@@ -40,14 +40,23 @@
              the-rest)
       (cons msg processed))))
 
+(defn- summary-nses [ns-trail]
+  (when (not-empty ns-trail)
+    (format "Your namespace trail:\n  %s"
+            (clojure.string/join "\n  " (map #(format "%s %s" (:ns %)
+                                                      (or (and (:seconds %)
+                                                               (format "(%s seconds)" (:seconds %))) "(Am here)"))
+                                             (enrich-with-duration ns-trail))))))
+
+(defn- summary-functions [command-frequencies]
+  (when (not-empty command-frequencies)
+    (format "Your function calls:\n  %s"
+            (clojure.string/join "\n  " (map (fn [[k v]] (format "%s (%s times)" k v)) command-frequencies)))))
+
 (defn sample-summary
   "Print out the trail of where the user has been."
   [ns-trail command-frequencies]
-  (format "Your namespace trail:\n  %s"
-          (clojure.string/join "\n  " (map #(format "%s %s" (:ns %)
-                                                    (or (and (:seconds %)
-                                                             (format "(%s seconds)" (:seconds %))) "(Am here)"))
-                                           (enrich-with-duration ns-trail)))))
+  (clojure.string/join "\n" (remove empty? [(summary-nses ns-trail) (summary-functions command-frequencies)])))
 
 (defn summary-reply
   [{:keys [transport] :as msg}]

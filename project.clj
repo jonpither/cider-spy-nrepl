@@ -5,6 +5,9 @@
             :url "http://www.eclipse.org/legal/epl-v10.html"}
   :dependencies [[org.clojure/clojure "1.5.1"]
                  [cider/cider-nrepl "0.1.0-SNAPSHOT"]
+                 [joda-time "2.3"]
                  ]
-  :profiles {:dev {:repl-options {:nrepl-middleware [cider-spy-nrepl.middleware.summary/wrap-info]}
-                   }})
+  ;;:profiles
+  ;; {:dev {:repl-options {:nrepl-middleware [cider-spy-nrepl.middleware.summary/wrap-info]}
+  ;;        }}
+)

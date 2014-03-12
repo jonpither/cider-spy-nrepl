@@ -22,9 +22,10 @@
 (defn track-command
   "Add message to supplied tracking."
   [command-frequencies {:keys [code] :as msg}]
-  (let [forms (read-string (format "(%s)" code))]
-    (when (= (count forms) 1)
-      (update-in command-frequencies [(first forms)] #(or (and % (inc %)) 1)))))
+  (let [forms (and code (read-string (format "(%s)" code)))]
+    (if (= (count forms) 1)
+      (update-in command-frequencies [(first forms)] #(or (and % (inc %)) 1))
+      command-frequencies)))
 
 (defn track-msg! [msg]
   (swap! trail-atom track-namespace msg)
@@ -56,7 +57,9 @@
 (defn sample-summary
   "Print out the trail of where the user has been."
   [ns-trail command-frequencies]
-  (clojure.string/join "\n" (remove empty? [(summary-nses ns-trail) (summary-functions command-frequencies)])))
+  (or (not-empty
+       (clojure.string/join "\n\n" (remove empty? [(summary-nses ns-trail) (summary-functions command-frequencies)])))
+      "No Data."))
 
 (defn summary-reply
   [{:keys [transport] :as msg}]

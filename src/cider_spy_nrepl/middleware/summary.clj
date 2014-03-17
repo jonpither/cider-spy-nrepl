@@ -8,6 +8,7 @@
 
 (def trail-atom (atom '()))
 (def commands-atom (atom '{}))
+(def session-started (LocalDateTime.))
 
 (defn- safe-inc [v]
   (and (v (inc v)) 1))
@@ -54,16 +55,24 @@
     (format "Your function calls:\n  %s"
             (clojure.string/join "\n  " (map (fn [[k v]] (format "%s (%s times)" k v)) command-frequencies)))))
 
+(defn- summary-session [session-started]
+  (format "Session Started %s, uptime: %s seconds."
+          (.toString session-started "hh:mm:ss")
+          (.getSeconds (Seconds/secondsBetween session-started (LocalDateTime.)))))
+
 (defn sample-summary
   "Print out the trail of where the user has been."
-  [ns-trail command-frequencies]
-  (or (not-empty
-       (clojure.string/join "\n\n" (remove empty? [(summary-nses ns-trail) (summary-functions command-frequencies)])))
-      "No Data."))
+  [session-started ns-trail command-frequencies]
+  (let [data (remove empty? [(summary-nses ns-trail)
+                             (summary-functions command-frequencies)])]
+    (if (not-empty data)
+      (clojure.string/join "\n\n" (cons (summary-session session-started) data))
+      "No Data for Cider Spy.")))
 
 (defn summary-reply
   [{:keys [transport] :as msg}]
-  (transport/send transport (response-for msg :value (sample-summary @trail-atom @commands-atom)))
+  (def m msg)
+  (transport/send transport (response-for msg :value (sample-summary session-started @trail-atom @commands-atom)))
   (transport/send transport (response-for msg :status :done)))
 
 (defn wrap-info

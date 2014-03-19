@@ -8,6 +8,7 @@
 
 (def messages (atom '())) ;; Used for debugging
 
+(def summary-msg (atom nil))
 (def files-loaded (atom '{}))
 (def trail-atom (atom '()))
 (def commands-atom (atom '{}))
@@ -86,10 +87,20 @@
       (clojure.string/join "\n\n" (cons (summary-session session-started) data))
       "No Data for Cider Spy.")))
 
+(defn- send-summary [transport msg]
+  (transport/send transport (response-for msg :value (sample-summary session-started @trail-atom @commands-atom @files-loaded))))
+
 (defn summary-reply
   [{:keys [transport] :as msg}]
-  (transport/send transport (response-for msg :value (sample-summary session-started @trail-atom @commands-atom @files-loaded)))
+  (reset! summary-msg msg)
+  (send-summary msg transport)
   (transport/send transport (response-for msg :status :done)))
+
+(defn- wrap-handler [handler {:keys [transport] :as msg}]
+  (let [r (handler msg)]
+    (track-msg! msg)
+    (send-summary transport @summary-msg)
+    r))
 
 (defn wrap-info
   "Middleware that looks up info for a symbol within the context of a particular namespace."
@@ -97,9 +108,7 @@
   (fn [{:keys [op] :as msg}]
     (if (= "summary" op)
       (summary-reply msg)
-      (do
-        (track-msg! msg)
-        (handler msg)))))
+      (wrap-handler handler msg))))
 
 (set-descriptor!
  #'wrap-info

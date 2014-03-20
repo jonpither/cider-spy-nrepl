@@ -62,15 +62,20 @@
                                                                (format "(%s seconds)" (:seconds %))) "(Am here)"))
                                              (enrich-with-duration ns-trail))))))
 
+(defn- summary-frequencies [label m]
+  (when (not-empty m)
+    (format "%s\n  %s"
+            label
+            (clojure.string/join "\n  " (->> m
+                                             (sort-by val)
+                                             reverse
+                                             (map (fn [[k v]] (format "%s (%s times)" k v))))))))
+
 (defn- summary-functions [command-frequencies]
-  (when (not-empty command-frequencies)
-    (format "Your function calls:\n  %s"
-            (clojure.string/join "\n  " (map (fn [[k v]] (format "%s (%s times)" k v)) command-frequencies)))))
+  (summary-frequencies "Your function calls:" command-frequencies))
 
 (defn- summary-files-loaded [files-loaded]
-  (when (not-empty files-loaded)
-    (format "Your files loaded:\n  %s"
-            (clojure.string/join "\n  " (map (fn [[k v]] (format "%s (%s times)" k v)) files-loaded)))))
+  (summary-frequencies "Your files loaded:" files-loaded))
 
 (defn- summary-session [session-started]
   (format "Session Started %s, uptime: %s seconds."

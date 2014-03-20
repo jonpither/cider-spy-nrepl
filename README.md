@@ -1,6 +1,6 @@
 # cider-spy-nrepl
 
-Middelware to support [cider-spy](https://github.com/jonpither/cider-spy).
+Middleware to support [cider-spy](https://github.com/jonpither/cider-spy).
 
 # License
 

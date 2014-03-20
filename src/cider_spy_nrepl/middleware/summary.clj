@@ -93,7 +93,7 @@
 (defn summary-reply
   [{:keys [transport] :as msg}]
   (reset! summary-msg msg)
-  (send-summary msg transport)
+  (send-summary transport msg)
   (transport/send transport (response-for msg :status :done)))
 
 (defn- wrap-handler [handler {:keys [transport] :as msg}]

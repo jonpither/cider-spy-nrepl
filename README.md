@@ -1,14 +1,7 @@
 # cider-spy-nrepl
 
-A Clojure library designed to ... well, that part is up to you.
+Middelware to support [cider-spy](https://github.com/jonpither/cider-spy).
 
-## Usage
+Copyright © 2014 Jon Pither
 
-FIXME
-
-## License
-
-Copyright © 2014 FIXME
-
-Distributed under the Eclipse Public License either version 1.0 or (at
-your option) any later version.
+Distributed under the GNU General Public License, version 3

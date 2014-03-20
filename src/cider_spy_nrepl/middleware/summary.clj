@@ -27,7 +27,11 @@
 (defn track-command
   "Add message to supplied tracking."
   [command-frequencies {:keys [code] :as msg}]
-  (let [forms (and code (read-string (format "(%s)" code)))]
+  (let [forms (and code
+                   (not (re-find #"^\(try\n?\s*\(:arglists\n?\s*\(clojure\.core/meta" code))
+                   (not (re-find #"^\(try\n?\s*\(eval\n?\s*\(quote\n?\s*\(clojure.repl/doc" code))
+                   (not (re-find #"^\(defn? " code))
+                   (read-string (format "(%s)" code)))]
     (if (= (count forms) 1)
       (update-in command-frequencies [(first forms)] safe-inc)
       command-frequencies)))
@@ -39,7 +43,7 @@
     files-loaded))
 
 (defn track-msg! [msg]
-  (swap! messages cons msg)
+  (swap! messages conj msg)
   (swap! trail-atom track-namespace msg)
   (swap! commands-atom track-command msg)
   (swap! files-loaded track-load-file msg))

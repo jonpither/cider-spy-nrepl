@@ -99,7 +99,8 @@
 (defn- wrap-handler [handler {:keys [transport] :as msg}]
   (let [r (handler msg)]
     (track-msg! msg)
-    (send-summary transport @summary-msg)
+    (when (Boolean/valueOf (:auto-refresh @summary-msg))
+      (send-summary transport @summary-msg))
     r))
 
 (defn wrap-info

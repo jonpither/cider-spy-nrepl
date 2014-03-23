@@ -56,6 +56,6 @@
 
 (defn -main [port]
   (if port
-    (let [[b] (start-netty-server :port (Integer/parseInt port))]
+    (let [[b] (start-netty-server :port (Integer/parseInt (or port "7771")))]
       (.sync b))
     (println "Port required.")))

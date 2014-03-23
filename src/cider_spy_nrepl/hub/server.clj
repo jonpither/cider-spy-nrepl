@@ -17,9 +17,11 @@
 (defn simple-handler []
   (proxy [SimpleChannelInboundHandler] []
     (messageReceived [ctx request]
-      (log/debug "Server got request" (prn-str request))
+      (log/info "Server got request" (prn-str request))
       (when-let [reply (server-events/process request)]
-        (write-out ctx reply)))))
+        (write-out ctx reply)))
+    (channelInactive [ctx]
+      (log/info "Client Disconnected"))))
 
 (defn- start-netty-server
   "Returns a vector consisting of a channel, boss group and worker group"

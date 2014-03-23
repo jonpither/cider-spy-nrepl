@@ -1,4 +1,6 @@
 (ns cider-spy-nrepl.hub.client
+  (:require [cider-spy-nrepl.hub.edn-codec :as edn-codec]
+            [cider-spy-nrepl.hub.client-events :as client-events])
   (:import [io.netty.channel ChannelHandlerAdapter SimpleChannelInboundHandler ChannelInitializer]
            [io.netty.channel.nio NioEventLoopGroup]
            [io.netty.channel.socket.nio NioSocketChannel]
@@ -13,7 +15,7 @@
   []
   (proxy [SimpleChannelInboundHandler] []
     (messageReceived [ctx request]
-      (println "GOT" request)
+      (client-events/process request)
       (.flush ctx))))
 
 (defn- client-bootstrap
@@ -30,6 +32,7 @@
               (doto pipeline
                 (.addLast "framer" (DelimiterBasedFrameDecoder. 8192 (Delimiters/lineDelimiter)))
                 (.addLast "string-decoder" (StringDecoder.))
+                (.addLast "end" (edn-codec/make-decoder))
                 (.addLast "string-encoder" (StringEncoder.))
                 (.addLast "main handler" (simple-handler))))))))
      group]))

@@ -6,7 +6,10 @@
   :dependencies [[org.clojure/clojure "1.5.1"]
                  [cider/cider-nrepl "0.1.0-SNAPSHOT"]
                  [joda-time "2.3"]
+                 [io.netty/netty-all "5.0.0.Alpha1"]
+                 [org.clojure/tools.logging "0.2.6"]
                  ]
+  :main cider-spy-nrepl.hub.server
   ;;:profiles
   ;; {:dev {:repl-options {:nrepl-middleware [cider-spy-nrepl.middleware.summary/wrap-info]}
   ;;        }}

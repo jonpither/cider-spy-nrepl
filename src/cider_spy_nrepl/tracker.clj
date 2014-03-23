@@ -12,9 +12,10 @@
   (if v (inc v) 1))
 
 (defn- track-namespace
-  "Add message to supplied tracking."
+  "Add message to supplied tracking.
+   The user namespace is ignored."
   [trail {:keys [ns] :as msg}]
-  (if (and ns (not= (:ns msg) (-> trail first :ns)))
+  (if (and ns (not= "user" (:ns msg)) (not= (:ns msg) (-> trail first :ns)))
     (conj trail {:dt (LocalDateTime.) :ns ns})
     trail))
 

@@ -31,10 +31,11 @@
 (defn- summary-nses [ns-trail]
   (when (not-empty ns-trail)
     (format "Your namespace trail:\n  %s"
-            (clojure.string/join "\n  " (map #(format "%s %s" (:ns %)
-                                                      (or (and (:seconds %)
-                                                               (format "(%s seconds)" (:seconds %))) "(Am here)"))
-                                             (enrich-with-duration ns-trail))))))
+            (clojure.string/join "\n  " (->> ns-trail
+                                             enrich-with-duration
+                                             (map #(format "%s %s" (:ns %)
+                                                           (or (and (:seconds %)
+                                                                    (format "(%s seconds)" (:seconds %))) "(Am here)"))))))))
 
 (defn- summary-frequencies [label m]
   (when (not-empty m)

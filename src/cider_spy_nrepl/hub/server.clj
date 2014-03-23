@@ -10,13 +10,16 @@
            [io.netty.handler.codec.string StringEncoder]
            [io.netty.handler.codec DelimiterBasedFrameDecoder Delimiters]))
 
+(defn- write-out [ctx v]
+  (.write ctx (prn-str v))
+  (.flush ctx))
+
 (defn simple-handler []
   (proxy [SimpleChannelInboundHandler] []
     (messageReceived [ctx request]
-      (println "Server got request" (prn-str request))
-      (server-events/process request)
-      (.write ctx (format "Incoming %s" (prn-str request)))
-      (.flush ctx))))
+      (log/debug "Server got request" (prn-str request))
+      (when-let [reply (server-events/process request)]
+        (write-out ctx reply)))))
 
 (defn- start-netty-server
   "Returns a vector consisting of a channel, boss group and worker group"

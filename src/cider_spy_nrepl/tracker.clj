@@ -18,6 +18,7 @@
     (conj trail {:dt (LocalDateTime.) :ns ns})
     trail))
 
+;; TODO this is downright dangerous..
 (defn- track-command
   "Add message to supplied tracking."
   [command-frequencies {:keys [code] :as msg}]

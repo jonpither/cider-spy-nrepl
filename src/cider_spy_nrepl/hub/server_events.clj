@@ -2,7 +2,8 @@
 
 (def registrations (atom #{}))
 
-(defmulti process (comp keyword :type))
+(defmulti process (comp keyword :op))
 
-(defmethod process :register [{:keys [id]}]
-  (swap! registrations conj id))
+(defmethod process :register [{:keys [alias]}]
+  (swap! registrations conj alias)
+  (println "Registrations Updated:" @registrations))

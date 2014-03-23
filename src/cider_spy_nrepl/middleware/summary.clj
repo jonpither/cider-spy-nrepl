@@ -5,17 +5,11 @@
             [cider.nrepl.middleware.util.cljs :as cljs]
             [clojure.pprint]
             [cider-spy-nrepl.tracker]
-            [cider-spy-nrepl.hub.client :as hubc])
+            [cider-spy-nrepl.hub.client-facade :as hub-client])
   (:import [org.joda.time LocalDateTime Seconds]))
 
+;; TODO Abstract into a session
 (def summary-msg (atom nil))
-(def hub-client (atom nil))
-
-(defn- connect-to-hub! [{:keys [id]}]
-  (swap! hub-client #(or %
-                         (let [bootstrap (hubc/connect)]
-                           (hubc/send! bootstrap {:id id :type "register"})
-                           bootstrap))))
 
 (defn- seconds-between [msg1 msg2]
   (.getSeconds (Seconds/secondsBetween (:dt msg1) (:dt msg2))))
@@ -68,8 +62,8 @@
 
 (defn summary-reply
   "Reply to request for summary information."
-  [{:keys [transport] :as msg}]
-  (connect-to-hub! msg)
+  [{:keys [transport hub-alias] :as msg}]
+  (hub-client/connect-to-hub! hub-alias)
   (reset! summary-msg msg)
   (send-summary transport msg)
   (transport/send transport (response-for msg :status :done)))

@@ -15,7 +15,6 @@
     (messageReceived [ctx request]
       (println "Server got request" (prn-str request))
       (server-events/process request)
-      (println "Registrations" @cider-spy-nrepl.hub.server-events/registrations)
       (.write ctx (format "Incoming %s" (prn-str request)))
       (.flush ctx))))
 

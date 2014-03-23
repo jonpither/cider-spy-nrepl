@@ -54,8 +54,8 @@
   (.shutdownGracefully wg)
   (.shutdownGracefully bg))
 
-(defn -main [port]
-  (if port
-    (let [[b] (start-netty-server :port (Integer/parseInt (or port "7771")))]
-      (.sync b))
-    (println "Port required.")))
+(defn -main [& args]
+  (let [port (or (first args) "7771")]
+    (println (format "Starting CIDER-SPY HUB Server on %s." port))
+    (let [[b] (start-netty-server :port (Integer/parseInt port))]
+      (.sync b))))

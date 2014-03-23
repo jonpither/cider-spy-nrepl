@@ -15,8 +15,8 @@
 (defn- summary-hackers
   "Summarise the hackers currently with sessions in CIDER HUB."
   []
-  (format "Devs also hacking:\n  %s"
-          (clojure.string/join "\n  " @client-events/registrations)))
+  (format "Devs hacking:\n  %s"
+          (clojure.string/join ", " @client-events/registrations)))
 
 (defn- seconds-between [msg1 msg2]
   (.getSeconds (Seconds/secondsBetween (:dt msg1) (:dt msg2))))

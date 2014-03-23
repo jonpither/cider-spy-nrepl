@@ -1,6 +1,14 @@
 # cider-spy-nrepl
 
-Middleware to support [cider-spy](https://github.com/jonpither/cider-spy).
+## Middleware
+
+Required Middleware to support [cider-spy](https://github.com/jonpither/cider-spy).
+
+## Hub
+
+Communicate and track fellow REPL hackers by running a hub:
+
+`lein run`
 
 # License
 

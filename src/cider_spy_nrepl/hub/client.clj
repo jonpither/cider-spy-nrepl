@@ -38,11 +38,11 @@
 (defn connect
   "Connect to CIDER-SPY-HUB.
    Returns a vector containing a client bootstrap, a group and a channel."
-  []
+  [host port]
   (try
     (let [[b group] (client-bootstrap)]
       [b group (.channel (.sync (.connect b (InetSocketAddress. "localhost" 7771))))])
-    (catch ConnectException e (println "Could not connect, sorry."))))
+    (catch ConnectException e (println (format "Could not connect to %s:%s, sorry." host port)))))
 
 (defn send! [[_ _ c] msg]
   (.sync (.writeAndFlush c (prn-str msg))))

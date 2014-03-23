@@ -9,8 +9,8 @@
   ([bootstrap op msg]
      (hubc/send! bootstrap (assoc msg :op op))))
 
-(defn connect-to-hub! [alias]
+(defn connect-to-hub! [host port alias]
   (swap! hub-client #(or %
-                         (let [bootstrap (hubc/connect)]
+                         (when-let [bootstrap (hubc/connect host port)]
                            (send! bootstrap :register {:alias alias})
                            bootstrap))))

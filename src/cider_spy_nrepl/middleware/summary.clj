@@ -62,8 +62,8 @@
 
 (defn summary-reply
   "Reply to request for summary information."
-  [{:keys [transport hub-alias] :as msg}]
-  (hub-client/connect-to-hub! hub-alias)
+  [{:keys [transport hub-host hub-port hub-alias] :as msg}]
+  (hub-client/connect-to-hub! hub-host (Integer/parseInt hub-port) hub-alias)
   (reset! summary-msg msg)
   (send-summary transport msg)
   (transport/send transport (response-for msg :status :done)))

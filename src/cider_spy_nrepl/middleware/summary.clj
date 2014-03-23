@@ -9,6 +9,9 @@
             [cider-spy-nrepl.hub.client-events :as client-events])
   (:import [org.joda.time LocalDateTime Seconds]))
 
+;; TODO: keep summary and tracking encapsulated together
+;; Form a protocol
+
 ;; TODO Abstract into a session
 (def summary-msg (atom nil))
 
@@ -21,7 +24,7 @@
 (defn- seconds-between [msg1 msg2]
   (.getSeconds (Seconds/secondsBetween (:dt msg1) (:dt msg2))))
 
-(defn enrich-with-duration [msgs]
+(defn- enrich-with-duration [msgs]
   (loop [processed '() [msg & the-rest] (reverse msgs)]
     (if (not-empty the-rest)
       (recur (cons (assoc msg :seconds (seconds-between msg (first the-rest))) processed)

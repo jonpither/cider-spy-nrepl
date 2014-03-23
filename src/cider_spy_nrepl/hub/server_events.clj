@@ -10,4 +10,6 @@
 (defmethod process :register [{:keys [alias]}]
   (swap! registrations conj alias)
   (println "Registrations Updated:" @registrations)
-  @registrations)
+  {:op :registered
+   :alias alias
+   :registered @registrations})

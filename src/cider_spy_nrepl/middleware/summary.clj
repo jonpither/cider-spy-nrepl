@@ -5,11 +5,18 @@
             [cider.nrepl.middleware.util.cljs :as cljs]
             [clojure.pprint]
             [cider-spy-nrepl.tracker]
-            [cider-spy-nrepl.hub.client-facade :as hub-client])
+            [cider-spy-nrepl.hub.client-facade :as hub-client]
+            [cider-spy-nrepl.hub.client-events :as client-events])
   (:import [org.joda.time LocalDateTime Seconds]))
 
 ;; TODO Abstract into a session
 (def summary-msg (atom nil))
+
+(defn- summary-hackers
+  "Summarise the hackers currently with sessions in CIDER HUB."
+  []
+  (format "Devs also hacking:\n  %s"
+          (clojure.string/join "\n  " @client-events/registrations)))
 
 (defn- seconds-between [msg1 msg2]
   (.getSeconds (Seconds/secondsBetween (:dt msg1) (:dt msg2))))
@@ -48,7 +55,8 @@
   [session-started ns-trail command-frequencies files-loaded]
   (let [data (remove empty? [(summary-nses ns-trail)
                              (summary-frequencies "Your function calls:" command-frequencies)
-                             (summary-frequencies "Your files loaded:" files-loaded)])]
+                             (summary-frequencies "Your files loaded:" files-loaded)
+                             (summary-hackers)])]
     (if (not-empty data)
       (clojure.string/join "\n\n" (cons (summary-session session-started) data))
       "No Data for Cider Spy.")))

@@ -7,6 +7,8 @@
 (defmethod process :default [m]
   (println "Did not understand message from hub" m))
 
-(defmethod process :register [{:keys [alias]}]
-  (swap! registrations conj alias)
+(defmethod process :registered [{:keys [alias registered] :as msg}]
+  (reset! registrations registered)
+  (println "hi" (type msg))
+  (println (format "Registered: %s" alias))
   (println "Spy Agent, Registrations Updated:" @registrations))

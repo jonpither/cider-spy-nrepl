@@ -36,12 +36,6 @@
                                              reverse
                                              (map (fn [[k v]] (format "%s (%s times)" k v))))))))
 
-(defn- summary-functions [command-frequencies]
-  (summary-frequencies "Your function calls:" command-frequencies))
-
-(defn- summary-files-loaded [files-loaded]
-  (summary-frequencies "Your files loaded:" files-loaded))
-
 (defn- summary-session [session-started]
   (format "Session Started %s, uptime: %s seconds."
           (.toString session-started "hh:mm:ss")
@@ -51,8 +45,8 @@
   "Print out the trail of where the user has been."
   [session-started ns-trail command-frequencies files-loaded]
   (let [data (remove empty? [(summary-nses ns-trail)
-                             (summary-functions command-frequencies)
-                             (summary-files-loaded files-loaded)])]
+                             (summary-frequencies "Your function calls:" command-frequencies)
+                             (summary-frequencies "Your files loaded:" files-loaded)])]
     (if (not-empty data)
       (clojure.string/join "\n\n" (cons (summary-session session-started) data))
       "No Data for Cider Spy.")))

@@ -1,5 +1,6 @@
 (ns cider-spy-nrepl.hub.client-facade
-  (:require [cider-spy-nrepl.hub.client :as hubc]))
+  (:require [cider-spy-nrepl.hub.client :as hubc]
+            [cider-spy-nrepl.hub.client-events :as client-events]))
 
 (def hub-client (atom nil))
 

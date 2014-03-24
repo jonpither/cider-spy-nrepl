@@ -44,7 +44,7 @@
   [host port]
   (try
     (let [[b group] (client-bootstrap)]
-      [b group (.channel (.sync (.connect b (InetSocketAddress. "localhost" 7771))))])
+      [b group (.channel (.sync (.connect b (InetSocketAddress. host port))))])
     (catch ConnectException e (println (format "Could not connect to %s:%s, sorry." host port)))))
 
 (defn send! [[_ _ c] msg]

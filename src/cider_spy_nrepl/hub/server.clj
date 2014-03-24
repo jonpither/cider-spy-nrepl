@@ -23,7 +23,7 @@
     (channelInactive [ctx]
       (log/info "Client Disconnected"))))
 
-(defn- start-netty-server
+(defn start-netty-server
   "Returns a vector consisting of a channel, boss group and worker group"
   [& {:keys [port]}]
   (let [boss-group (NioEventLoopGroup.)
@@ -53,10 +53,10 @@
   "Shut down the netty Server Bootstrap
    Expects a vector containing a server bootstrap, boss group and worker group."
   [[b bg wg]]
-  (.awaitUninterruptibly b)
+  (.sync (.awaitUninterruptibly b))
   (-> b (.channel) (.close) (.sync))
-  (.shutdownGracefully wg)
-  (.shutdownGracefully bg))
+  (.sync (.shutdownGracefully wg))
+  (.sync (.shutdownGracefully bg)))
 
 (defn -main [& args]
   (let [port (or (first args) "7771")]

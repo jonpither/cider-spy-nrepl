@@ -8,20 +8,24 @@
            [io.netty.channel.socket.nio NioServerSocketChannel]
            [io.netty.handler.codec.string StringDecoder]
            [io.netty.handler.codec.string StringEncoder]
-           [io.netty.handler.codec DelimiterBasedFrameDecoder Delimiters]))
+           [io.netty.handler.codec DelimiterBasedFrameDecoder Delimiters]
+           [java.util UUID]))
 
 (defn- write-out [ctx v]
   (.write ctx (prn-str v))
   (.flush ctx))
 
 (defn simple-handler []
-  (proxy [SimpleChannelInboundHandler] []
-    (messageReceived [ctx request]
-      (log/info "Server got request" (prn-str request))
-      (when-let [reply (server-events/process request)]
-        (write-out ctx reply)))
-    (channelInactive [ctx]
-      (log/info "Client Disconnected"))))
+  (let [session-id (str (UUID/randomUUID))]
+    (proxy [SimpleChannelInboundHandler] []
+      (messageReceived [ctx request]
+        (log/info "Server got request" (prn-str request))
+        (when-let [reply (server-events/process
+                          (assoc request :session-id session-id))]
+          (write-out ctx reply)))
+      (channelInactive [ctx]
+        (server-events/unregister! session-id)
+        (log/info "Client Disconnected")))))
 
 (defn start-netty-server
   "Returns a vector consisting of a channel, boss group and worker group"

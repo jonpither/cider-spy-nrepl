@@ -12,7 +12,7 @@
 
 (defmacro test-with-server [& forms]
   `(let [~'server (hub-server/start-netty-server :port 9812)]
-     (reset! server-events/registrations #{})
+     (reset! server-events/registrations {})
      (try
        ~@forms
        (finally
@@ -24,11 +24,11 @@
     (reset! client-events/registrations #{})
     (let [client (client-facade/connect-to-hub! "localhost" 9812 "jonnyboy")]
       (Thread/sleep 500)
-      (is (= #{"jonnyboy"} @server-events/registrations))
+      (is (= #{"jonnyboy"} (set (vals @server-events/registrations))))
       (is (= #{"jonnyboy"} @client-events/registrations))
 
       (hubc/shutdown! client)
 
       (Thread/sleep 500)
 
-      (is (= #{} @server-events/registrations)))))
+      (is (= #{} (set (vals @server-events/registrations)))))))

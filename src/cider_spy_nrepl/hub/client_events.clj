@@ -9,6 +9,4 @@
 
 (defmethod process :registered [{:keys [alias registered] :as msg}]
   (reset! registrations registered)
-  (println "hi" (type msg))
-  (println (format "Registered: %s" alias))
-  (println "Spy Agent, Registrations Updated:" @registrations))
+  (println (format "Registered: %s" alias)))

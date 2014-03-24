@@ -47,5 +47,12 @@
       [b group (.channel (.sync (.connect b (InetSocketAddress. host port))))])
     (catch ConnectException e (println (format "Could not connect to %s:%s, sorry." host port)))))
 
+(defn shutdown!
+  "Shut down the netty Server Bootstrap
+   Expects a vector containing a server bootstrap, boss group and worker group."
+  [[b g c]]
+  (-> c (.close) (.sync))
+  (.sync (.shutdownGracefully g)))
+
 (defn send! [[_ _ c] msg]
   (.sync (.writeAndFlush c (prn-str msg))))

@@ -17,14 +17,15 @@
 
 (defn- summary-hackers
   "Summarise the hackers currently with sessions in CIDER HUB."
-  []
-  (format "Devs hacking:\n  %s"
-          (clojure.string/join ", " @client-events/registrations)))
+  [registrations]
+  (when (not-empty registrations)
+    (format "Devs hacking:\n  %s"
+            (clojure.string/join ", " registrations))))
 
 (defn- seconds-between [msg1 msg2]
   (.getSeconds (Seconds/secondsBetween (:dt msg1) (:dt msg2))))
 
-(defn- enrich-with-duration [msgs]
+(defn enrich-with-duration [msgs]
   (loop [processed '() [msg & the-rest] (reverse msgs)]
     (if (not-empty the-rest)
       (recur (cons (assoc msg :seconds (seconds-between msg (first the-rest))) processed)
@@ -56,13 +57,13 @@
 
 (defn sample-summary
   "Print out the trail of where the user has been."
-  [session-started ns-trail command-frequencies files-loaded]
+  [session-started ns-trail command-frequencies files-loaded registrations]
   (let [data (remove empty? [(summary-nses ns-trail)
                              (summary-frequencies "Your function calls:" command-frequencies)
                              (summary-frequencies "Your files loaded:" files-loaded)
-                             (summary-hackers)])]
+                             (summary-hackers registrations)])]
     (if (not-empty data)
-      (clojure.string/join "\n\n" (cons (summary-session session-started) data))
+      (clojure.string/join "\n\n" (if session-started (cons (summary-session session-started) data) data))
       "No Data for Cider Spy.")))
 
 (defn- send-summary [transport msg]
@@ -70,7 +71,8 @@
                                           (sample-summary cider-spy-nrepl.tracker/session-started
                                                           @cider-spy-nrepl.tracker/trail-atom
                                                           @cider-spy-nrepl.tracker/commands-atom
-                                                          @cider-spy-nrepl.tracker/files-loaded))))
+                                                          @cider-spy-nrepl.tracker/files-loaded
+                                                          @client-events/registrations))))
 
 (defn summary-reply
   "Reply to request for summary information."

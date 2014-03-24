@@ -11,7 +11,7 @@
 (defn- safe-inc [v]
   (if v (inc v) 1))
 
-(defn- track-namespace
+(defn track-namespace
   "Add message to supplied tracking.
    The user namespace is ignored."
   [trail {:keys [ns] :as msg}]
@@ -20,7 +20,7 @@
     trail))
 
 ;; TODO this is downright dangerous..
-(defn- track-command
+(defn track-command
   "Add message to supplied tracking."
   [command-frequencies {:keys [code] :as msg}]
   (let [forms (and code

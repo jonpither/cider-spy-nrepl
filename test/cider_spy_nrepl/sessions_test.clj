@@ -17,16 +17,26 @@
        (finally
          (hub-server/shutdown ~'server)))))
 
+(defmacro test-with-client [alias & forms]
+  `(do
+     (reset! client-events/registrations #{})
+     (let [~'client (client-facade/connect-to-hub! "localhost" 9812 ~alias)]
+       ;; Allow time for registration message to do a round trip
+       (Thread/sleep 500)
+       (try
+         ~@forms
+         (finally
+           (hubc/shutdown! ~'client))))))
+
 (deftest test-client-should-register-and-unregister
   (test-with-server
-    (reset! client-events/registrations #{})
-    (let [client (client-facade/connect-to-hub! "localhost" 9812 "jonnyboy")]
-      (Thread/sleep 500)
-      (is (= #{"jonnyboy"} (set (vals @server-events/registrations))))
-      (is (= #{"jonnyboy"} @client-events/registrations))
+   (test-with-client
+    "jonnyboy"
+    (is (= #{"jonnyboy"} (set (vals @server-events/registrations))))
+    (is (= #{"jonnyboy"} @client-events/registrations))
 
-      (hubc/shutdown! client)
+    (hubc/shutdown! client)
 
-      (Thread/sleep 500)
+    (Thread/sleep 500)
 
-      (is (= #{} (set (vals @server-events/registrations)))))))
+    (is (= #{} (set (vals @server-events/registrations)))))))

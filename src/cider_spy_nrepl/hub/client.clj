@@ -48,11 +48,14 @@
     (catch ConnectException e (println (format "Could not connect to %s:%s, sorry." host port)))))
 
 (defn shutdown!
-  "Shut down the netty Server Bootstrap
-   Expects a vector containing a server bootstrap, boss group and worker group."
+  "Shut down the netty Client Bootstrap
+   Expects a vector containing a client bootstrap, group and channel.
+   This operation can be run safely against a Client Bootstrap that is already shutdown."
   [[b g c]]
-  (-> c (.close) (.sync))
-  (.sync (.shutdownGracefully g)))
+  (when [(.isOpen c)]
+    (-> c (.close) (.sync)))
+  (when-not [(.isShutdown g)]
+    (.sync (.shutdownGracefully g))))
 
 (defn send! [[_ _ c] msg]
   (.sync (.writeAndFlush c (prn-str msg))))

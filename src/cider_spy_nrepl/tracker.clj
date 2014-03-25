@@ -1,13 +1,6 @@
 (ns cider-spy-nrepl.tracker
   (:import [org.joda.time LocalDateTime]))
 
-(def messages (atom '())) ;; Used for debugging
-
-(def files-loaded (atom '{}))
-(def trail-atom (atom '()))
-(def commands-atom (atom '{}))
-(def session-started (LocalDateTime.))
-
 (defn- safe-inc [v]
   (if v (inc v) 1))
 
@@ -36,8 +29,18 @@
     (update-in files-loaded [file-path] safe-inc)
     files-loaded))
 
+(def session-started (LocalDateTime.))
+(def session (atom {}))
+
+(def trackers
+  [[:files-loaded #'track-load-file {}]
+   [:ns-trail #'track-namespace '()]
+   [:commands #'track-command {}]
+   [:messages #'conj '()]])
+
+(defn- apply-trackers [session msg]
+  (reduce (fn [s [k f init-val]] (update-in s [k] #(f (or %1 init-val) msg)))
+          session trackers))
+
 (defn track-msg! [msg]
-  (swap! messages conj msg)
-  (swap! trail-atom track-namespace msg)
-  (swap! commands-atom track-command msg)
-  (swap! files-loaded track-load-file msg))
+  (swap! session apply-trackers msg))

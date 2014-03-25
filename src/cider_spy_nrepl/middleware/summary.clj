@@ -67,12 +67,11 @@
       "No Data for Cider Spy.")))
 
 (defn- send-summary [transport msg]
-  (transport/send transport (response-for msg :value
-                                          (sample-summary cider-spy-nrepl.tracker/session-started
-                                                          @cider-spy-nrepl.tracker/trail-atom
-                                                          @cider-spy-nrepl.tracker/commands-atom
-                                                          @cider-spy-nrepl.tracker/files-loaded
-                                                          @client-events/registrations))))
+  (let [{:keys [ns-trail files-loaded commands]} @cider-spy-nrepl.tracker/session]
+    (transport/send transport (response-for msg :value
+                                            (sample-summary cider-spy-nrepl.tracker/session-started
+                                                            ns-trail commands files-loaded
+                                                            @client-events/registrations)))))
 
 (defn summary-reply
   "Reply to request for summary information."

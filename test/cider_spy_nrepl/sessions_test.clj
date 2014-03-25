@@ -6,7 +6,6 @@
             [cider-spy-nrepl.hub.client-events :as client-events]
             [cider-spy-nrepl.hub.server-events :as server-events]))
 
-;; TODO assert on outcome of shutdown promise
 ;; TODO test someone in a different session gets registered notice
 ;; TODO rework sleeps with core async, much nicer
 
@@ -18,7 +17,6 @@
        (finally
          (hub-server/shutdown ~'server)))))
 
-;; This is going to be hairy - a full on async test.
 (deftest test-client-should-register-and-unregister
   (test-with-server
     (reset! client-events/registrations #{})

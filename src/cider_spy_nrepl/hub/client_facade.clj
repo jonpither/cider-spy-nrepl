@@ -2,6 +2,9 @@
   (:require [cider-spy-nrepl.hub.client :as hubc]
             [cider-spy-nrepl.hub.client-events :as client-events]))
 
+;; Need to split the register away from the connect-to-hub!
+;; The hub-connection has a different lifecycle/management to individual sessions
+
 (def hub-client (atom nil))
 
 (defn- send!

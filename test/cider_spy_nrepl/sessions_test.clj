@@ -8,6 +8,8 @@
 
 ;; TODO test someone in a different session gets registered notice
 ;; TODO rework sleeps with core async, much nicer
+;; TODO Make very clear tests that cover 2 sessions to same nrepl server vs 2 diff nepl-servers.
+;;  I should manually test what happenz if 2 diff emacs CIDERs with diff aliases connect to same nrepl-server then on to the hub.
 
 (defmacro test-with-server [& forms]
   `(let [~'server (hub-server/start-netty-server :port 9812)]

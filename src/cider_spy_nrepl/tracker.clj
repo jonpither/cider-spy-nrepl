@@ -19,18 +19,16 @@
     (conj trail {:dt (LocalDateTime.) :ns ns})
     trail))
 
-;; TODO this is downright dangerous..
 (defn track-command
   "Add message to supplied tracking."
   [command-frequencies {:keys [code] :as msg}]
-  (let [forms (and code
-                   (not (re-find #"^\(try\n?\s*\(:arglists\n?\s*\(clojure\.core/meta" code))
-                   (not (re-find #"^\(try\n?\s*\(eval\n?\s*\(quote\n?\s*\(clojure.repl/doc" code))
-                   (not (re-find #"^\(defn? " code))
-                   (read-string (format "(%s)" code)))]
-    (if (= (count forms) 1)
-      (update-in command-frequencies [(first forms)] safe-inc)
-      command-frequencies)))
+  (if (and code
+           (not (re-find #"^\(try\n?\s*\(:arglists\n?\s*\(clojure\.core/meta" code))
+           (not (re-find #"^\(try\n?\s*\(eval\n?\s*\(quote\n?\s*\(clojure.repl/doc" code))
+           (not (re-find #"^\(defn? " code))
+           (read-string (format "(%s)" code)))
+    (update-in command-frequencies [code] safe-inc)
+    command-frequencies))
 
 ;; TODO Need to extract the namespace out of the file being loaded to make this more useful
 (defn- track-load-file [files-loaded {:keys [op file-path] :as msg}]

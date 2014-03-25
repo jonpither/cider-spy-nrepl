@@ -29,9 +29,6 @@
     (update-in files-loaded [file-path] safe-inc)
     files-loaded))
 
-(def session-started (LocalDateTime.))
-(def session (atom {}))
-
 (def trackers
   [[:files-loaded #'track-load-file {}]
    [:ns-trail #'track-namespace '()]
@@ -42,5 +39,5 @@
   (reduce (fn [s [k f init-val]] (update-in s [k] #(f (or %1 init-val) msg)))
           session trackers))
 
-(defn track-msg! [msg]
+(defn track-msg! [msg session]
   (swap! session apply-trackers msg))

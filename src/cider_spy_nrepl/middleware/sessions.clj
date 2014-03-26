@@ -4,7 +4,7 @@
 (def sessions (atom {}))
 
 (defn- new-session []
-  {:session-started (LocalDateTime.)})
+  (atom {:session-started (LocalDateTime.)}))
 
 (defn session!
   "Return the session for the given msg.

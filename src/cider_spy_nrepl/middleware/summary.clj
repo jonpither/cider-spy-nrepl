@@ -49,19 +49,22 @@
                                              (map (fn [[k v]] (format "%s (%s times)" k v))))))))
 
 (defn- summary-session [session-started]
-  (format "Session Started %s, uptime: %s seconds."
-          (.toString session-started "hh:mm:ss")
-          (.getSeconds (Seconds/secondsBetween session-started (LocalDateTime.)))))
+  (when session-started
+    (format "Session Started %s, uptime: %s seconds."
+            (.toString session-started "hh:mm:ss")
+            (.getSeconds (Seconds/secondsBetween session-started (LocalDateTime.))))))
 
 (defn sample-summary
   "Print out the trail of where the user has been."
   [{:keys [session-started ns-trail commands files-loaded]} registrations]
-  (let [data (remove empty? [(summary-nses ns-trail)
+  (let [tracking-data (remove empty? [(summary-nses ns-trail)
                              (summary-frequencies "Your function calls:" commands)
-                             (summary-frequencies "Your files loaded:" files-loaded)
-                             (summary-hackers registrations)])]
-    (if (not-empty data)
-      (clojure.string/join "\n\n" (if session-started (cons (summary-session session-started) data) data))
+                             (summary-frequencies "Your files loaded:" files-loaded)])]
+    (if (not-empty tracking-data)
+      (clojure.string/join "\n\n"
+                           (remove empty?
+                                   (concat [(summary-session session-started)
+                                            (summary-hackers registrations)] tracking-data)))
       "No Data for Cider Spy.")))
 
 (defn- send-summary [transport msg]
@@ -78,12 +81,13 @@
   (transport/send transport (response-for msg :status :done)))
 
 (defn- wrap-handler [handler {:keys [transport] :as msg}]
-  (let [r (handler msg)
-        {:keys [summary-msg] :as session} (sessions/session! msg)]
+  (let [result (handler msg)
+        session (sessions/session! msg)]
     (cider-spy-nrepl.tracker/track-msg! msg session)
-    (when (Boolean/valueOf (:auto-refresh summary-msg))
-      (send-summary transport summary-msg))
-    r))
+    (let [{:keys [summary-msg]} @session]
+      (when (Boolean/valueOf (:auto-refresh summary-msg))
+        (send-summary transport summary-msg)))
+    result))
 
 (defn wrap-info
   "Middleware that looks up info for a symbol within the context of a particular namespace."

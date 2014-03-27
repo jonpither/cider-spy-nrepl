@@ -67,26 +67,28 @@
                                             (summary-hackers registrations)] tracking-data)))
       "No Data for Cider Spy.")))
 
-(defn- send-summary [transport msg]
+(defn- send-summary [session transport msg]
   (transport/send transport (response-for msg :value
-                                          (sample-summary (sessions/session! msg)
+                                          (sample-summary @session
                                                           @client-events/registrations))))
 
 (defn summary-reply
   "Reply to request for summary information."
   [{:keys [transport hub-host hub-port hub-alias] :as msg}]
-  (hub-client/connect-to-hub! hub-host (Integer/parseInt hub-port) hub-alias)
-  (sessions/summary-msg! (sessions/session! msg) msg)
-  (send-summary transport msg)
-  (transport/send transport (response-for msg :status :done)))
+  (let [session (sessions/session! msg)]
+    (hub-client/connect-to-hub! hub-host (Integer/parseInt hub-port) hub-alias)
+    (sessions/summary-msg! session msg)
+    (send-summary session transport msg)
+    (transport/send transport (response-for msg :status :done))))
 
-(defn- wrap-handler [handler {:keys [transport] :as msg}]
+(defn- wrap-handler [handler {:keys [transport session] :as msg}]
   (let [result (handler msg)
         session (sessions/session! msg)]
-    (cider-spy-nrepl.tracker/track-msg! msg session)
-    (let [{:keys [summary-msg]} @session]
-      (when (Boolean/valueOf (:auto-refresh summary-msg))
-        (send-summary transport summary-msg)))
+    (when session
+      (cider-spy-nrepl.tracker/track-msg! msg session)
+      (let [{:keys [summary-msg]} @session]
+        (when (Boolean/valueOf (:auto-refresh summary-msg))
+          (send-summary session transport summary-msg))))
     result))
 
 (defn wrap-info

@@ -9,11 +9,12 @@
 (defn session!
   "Return the session for the given msg.
    If a session does not exist then one will be created."
-  [{:keys [id]}]
-  (when-not (get @sessions id)
-    (swap! sessions assoc id (new-session)))
+  [{:keys [session]}]
+  (when session
+    (when-not (get @sessions session)
+      (swap! sessions assoc session (new-session)))
 
-  (get @sessions id))
+    (get @sessions session)))
 
 (defn summary-msg!
   "Update the session with summary message.

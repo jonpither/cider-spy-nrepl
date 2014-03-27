@@ -18,7 +18,7 @@
   (if (and code
            (not (re-find #"^\(try\n?\s*\(:arglists\n?\s*\(clojure\.core/meta" code))
            (not (re-find #"^\(try\n?\s*\(eval\n?\s*\(quote\n?\s*\(clojure.repl/doc" code))
-           (not (re-find #"^\(defn? " code))
+           (not (re-find #"^\(defn?-? " code))
            (read-string (format "(%s)" code)))
     (update-in command-frequencies [code] safe-inc)
     command-frequencies))

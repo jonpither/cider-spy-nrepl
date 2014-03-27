@@ -14,8 +14,8 @@
 
 (defn track-command
   "Add message to supplied tracking."
-  [command-frequencies {:keys [code] :as msg}]
-  (if (and code
+  [command-frequencies {:keys [code op] :as msg}]
+  (if (and code (not= "load-file" op)
            (not (re-find #"^\(try\n?\s*\(:arglists\n?\s*\(clojure\.core/meta" code))
            (not (re-find #"^\(try\n?\s*\(eval\n?\s*\(quote\n?\s*\(clojure.repl/doc" code))
            (not (re-find #"^\(defn?-? " code))

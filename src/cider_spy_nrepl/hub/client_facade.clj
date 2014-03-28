@@ -8,7 +8,7 @@
 
 (defn- hub-connection! [session host port alias bootstrap]
   (or bootstrap
-      (when-let [bootstrap (hubc/connect host port)]
+      (when-let [bootstrap (hubc/connect host port session)]
         (send! bootstrap :register {:alias alias :session-id (:id @session)})
         bootstrap)))
 

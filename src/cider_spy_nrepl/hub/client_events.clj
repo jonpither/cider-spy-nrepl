@@ -1,12 +1,10 @@
 (ns cider-spy-nrepl.hub.client-events)
 
-(def registrations (atom #{}))
+(defmulti process (fn [_ m] (-> m :op keyword)))
 
-(defmulti process (comp keyword :op))
-
-(defmethod process :default [m]
+(defmethod process :default [s m]
   (println "Did not understand message from hub" m))
 
-(defmethod process :registered [{:keys [alias registered] :as msg}]
-  (reset! registrations registered)
+(defmethod process :registered [s {:keys [alias registered] :as msg}]
+  (swap! s assoc-in [:registrations] registered)
   (println (format "Registered: %s" alias)))

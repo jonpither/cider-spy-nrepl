@@ -56,7 +56,7 @@
 
 (defn sample-summary
   "Print out the trail of where the user has been."
-  [{:keys [session-started ns-trail commands files-loaded]} registrations]
+  [{:keys [session-started ns-trail commands files-loaded registrations]}]
   (let [tracking-data (remove empty? [(summary-nses ns-trail)
                              (summary-frequencies "Your function calls:" commands)
                              (summary-frequencies "Your files loaded:" files-loaded)])]
@@ -68,9 +68,7 @@
       "No Data for Cider Spy.")))
 
 (defn- send-summary [session transport msg]
-  (transport/send transport (response-for msg :value
-                                          (sample-summary @session
-                                                          @client-events/registrations))))
+  (transport/send transport (response-for msg :value (sample-summary @session))))
 
 (defn summary-reply
   "Reply to request for summary information."

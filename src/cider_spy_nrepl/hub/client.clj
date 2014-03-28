@@ -12,15 +12,15 @@
 
 (defn simple-handler
   "Handle messages coming back from the CIDER-SPY hub."
-  []
+  [session]
   (proxy [SimpleChannelInboundHandler] []
     (messageReceived [ctx request]
-      (client-events/process request)
+      (client-events/process session request)
       (.flush ctx))))
 
 (defn- client-bootstrap
   "Create a NETTY client bootstrap."
-  []
+  [session]
   (let [group (NioEventLoopGroup.)]
     [(doto (Bootstrap.)
        (.group group)
@@ -34,16 +34,16 @@
                 (.addLast "string-decoder" (StringDecoder.))
                 (.addLast "end" (edn-codec/make-decoder))
                 (.addLast "string-encoder" (StringEncoder.))
-                (.addLast "main handler" (simple-handler))))))))
+                (.addLast "main handler" (simple-handler session))))))))
      group]))
 
 ;; TODO, some (.shutdownGracefully group) action
 (defn connect
   "Connect to CIDER-SPY-HUB.
    Returns a vector containing a client bootstrap, a group and a channel."
-  [host port]
+  [host port session]
   (try
-    (let [[b group] (client-bootstrap)]
+    (let [[b group] (client-bootstrap session)]
       [b group (.channel (.sync (.connect b (InetSocketAddress. host port))))])
     (catch ConnectException e (println (format "Could not connect to %s:%s, sorry." host port)))))
 

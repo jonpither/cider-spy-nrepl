@@ -10,8 +10,8 @@
            [io.netty.handler.codec.string StringEncoder]
            [io.netty.handler.codec DelimiterBasedFrameDecoder Delimiters]))
 
-(defn simple-handler []
-  (let [session (atom {})]
+(defn simple-handler [ch]
+  (let [session (atom {:channel ch})]
     (proxy [SimpleChannelInboundHandler] []
       (messageReceived [ctx request]
         (log/info "Server got request" (prn-str request))
@@ -39,7 +39,7 @@
                   (.addLast "string-decoder" (StringDecoder.))
                   (.addLast "end" (edn-codec/make-decoder))
                   (.addLast "string-encoder" (StringEncoder.))
-                  (.addLast "handler" (simple-handler))
+                  (.addLast "handler" (simple-handler ch))
                   )))))
          (.option ChannelOption/SO_BACKLOG (int 128))
          (.childOption ChannelOption/SO_KEEPALIVE true)

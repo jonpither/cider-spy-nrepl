@@ -9,23 +9,22 @@
 ;; TODO worried about never shutting down individual connections to hub
 ;; TODO test someone in a different session gets registered notice
 ;; TODO rework sleeps with core async, much nicer
-;; TODO Make very clear tests that cover 2 sessions to same nrepl server
-;; TODO test 2 connectons through same nrepl to diff hubs
-;;  I should manually test what happenz if 2 diff emacs CIDERs with diff aliases connect to same nrepl-server then on to the hub.
+;; TODO Manually test diff emacs CIDERs with diff aliases connect to same nrepl-server then on to the hub.
 ;; TODO fn on client-facade - other users (uses diff between session-ids)
 
-(defmacro test-with-server [server-name & forms]
-  `(let [~server-name (hub-server/start-netty-server :port 9812)]
+(defmacro test-with-server [server-name port & forms]
+  `(let [~server-name (hub-server/start-netty-server :port ~port)]
      (reset! register/sessions {})
      (try
        ~@forms
        (finally
          (hub-server/shutdown ~server-name)))))
 
-(defmacro test-with-client [client-name alias & forms]
+(defmacro test-with-client [client-name session-name alias & forms]
   `(do
      (let [~'session (atom {:id (str (UUID/randomUUID))})
-           ~client-name (client-facade/connect-to-hub! "localhost" 9812 ~alias ~'session)]
+           ~client-name (client-facade/connect-to-hub! "localhost" 9812 ~alias ~'session)
+           ~session-name ~'session]
        ;; Allow time for registration message to do a round trip
        (Thread/sleep 500)
        (try
@@ -35,9 +34,9 @@
 
 (deftest test-client-should-register-and-unregister
   (test-with-server
-   server1
+   server1 9812
    (test-with-client
-    client1 "jonnyboy"
+    client1 session1 "jonnyboy"
     (is (= #{"jonnyboy"} (set (register/aliases))))
     (is (= #{"jonnyboy"} (:registrations @session)))
 
@@ -49,12 +48,12 @@
 
 (deftest test-two-registrations
   (test-with-server
-   server1
+   server1 9812
    (test-with-client
-    client1 "jonnyboy"
+    client1 session1 "jonnyboy"
 
     (test-with-client
-     client2 "frank"
+     client2 session2 "frank"
 
      (is (= #{"jonnyboy" "frank"} (:registrations @session))))
 
@@ -62,17 +61,20 @@
 
     (is (= #{"jonnyboy"} (set (register/aliases)))))))
 
-;; (deftest test-two-registrations-on-different-servers
-;;   (test-with-server
-;;    server1
-;;    (test-with-client
-;;     client1 "jonnyboy"
+(deftest test-two-registrations-on-different-servers
+  (test-with-server
+   server1 9812
+   (test-with-client
+    client1 session1 "jonnyboy"
 
-;;     (test-with-server
-;;      server2
-;;      (test-with-client
-;;       client2 "frank"
+    (test-with-server
+     server2 9813
+     (test-with-client
+      client2 session2 "frank"
 
-;;       ;; todo: client-events/registrations needs to be whacked in the session
+      (is (= #{"jonnyboy"} (:registrations @session1)))
+      (is (= #{"frank"} (:registrations @session2)))))
 
-;;       )))))
+    (Thread/sleep 500)
+
+    (is (= #{"jonnyboy"} (:registrations @session1))))))

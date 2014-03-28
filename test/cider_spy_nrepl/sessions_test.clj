@@ -25,8 +25,8 @@
 (defmacro test-with-client [client-name alias & forms]
   `(do
      (reset! client-events/registrations #{})
-     (let [~'session-id (str (UUID/randomUUID))
-           ~client-name (client-facade/connect-to-hub! "localhost" 9812 ~alias ~'session-id)]
+     (let [~'session (atom {:id (str (UUID/randomUUID))})
+           ~client-name (client-facade/connect-to-hub! "localhost" 9812 ~alias ~'session)]
        ;; Allow time for registration message to do a round trip
        (Thread/sleep 500)
        (try

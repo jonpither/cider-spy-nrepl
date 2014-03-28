@@ -14,7 +14,6 @@
   (let [session (atom {})]
     (proxy [SimpleChannelInboundHandler] []
       (messageReceived [ctx request]
-        (println "asdsad")
         (log/info "Server got request" (prn-str request))
         (server-events/process ctx session request))
       (channelInactive [ctx]

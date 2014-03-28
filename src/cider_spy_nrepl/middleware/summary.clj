@@ -76,7 +76,7 @@
   "Reply to request for summary information."
   [{:keys [transport hub-host hub-port hub-alias] :as msg}]
   (let [session (sessions/session! msg)]
-    (hub-client/connect-to-hub! hub-host (Integer/parseInt hub-port) hub-alias (:id @session))
+    (hub-client/connect-to-hub! hub-host (Integer/parseInt hub-port) hub-alias @session)
     (sessions/summary-msg! session msg)
     (send-summary session transport msg)
     (transport/send transport (response-for msg :status :done))))

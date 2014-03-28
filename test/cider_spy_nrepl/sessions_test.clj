@@ -46,7 +46,7 @@
 
     (is (= #{} (set (register/aliases)))))))
 
-(deftest test-two-registrations
+(deftest test-two-registrations-and-unsubscribe
   (test-with-server
    server1 9812
    (test-with-client
@@ -55,10 +55,12 @@
     (test-with-client
      client2 session2 "frank"
 
-     (is (= #{"jonnyboy" "frank"} (:registrations @session))))
+     (is (= #{"jonnyboy" "frank"} (:registrations @session1)))
+     (is (= #{"jonnyboy" "frank"} (:registrations @session2))))
 
     (Thread/sleep 500)
 
+    (is (= #{"jonnyboy"} (:registrations @session1)))
     (is (= #{"jonnyboy"} (set (register/aliases)))))))
 
 (deftest test-two-registrations-on-different-servers

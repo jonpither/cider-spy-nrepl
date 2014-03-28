@@ -3,8 +3,8 @@
 
 (def sessions (atom {}))
 
-(defn- new-session []
-  (atom {:session-started (LocalDateTime.)}))
+(defn- new-session [id]
+  (atom {:id id :session-started (LocalDateTime.)}))
 
 (defn session!
   "Return the session for the given msg.
@@ -12,7 +12,7 @@
   [{:keys [session]}]
   (when session
     (when-not (get @sessions session)
-      (swap! sessions assoc session (new-session)))
+      (swap! sessions assoc session (new-session session)))
 
     (get @sessions session)))
 

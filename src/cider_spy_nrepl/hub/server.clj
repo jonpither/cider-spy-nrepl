@@ -8,23 +8,17 @@
            [io.netty.channel.socket.nio NioServerSocketChannel]
            [io.netty.handler.codec.string StringDecoder]
            [io.netty.handler.codec.string StringEncoder]
-           [io.netty.handler.codec DelimiterBasedFrameDecoder Delimiters]
-           [java.util UUID]))
-
-(defn- write-out [ctx v]
-  (.write ctx (prn-str v))
-  (.flush ctx))
+           [io.netty.handler.codec DelimiterBasedFrameDecoder Delimiters]))
 
 (defn simple-handler []
-  (let [session-id (str (UUID/randomUUID))]
+  (let [session (atom {})]
     (proxy [SimpleChannelInboundHandler] []
       (messageReceived [ctx request]
+        (println "asdsad")
         (log/info "Server got request" (prn-str request))
-        (when-let [reply (server-events/process
-                          (assoc request :session-id session-id))]
-          (write-out ctx reply)))
+        (server-events/process ctx session request))
       (channelInactive [ctx]
-        (server-events/unregister! session-id)
+        (server-events/unregister! session)
         (log/info "Client Disconnected")))))
 
 (defn start-netty-server

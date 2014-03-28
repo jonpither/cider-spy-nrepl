@@ -4,16 +4,18 @@
             [cider-spy-nrepl.hub.client-facade :as client-facade]
             [cider-spy-nrepl.hub.client :as hubc]
             [cider-spy-nrepl.hub.client-events :as client-events]
-            [cider-spy-nrepl.hub.server-events :as server-events]))
+            [cider-spy-nrepl.hub.register :as register])
+  (:import [java.util UUID]))
 
 ;; TODO test someone in a different session gets registered notice
 ;; TODO rework sleeps with core async, much nicer
-;; TODO Make very clear tests that cover 2 sessions to same nrepl server vs 2 diff nepl-servers.
+;; TODO Make very clear tests that cover 2 sessions to same nrepl server
+;; TODO test 2 connectons through same nrepl to diff hubs
 ;;  I should manually test what happenz if 2 diff emacs CIDERs with diff aliases connect to same nrepl-server then on to the hub.
 
 (defmacro test-with-server [& forms]
   `(let [~'server (hub-server/start-netty-server :port 9812)]
-     (reset! server-events/registrations {})
+     (reset! register/sessions {})
      (try
        ~@forms
        (finally
@@ -22,7 +24,8 @@
 (defmacro test-with-client [alias & forms]
   `(do
      (reset! client-events/registrations #{})
-     (let [~'client (client-facade/connect-to-hub! "localhost" 9812 ~alias)]
+     (let [~'session-id (str (UUID/randomUUID))
+           ~'client (client-facade/connect-to-hub! "localhost" 9812 ~alias ~'session-id)]
        ;; Allow time for registration message to do a round trip
        (Thread/sleep 500)
        (try
@@ -34,11 +37,11 @@
   (test-with-server
    (test-with-client
     "jonnyboy"
-    (is (= #{"jonnyboy"} (set (vals @server-events/registrations))))
+    (is (= #{"jonnyboy"} (set (register/aliases))))
     (is (= #{"jonnyboy"} @client-events/registrations))
 
     (hubc/shutdown! client)
 
     (Thread/sleep 500)
 
-    (is (= #{} (set (vals @server-events/registrations)))))))
+    (is (= #{} (set (register/aliases)))))))

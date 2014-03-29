@@ -14,8 +14,7 @@ Communicate and track fellow REPL hackers by running a hub:
 
 Need a ping/pong to test the round loop
 Handle server going down - clients become orphaned and nrepl needs bouncing.
-Don't do a read-string on incoming code - reading could be dangerous! (maybe edn?)
-There's some barfing in the read-command, related to the above, some work needed!
+Uses clojure.tools.analyzer to filter multiple forms in code
 
 # License
 

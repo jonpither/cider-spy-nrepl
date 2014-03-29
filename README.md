@@ -2,7 +2,7 @@
 
 ## Middleware
 
-Required Middleware to support [cider-spy](https://github.com/jonpither/cider-spy).
+Required Middleware to support [cider-spy](https://github.com/jonpither/cider-spy). Also runs standalone to act as a hub for cider-spy-nrepls to communicate with each other.
 
 ## Hub
 

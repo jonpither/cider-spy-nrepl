@@ -25,4 +25,6 @@
   (broadcast-msg! :registered :alias alias :registered (set (register/aliases))))
 
 (defn unregister! [session]
-  (register/unregister! session))
+  (register/unregister! session)
+
+  (broadcast-msg! :unregistered :alias (:alias @session) :registered (set (register/aliases))))

@@ -1,4 +1,5 @@
-(ns cider-spy-nrepl.hub.client-events)
+(ns cider-spy-nrepl.hub.client-events
+  (:require [clojure.tools.logging :as log]))
 
 (defmulti process (fn [_ m] (-> m :op keyword)))
 
@@ -7,4 +8,8 @@
 
 (defmethod process :registered [s {:keys [alias registered] :as msg}]
   (swap! s assoc-in [:registrations] registered)
-  (println (format "Registered: %s" alias)))
+  (log/info (format "Registered: %s" alias)))
+
+(defmethod process :unregistered [s {:keys [alias registered] :as msg}]
+  (swap! s assoc-in [:registrations] registered)
+  (log/info (format "Unregistered: %s" alias)))

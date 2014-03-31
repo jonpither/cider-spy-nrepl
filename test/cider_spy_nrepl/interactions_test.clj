@@ -17,7 +17,7 @@
     (binding [server-events/broadcast-msg!
               (partial send-to-client-events client-session)]
       (let [server-session (atom {:id "fooid"})]
-        (server-events/process nil {:op :register} server-session)))))x
+        (server-events/process nil {:op :register} server-session)))))
 
 ;: TODO - test that summary is automatically updated when someone registers / deregisters.
 ;; TODO - need to test the correct code is called to asynchronously push a message to cider

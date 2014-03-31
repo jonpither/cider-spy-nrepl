@@ -13,4 +13,7 @@
         bootstrap)))
 
 (defn connect-to-hub! [host port alias session]
-  (:hub-client (swap! session update-in [:hub-client] (partial hub-connection! session host port alias))))
+  (try
+    (:hub-client (swap! session update-in [:hub-client] (partial hub-connection! session host port alias)))
+    (catch java.net.SocketException e
+      (println "Couldn't connect to HUB." host port))))

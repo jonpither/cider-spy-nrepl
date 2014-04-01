@@ -3,7 +3,7 @@
             [clojure.tools.nrepl.misc :refer [response-for]]
             [cider-spy-nrepl.middleware.summary-builder :as summary-builder]))
 
-(defn- send-back-to-cider! [transport session-id message-id s]
+(defn ^:dynamic send-back-to-cider! [transport session-id message-id s]
   (transport/send transport
                   (response-for {:session session-id :id message-id} :value s)))
 

@@ -1,5 +1,6 @@
 (ns cider-spy-nrepl.hub.client-events
-  (:require [clojure.tools.logging :as log]))
+  (:require [clojure.tools.logging :as log]
+            [cider-spy-nrepl.middleware.cider :as cider]))
 
 (defmulti process (fn [_ m] (-> m :op keyword)))
 
@@ -7,9 +8,10 @@
   (println "Did not understand message from hub" m))
 
 (defmethod process :registered [s {:keys [alias registered] :as msg}]
+  (log/info (format "Registered: %s" alias))
   (swap! s assoc-in [:registrations] registered)
-  (log/info (format "Registered: %s" alias)))
+  (cider/update-spy-buffer-summary! s))
 
 (defmethod process :unregistered [s {:keys [alias registered] :as msg}]
-  (swap! s assoc-in [:registrations] registered)
-  (log/info (format "Unregistered: %s" alias)))
+  (log/info (format "Unregistered: %s" alias))
+  (swap! s assoc-in [:registrations] registered))

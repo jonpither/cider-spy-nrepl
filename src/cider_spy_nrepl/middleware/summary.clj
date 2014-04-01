@@ -6,30 +6,25 @@
             [clojure.pprint]
             [cider-spy-nrepl.tracker]
             [cider-spy-nrepl.hub.client-facade :as hub-client]
-            [cider-spy-nrepl.hub.client-events :as client-events]
             [cider-spy-nrepl.middleware.sessions :as sessions]
-            [cider-spy-nrepl.middleware.cider :as cider]
-            [cider-spy-nrepl.middleware.summary-builder :as summary-builder])
+            [cider-spy-nrepl.middleware.cider :as cider])
   (:import [org.joda.time LocalDateTime Seconds]))
-
 
 (defn summary-reply
   "Reply to request for summary information."
   [{:keys [transport hub-host hub-port hub-alias] :as msg}]
   (let [session (sessions/session! msg)]
     (hub-client/connect-to-hub! hub-host (Integer/parseInt hub-port) hub-alias session)
-    (sessions/summary-msg! session msg)
-    (cider/send-to-spy-buffer! session transport (summary-builder/summary @session))
-    (transport/send transport (response-for msg :status :done))))
+    (cider/update-session-for-summary-msg! session msg)
+    (cider/update-spy-buffer-summary! session)))
 
-(defn- wrap-handler [handler {:keys [transport session] :as msg}]
-  (let [result (handler msg)
-        session (sessions/session! msg)]
-    (when session
+(defn- wrap-handler
+  "Wrap the handler to apply tracking and to update the CIDER SPY summary buffer."
+  [handler {:keys [transport session] :as msg}]
+  (let [result (handler msg)]
+    (when-let [session (sessions/session! msg)]
       (cider-spy-nrepl.tracker/track-msg! msg session)
-      (let [{:keys [summary-msg]} @session]
-        (when (Boolean/valueOf (:auto-refresh summary-msg))
-          (cider/send-to-spy-buffer! session transport (summary-builder/summary @session)))))
+      (cider/update-spy-buffer-summary! session))
     result))
 
 (defn wrap-info

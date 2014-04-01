@@ -3,21 +3,15 @@
 
 (def sessions (atom {}))
 
-(defn- new-session [id]
-  (atom {:id id :session-started (LocalDateTime.)}))
+(defn- new-session [{:keys [session transport]}]
+  (atom {:id session :transport transport :session-started (LocalDateTime.)}))
 
 (defn session!
   "Return the session for the given msg.
    If a session does not exist then one will be created."
-  [{:keys [session]}]
+  [{:keys [session] :as msg}]
   (when session
     (when-not (get @sessions session)
-      (swap! sessions assoc session (new-session session)))
+      (swap! sessions assoc session (new-session msg)))
 
     (get @sessions session)))
-
-(defn summary-msg!
-  "Update the session with summary message.
-   We need to keep a hold of this."
-  [session summary-msg]
-  (swap! session assoc :summary-msg summary-msg))

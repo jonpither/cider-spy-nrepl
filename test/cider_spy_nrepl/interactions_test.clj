@@ -7,6 +7,7 @@
 ;; TODO - make this nicer and test for unregister event.
 ;; TODO - Test the summary msg for registrations.
 ;; TODO - this bypasses all the handler code which is fair enough. Perhaps need a dedicated test?
+;; TODO - wider scope so that everything is client initiated rather than triggering server events
 
 (defn- send-to-client-events
   "Stub out SEND-BACK-TO-CIDER! and capture what is sent."

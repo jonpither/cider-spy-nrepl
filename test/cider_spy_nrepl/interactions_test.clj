@@ -41,4 +41,4 @@
          (is (= (:id @client-session) session-id))
          (is (= (:summary-message-id @client-session) message-id))
 
-         (is (re-find #"Devs hacking\n   Jon" s)))))
+         (is (re-find #"Devs hacking:\s*Jon" s)))))

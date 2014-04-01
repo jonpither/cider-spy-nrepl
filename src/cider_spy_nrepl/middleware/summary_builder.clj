@@ -50,10 +50,10 @@
   [{:keys [session-started ns-trail commands files-loaded registrations]}]
   (let [tracking-data (remove empty? [(summary-nses ns-trail)
                              (summary-frequencies "Your function calls:" commands)
-                             (summary-frequencies "Your files loaded:" files-loaded)])]
+                             (summary-frequencies "Your files loaded:" files-loaded)
+                             (summary-hackers registrations)])]
     (if (not-empty tracking-data)
       (clojure.string/join "\n\n"
                            (remove empty?
-                                   (concat [(summary-session session-started)
-                                            (summary-hackers registrations)] tracking-data)))
+                                   (concat [(summary-session session-started)] tracking-data)))
       "No Data for Cider Spy.")))

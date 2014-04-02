@@ -27,9 +27,9 @@
   "Process messages on HUB-CHAN delegating to CIDER-SPY server.
    When the server raises a response We stub out a function as to
    pass a message on to NREPL-SERVER-CHAN, bypassing Netty."
-  [session hub-chan nrepl-server-chan]
+  [hub-chan nrepl-server-chan]
   (go-loop []
-    (when-let [m (<! hub-chan)]
+    (when-let [[session m] (<! hub-chan)]
       (binding [server-events/broadcast-msg!
                 (fn [op & {:as msg}]
                   (go (>! nrepl-server-chan (assoc msg :op op))))]
@@ -43,20 +43,22 @@
          ~'cider-chan (chan)
 
          ;; Sessions
-         ~'session-on-hub (atom {:id "fooid"})
          ~'session-on-nrepl-server (atom {:id "fooid"})]
 
      (try
-       (run-hub-stub ~'session-on-hub ~'hub-chan ~'nrepl-server-chan)
+       (run-hub-stub ~'hub-chan ~'nrepl-server-chan)
        (run-nrepl-server-stub ~'session-on-nrepl-server ~'nrepl-server-chan ~'cider-chan)
 
        ~@body
 
        (finally (close! ~'hub-chan)))))
 
+;; TODO this is barfing because the same session is used
+;;   See cider-spy-nrepl.hub.register
+
 (deftest registration-should-bubble-to-cider
   (spy-harness
-   (>!! hub-chan {:op :register :alias "Jon"})
+   (>!! hub-chan [(atom {:id "fooid"}) {:op :register :alias "Jon"}])
 
    (let [[transport session-id message-id s]
          (first (alts!! [(timeout 2000) cider-chan]))]
@@ -66,3 +68,16 @@
      (is (= (:summary-message-id @session-on-nrepl-server) message-id))
 
      (is (re-find #"Devs hacking:\s*Jon" s)))))
+
+
+(deftest multiple-registrations
+  (spy-harness
+   (>!! hub-chan [(atom {}) {:session-id "fooid1" :op :register :alias "Jon"}])
+
+   (spy-harness
+    (>!! hub-chan [(atom {}) {:session-id "fooid2" :op :register :alias "Dave"}])
+
+    (let [[_ _ _ s]
+          (first (alts!! [(timeout 2000) cider-chan]))]
+
+      (is (re-find #"Devs hacking:\s*Jon, Dave" s))))))

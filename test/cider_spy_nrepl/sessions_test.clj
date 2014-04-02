@@ -7,7 +7,6 @@
             [clojure.tools.nrepl.transport :as transport])
   (:import [java.util UUID]))
 
-;; TODO get rid of horrible exceptions encountered during successful lein test
 ;; TODO worried about never shutting down individual connections to hub
 ;; TODO test someone in a different session gets registered notice
 ;; TODO rework sleeps with core async, much nicer

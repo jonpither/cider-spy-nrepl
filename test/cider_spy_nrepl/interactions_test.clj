@@ -53,9 +53,6 @@
 
        (finally (close! ~'hub-chan)))))
 
-;; TODO this is barfing because the same session is used
-;;   See cider-spy-nrepl.hub.register
-
 (deftest registration-should-bubble-to-cider
   (spy-harness
    (>!! hub-chan [(atom {:id "fooid"}) {:op :register :alias "Jon"}])
@@ -81,3 +78,18 @@
           (first (alts!! [(timeout 2000) cider-chan]))]
 
       (is (re-find #"Devs hacking:\s*Jon, Dave" s))))))
+
+(deftest unregister-user
+  (spy-harness
+   (>!! hub-chan [(atom {}) {:session-id "fooid1" :op :register :alias "Jon"}])
+
+   (spy-harness
+    (>!! hub-chan [(atom {}) {:session-id "fooid2" :op :register :alias "Dave"}])
+
+    (println (first (alts!! [(timeout 2000) cider-chan])))
+    (>!! hub-chan [(atom {:id "fooid2"}) {:op :unregister}])
+
+    (let [[_ _ _ s]
+          (first (alts!! [(timeout 2000) cider-chan]))]
+
+      (is (re-find #"Devs hacking:\s*Jon" s))))))

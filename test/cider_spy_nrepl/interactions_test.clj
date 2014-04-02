@@ -1,44 +1,66 @@
 (ns cider-spy-nrepl.interactions-test
+  (:use [clojure.core.async :only [chan timeout >!! <!! buffer alts!! go-loop >! close! go]])
   (:require [clojure.test :refer :all]
             [cider-spy-nrepl.hub.server-events :as server-events]
             [cider-spy-nrepl.hub.client-events :as client-events]
             [cider-spy-nrepl.middleware.cider :as cider]))
 
-;; TODO - make this nicer and test for unregister event.
-;; TODO - Test the summary msg for registrations.
+;/ ; TODO - make this nicer and test for unregister event.
 ;; TODO - this bypasses all the handler code which is fair enough. Perhaps need a dedicated test?
 ;; TODO - wider scope so that everything is client initiated rather than triggering server events
 
-(defn- send-to-client-events
-  "Stub out SEND-BACK-TO-CIDER! and capture what is sent."
-  [client-session op & {:as msg}]
-  (let [sent-to-client (promise)]
-    (binding [cider/send-back-to-cider!
-              (fn [transport session-id message-id s]
-                (deliver sent-to-client [transport session-id message-id s]))]
-      (client-events/process client-session (assoc msg :op op)))
-    @sent-to-client))
+(defn- run-nrepl-server-stub
+  "Process messages on NREPL-SERVER-CHAN delegating to CIDER-NREPL server.
+   When the server raises a response We stub out a function as to
+   pass a message on to CIDER-CHAN, as though CIDER were receiving the msg."
+  [session nrepl-server-chan cider-chan]
+  (println "fireup")
+  (go-loop []
+    (when-let [msg (<! nrepl-server-chan)]
+      (binding [cider/send-back-to-cider!
+                (fn [transport session-id message-id s]
+                  (go (>! cider-chan [transport session-id message-id s])))]
+        (client-events/process session msg))
+      (recur))
+    (close! cider-chan)))
 
-(defn- process-on-server-and-client-receives
-  "Process SERVER-MSG as an incoming msg to the server.
-   We expect a msg to be sent back to the client, and for client to send
-   a message to CIDER."
-  [client-session server-msg]
-  (binding [server-events/broadcast-msg!
-            (partial send-to-client-events client-session)]
-    (let [server-session (atom {:id "fooid"})]
-      (server-events/process nil server-session server-msg))))
+(defn- run-hub-stub
+  "Process messages on HUB-CHAN delegating to CIDER-SPY server.
+   When the server raises a response We stub out a function as to
+   pass a message on to NREPL-SERVER-CHAN, bypassing Netty."
+   [session hub-chan nrepl-server-chan]
+   (go-loop []
+     (when-let [m (<! hub-chan)]
+       (binding [server-events/broadcast-msg!
+                 (fn [op & {:as msg}]
+                   (go (>! nrepl-server-chan (assoc msg :op op))))]
+         (server-events/process nil session m))
+       (recur))
+     (println "closing")
+     (close! nrepl-server-chan)))
 
-(deftest registration-should-bubble-to-cider []
-  (let [client-session
-        (atom {:id "fooid"
-               :transport :t1
-               :summary-message-id 123})]
-    (let [[transport session-id message-id s]
-          (process-on-server-and-client-receives
-           client-session {:op :register :alias "Jon"})]
-         (is (= (:transport @client-session) transport))
-         (is (= (:id @client-session) session-id))
-         (is (= (:summary-message-id @client-session) message-id))
+(deftest registration-should-bubble-to-cider
+  (let [hub-chan (chan)
+        nrepl-server-chan (chan)
+        cider-chan (chan)
 
-         (is (re-find #"Devs hacking:\s*Jon" s)))))
+        ;; Sessions
+        session-on-hub (atom {:id "fooid"})
+        session-on-nrepl-server (atom {:id "fooid"})]
+
+    (try
+      (run-hub-stub session-on-hub hub-chan nrepl-server-chan)
+      (run-nrepl-server-stub session-on-nrepl-server nrepl-server-chan cider-chan)
+
+      (>!! hub-chan {:op :register :alias "Jon"})
+
+      (let [[transport session-id message-id s]
+            (first (alts!! [(timeout 2000) cider-chan]))]
+
+        (is (= (:transport @session-on-nrepl-server) transport))
+        (is (= (:id @session-on-nrepl-server) session-id))
+        (is (= (:summary-message-id @session-on-nrepl-server) message-id))
+
+        (is (re-find #"Devs hacking:\s*Jon" s)))
+
+      (finally (close! hub-chan)))))

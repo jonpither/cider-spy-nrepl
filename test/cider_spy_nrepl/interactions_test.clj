@@ -87,9 +87,9 @@
     (>!! hub-chan [(atom {}) {:session-id "fooid2" :op :register :alias "Dave"}])
 
     (println (first (alts!! [(timeout 2000) cider-chan])))
-    (>!! hub-chan [(atom {:id "fooid2"}) {:op :unregister}])
+    (>!! hub-chan [(atom {:id "fooid2"}) {:op :unregister}]))
 
-    (let [[_ _ _ s]
-          (first (alts!! [(timeout 2000) cider-chan]))]
+   (let [[_ _ _ s]
+         (first (alts!! [(timeout 2000) cider-chan]))]
 
-      (is (re-find #"Devs hacking:\s*Jon" s))))))
+     (is (re-find #"Devs hacking:\s*Jon" s)))))

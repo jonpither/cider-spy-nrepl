@@ -14,4 +14,5 @@
 
 (defmethod process :unregistered [s {:keys [alias registered] :as msg}]
   (log/info (format "Unregistered: %s" alias))
-  (swap! s assoc-in [:registrations] registered))
+  (swap! s assoc-in [:registrations] registered)
+  (cider/update-spy-buffer-summary! s))

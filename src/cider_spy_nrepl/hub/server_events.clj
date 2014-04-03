@@ -21,13 +21,11 @@
 
 (defmethod process :register [_ session {:keys [session-id alias]}]
   (register/register! session session-id alias)
-
   (broadcast-msg! :registered :alias alias :registered (set (register/aliases))))
 
 (defmethod process :unregister [_ session _]
   (register/unregister! session)
-
   (broadcast-msg! :unregistered :alias (:alias @session) :registered (set (register/aliases))))
 
 (defn unregister! [session]
-  (process nil session {:op unregister!}))
+  (process nil session {:op :unregister}))

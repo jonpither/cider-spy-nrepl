@@ -5,7 +5,6 @@
             [cider-spy-nrepl.hub.client-events :as client-events]
             [cider-spy-nrepl.middleware.cider :as cider]))
 
-;; TODO - test for unregister event.
 ;; TODO - this bypasses all the handler code which is fair enough. Perhaps need a dedicated test?
 ;; TODO - wider scope so that everything is client initiated rather than triggering server events
 
@@ -13,9 +12,9 @@
   "Process messages on NREPL-SERVER-CHAN delegating to CIDER-NREPL server.
    When the server raises a response We stub out a function as to
    pass a message on to CIDER-CHAN, as though CIDER were receiving the msg."
-  [session nrepl-server-chan cider-chan]
+  [nrepl-server-chan cider-chan]
   (go-loop []
-    (when-let [msg (<! nrepl-server-chan)]
+    (when-let [[session msg] (<! nrepl-server-chan)]
       (binding [cider/send-back-to-cider!
                 (fn [transport session-id message-id s]
                   (go (>! cider-chan [transport session-id message-id s])))]
@@ -29,67 +28,59 @@
    pass a message on to NREPL-SERVER-CHAN, bypassing Netty."
   [hub-chan nrepl-server-chan]
   (go-loop []
-    (when-let [[session m] (<! hub-chan)]
+    (when-let [[hub-session nrepl-session m] (<! hub-chan)]
       (binding [server-events/broadcast-msg!
                 (fn [op & {:as msg}]
-                  (go (>! nrepl-server-chan (assoc msg :op op))))]
-        (server-events/process nil session m))
+                  (println "server broadcast" msg)
+                  (go (>! nrepl-server-chan [nrepl-session (assoc msg :op op)])))]
+        (server-events/process nil hub-session m))
       (recur))
     (close! nrepl-server-chan)))
 
 (defmacro spy-harness [& body]
   `(let [~'hub-chan (chan)
          ~'nrepl-server-chan (chan)
-         ~'cider-chan (chan)
-
-         ;; Sessions
-         ~'session-on-nrepl-server (atom {:id "fooid"})]
+         ~'cider-chan (chan)]
 
      (try
        (run-hub-stub ~'hub-chan ~'nrepl-server-chan)
-       (run-nrepl-server-stub ~'session-on-nrepl-server ~'nrepl-server-chan ~'cider-chan)
+       (run-nrepl-server-stub ~'nrepl-server-chan ~'cider-chan)
 
        ~@body
 
        (finally (close! ~'hub-chan)))))
 
+;; Test to ensure correctness of message sent to CIDER
 (deftest registration-should-bubble-to-cider
   (spy-harness
-   (>!! hub-chan [(atom {:id "fooid"}) {:op :register :alias "Jon"}])
+   (let [hub-session (atom {:id "fooid"})
+         nrepl-session (atom {:id "fooid"
+                              :transport "a-transport"
+                              :summary-message-id "summary-msg-id"})]
+     (>!! hub-chan [hub-session nrepl-session {:op :register :alias "Jon"}])
 
-   (let [[transport session-id message-id s]
-         (first (alts!! [(timeout 2000) cider-chan]))]
+     (let [[transport session-id message-id s]
+           (first (alts!! [(timeout 2000) cider-chan]))]
 
-     (is (= (:transport @session-on-nrepl-server) transport))
-     (is (= (:id @session-on-nrepl-server) session-id))
-     (is (= (:summary-message-id @session-on-nrepl-server) message-id))
+       (is (= (:transport @nrepl-session) transport))
+       (is (= (:id @nrepl-session) session-id))
+       (is (= (:summary-message-id @nrepl-session) message-id))
 
-     (is (re-find #"Devs hacking:\s*Jon" s)))))
+       (is (re-find #"Devs hacking:\s*Jon" s))))))
 
+(defn- cider-msg
+  "Utility to extract string message sent to CIDER."
+  [cider-chan]
+  (let [[_ _ _ s]
+        (first (alts!! [(timeout 4000) cider-chan]))]
+    s))
 
-(deftest multiple-registrations
+(deftest user-registrations
   (spy-harness
-   (>!! hub-chan [(atom {}) {:session-id "fooid1" :op :register :alias "Jon"}])
-
-   (spy-harness
-    (>!! hub-chan [(atom {}) {:session-id "fooid2" :op :register :alias "Dave"}])
-
-    (let [[_ _ _ s]
-          (first (alts!! [(timeout 2000) cider-chan]))]
-
-      (is (re-find #"Devs hacking:\s*Jon, Dave" s))))))
-
-(deftest unregister-user
-  (spy-harness
-   (>!! hub-chan [(atom {}) {:session-id "fooid1" :op :register :alias "Jon"}])
-
-   (spy-harness
-    (>!! hub-chan [(atom {}) {:session-id "fooid2" :op :register :alias "Dave"}])
-
-    (println (first (alts!! [(timeout 2000) cider-chan])))
-    (>!! hub-chan [(atom {:id "fooid2"}) {:op :unregister}]))
-
-   (let [[_ _ _ s]
-         (first (alts!! [(timeout 2000) cider-chan]))]
-
-     (is (re-find #"Devs hacking:\s*Jon" s)))))
+   (>!! hub-chan [(atom {}) (atom {}) {:session-id 1 :op :register :alias "Jon"}])
+   (re-find #"Devs hacking:\s*Jon" (cider-msg cider-chan))
+   (>!! hub-chan [(atom {:id 2}) (atom {}) {:session-id 2 :op :register :alias "Dave"}])
+   (re-find #"Devs hacking:\s*Jon, Dave" (cider-msg cider-chan))
+   (>!! hub-chan [(atom {:id 2}) (atom {}) {:op :unregister}])
+   (re-find #"Devs hacking:\s*Jon" (cider-msg cider-chan))
+))

@@ -1,5 +1,5 @@
-(ns cider-spy-nrepl.tracker-test
-  (:require [cider-spy-nrepl.tracker :refer :all]
+(ns cider-spy-nrepl.middleware.tracker-test
+  (:require [cider-spy-nrepl.middleware.tracker :refer :all]
             [clojure.test :refer :all]))
 
 (defmacro tracker-harness [& forms]

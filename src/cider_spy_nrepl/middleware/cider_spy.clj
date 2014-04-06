@@ -1,7 +1,8 @@
 (ns cider-spy-nrepl.middleware.cider-spy
   (:require [cider-spy-nrepl.middleware.sessions :as sessions]
-            [clojure.tools.nrepl.middleware :refer [set-descriptor!]]
-            [cider-spy-nrepl.middleware.cider :as cider]))
+            [cider-spy-nrepl.middleware.cider :as cider]
+            [cider-spy-nrepl.middleware.tracker :as tracker]
+            [clojure.tools.nrepl.middleware :refer [set-descriptor!]]))
 
 (defn- handle-summary
   "Handle the CIDER-SPY request for summary information."
@@ -15,7 +16,7 @@
   [handler {:keys [transport session] :as msg}]
   (let [result (handler msg)]
     (when-let [session (sessions/session! msg)]
-      (cider-spy-nrepl.tracker/track-msg! msg session)
+      (tracker/track-msg! msg session)
       (cider/update-spy-buffer-summary! session))
     result))
 

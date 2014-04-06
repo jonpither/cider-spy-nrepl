@@ -1,4 +1,4 @@
-(ns cider-spy-nrepl.tracker
+(ns cider-spy-nrepl.middleware.tracker
   (:import [org.joda.time LocalDateTime]))
 
 (defn- safe-inc [v]

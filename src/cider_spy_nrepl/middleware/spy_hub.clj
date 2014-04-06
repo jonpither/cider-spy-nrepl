@@ -10,12 +10,12 @@
 (defn- send-connected-msg! [{:keys [transport hub-host hub-port hub-alias] :as msg} s]
   (transport/send transport (response-for msg :value (str "CIDER-SPY-NREPL: " s))))
 
-(defn- connect-to-hub! [{:keys [hub-client] :as session}
+(defn- connect-to-hub! [{:keys [hub-client] :as session} session-atom
                         {:keys [hub-host hub-port hub-alias] :as msg}]
   (if-not hub-client
     (do
       (send-connected-msg! msg (format "Connecting to SPY HUB %s:%s with alias %s" hub-host hub-port hub-alias))
-      (if-let [hub-client (hub-client/connect-to-hub! hub-host (Integer/parseInt hub-port) hub-alias session)]
+      (if-let [hub-client (hub-client/connect-to-hub! hub-host (Integer/parseInt hub-port) hub-alias session-atom)]
         (do
           (send-connected-msg! msg (format "You are connected to the CIDER SPY HUB."))
           (assoc session :hub-client hub-client))
@@ -30,7 +30,7 @@
   (future
     (let [session (sessions/session! msg)]
       (if session
-        (swap! session connect-to-hub! msg)
+        (swap! session connect-to-hub! session msg)
         (log/warn "Expected session for connection to hub.")))))
 
 (defn handler

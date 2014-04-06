@@ -1,9 +1,10 @@
-(ns cider-spy-nrepl.sessions-test
+(ns cider-spy-nrepl.connections-test
   (:require [clojure.test :refer :all]
             [cider-spy-nrepl.hub.server :as hub-server]
-            [cider-spy-nrepl.hub.client-facade :as client-facade]
             [cider-spy-nrepl.hub.client :as hubc]
             [cider-spy-nrepl.hub.register :as register]
+            [cider-spy-nrepl.middleware.spy-hub :as middleware-spy-hub]
+            [cider-spy-nrepl.middleware.sessions :as middleware-sessions]
             [clojure.tools.nrepl.transport :as transport])
   (:import [java.util UUID]))
 
@@ -23,18 +24,27 @@
 
 (defmacro test-with-client [client-name session-name alias & forms]
   `(do
-     (let [~'session (atom {:id (str (UUID/randomUUID))
-                            :transport (reify transport/Transport
-                                         (send [_ _]
-                                           (println "Stubbed sending back to CIDER")))})
-           ~client-name (client-facade/connect-to-hub! "localhost" 9812 ~alias ~'session)
-           ~session-name ~'session]
+     (let [session-id# (str (UUID/randomUUID))]
+
+       ;; Handle a middleware request to connect to CIDER SPY HUB
+       ((middleware-spy-hub/handler nil) {:op "spy-hub-connect"
+                                          :hub-host "localhost"
+                                          :hub-port "9812"
+                                          :hub-alias ~alias
+                                          :session session-id#
+                                          :transport (reify transport/Transport
+                                                       (send [_ _]
+                                                         (println "Stubbed sending back to CIDER")))})
+
        ;; Allow time for registration message to do a round trip
        (Thread/sleep 500)
-       (try
-         ~@forms
-         (finally
-           (hubc/shutdown! ~client-name))))))
+       (let [~'session (get @middleware-sessions/sessions session-id#)
+             ~session-name ~'session
+             ~client-name (:hub-client @~'session)]
+         (try
+           ~@forms
+           (finally
+             (hubc/shutdown! ~client-name)))))))
 
 (deftest test-client-should-register-and-unregister
   (test-with-server

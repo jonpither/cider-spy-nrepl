@@ -5,7 +5,6 @@
             [cider.nrepl.middleware.util.cljs :as cljs]
             [clojure.pprint]
             [cider-spy-nrepl.tracker]
-            [cider-spy-nrepl.hub.client-facade :as hub-client]
             [cider-spy-nrepl.middleware.sessions :as sessions]
             [cider-spy-nrepl.middleware.cider :as cider])
   (:import [org.joda.time LocalDateTime Seconds]))
@@ -14,7 +13,6 @@
   "Reply to request for summary information."
   [{:keys [transport hub-host hub-port hub-alias] :as msg}]
   (let [session (sessions/session! msg)]
-    (hub-client/connect-to-hub! hub-host (Integer/parseInt hub-port) hub-alias session)
     (cider/update-session-for-summary-msg! session msg)
     (cider/update-spy-buffer-summary! session)))
 

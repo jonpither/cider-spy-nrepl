@@ -3,7 +3,7 @@
             [cider-spy-nrepl.hub.server :as hub-server]
             [cider-spy-nrepl.hub.client :as hubc]
             [cider-spy-nrepl.hub.register :as register]
-            [cider-spy-nrepl.middleware.spy-hub :as middleware-spy-hub]
+            [cider-spy-nrepl.middleware.cider-spy-hub :as middleware-spy-hub]
             [cider-spy-nrepl.middleware.sessions :as middleware-sessions]
             [clojure.tools.nrepl.transport :as transport])
   (:import [java.util UUID]))

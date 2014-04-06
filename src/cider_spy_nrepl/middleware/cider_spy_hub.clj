@@ -1,4 +1,4 @@
-(ns cider-spy-nrepl.middleware.spy-hub
+(ns cider-spy-nrepl.middleware.cider-spy-hub
   (:use [clojure.core.async :only [chan thread]])
   (:require [cider-spy-nrepl.hub.client-facade :as hub-client]
             [cider-spy-nrepl.middleware.sessions :as sessions]
@@ -44,5 +44,4 @@
  #'wrap-cider-spy-hub
  {:handles
   {"spy-hub-connect"
-   {:doc "Return a summary of hacking information about the nrepl session."
-    :returns {"status" "done"}}}})
+   {:doc "Connects to CIDER SPY HUB."}}})

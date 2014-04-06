@@ -27,14 +27,15 @@
      (let [session-id# (str (UUID/randomUUID))]
 
        ;; Handle a middleware request to connect to CIDER SPY HUB
-       ((middleware-spy-hub/handler nil) {:op "spy-hub-connect"
-                                          :hub-host "localhost"
-                                          :hub-port "9812"
-                                          :hub-alias ~alias
-                                          :session session-id#
-                                          :transport (reify transport/Transport
-                                                       (send [_ _]
-                                                         (println "Stubbed sending back to CIDER")))})
+       ((middleware-spy-hub/wrap-cider-spy-hub nil)
+        {:op "cider-spy-hub-connect"
+         :hub-host "localhost"
+         :hub-port "9812"
+         :hub-alias ~alias
+         :session session-id#
+         :transport (reify transport/Transport
+                      (send [_ _]
+                        (println "Stubbed sending back to CIDER")))})
 
        ;; Allow time for registration message to do a round trip
        (Thread/sleep 500)

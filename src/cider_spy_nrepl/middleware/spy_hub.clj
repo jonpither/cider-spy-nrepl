@@ -33,8 +33,7 @@
         (swap! session connect-to-hub! session msg)
         (log/warn "Expected session for connection to hub.")))))
 
-(defn handler
-  "Middleware that looks up info for a symbol within the context of a particular namespace."
+(defn wrap-cider-spy-hub
   [handler]
   (fn [{:keys [op] :as msg}]
     (if (= "cider-spy-hub-connect" op)
@@ -42,7 +41,7 @@
       (handler msg))))
 
 (set-descriptor!
- #'handler
+ #'wrap-cider-spy-hub
  {:handles
   {"spy-hub-connect"
    {:doc "Return a summary of hacking information about the nrepl session."

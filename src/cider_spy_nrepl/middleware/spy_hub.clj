@@ -37,7 +37,7 @@
   "Middleware that looks up info for a symbol within the context of a particular namespace."
   [handler]
   (fn [{:keys [op] :as msg}]
-    (if (= "spy-hub-connect" op)
+    (if (= "cider-spy-hub-connect" op)
       (handle-connect-to-hub-request msg)
       (handler msg))))
 

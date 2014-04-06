@@ -29,7 +29,7 @@
   "Middleware that looks up info for a symbol within the context of a particular namespace."
   [handler]
   (fn [{:keys [op] :as msg}]
-    (if (= "summary" op)
+    (if (= "cider-spy-summary" op)
       (summary-reply msg)
       (wrap-handler handler msg))))
 

@@ -51,8 +51,8 @@
   (let [{:keys [ns-trail commands nses-loaded]} tracking
         tracking-data (remove empty? [(summary-hackers registrations)
                                       (summary-nses ns-trail)
-                                      (summary-frequencies "Your function calls:" commands)
-                                      (summary-frequencies "Your nses loaded:" nses-loaded)])]
+                                      (summary-frequencies "Your nses loaded:" nses-loaded)
+                                      (summary-frequencies "Your function calls:" commands)])]
     (if (not-empty tracking-data)
       (clojure.string/join "\n\n"
                            (remove empty?

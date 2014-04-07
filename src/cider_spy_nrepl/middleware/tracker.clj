@@ -6,21 +6,20 @@
 (defn- safe-inc [v]
   (if v (inc v) 1))
 
-(defn- add-to-ns-trail [tracking ns]
-  (if ns
+(defn- add-to-ns-trail
+  "The user namespace is ignored. If the same ns is given as currently
+   at the head, it is also ignored."
+  [tracking ns]
+  (if (and ns (not= "user" ns)
+           (not= ns (-> tracking :ns-trail first :ns)))
     (update-in tracking [:ns-trail] conj {:dt (LocalDateTime.) :ns ns})
     tracking))
 
 ;; TODO need a decent way of recording where people are "at", a smart trail
 (defn- track-namespace
-  "Add message to supplied tracking.
-   The user namespace is ignored. If the same ns is given as currently
-   at the head, it is also ignored."
+  "Add message to supplied tracking."
   [tracking {:keys [ns] :as msg}]
-  (if (and ns (not= "user" (:ns msg))
-           (not= (:ns msg) (-> tracking :ns-trail first :ns)))
-    (add-to-ns-trail tracking ns)
-    tracking))
+  (add-to-ns-trail tracking (:ns msg)))
 
 ;; TODO commands can be simply changed to functions. Args etc are bullshit.
 (defn- track-command
@@ -39,8 +38,8 @@
                    (second (clojure.tools.namespace.parse/read-ns-decl
                             (PushbackReader. (java.io.StringReader. file)))))]
     (-> tracking
-        (update-in [:nses-loaded ns] safe-inc)
-        (add-to-ns-trail ns))
+        (update-in [:nses-loaded (str ns)] safe-inc)
+        (add-to-ns-trail (str ns)))
     tracking))
 
 (defn- track-msg

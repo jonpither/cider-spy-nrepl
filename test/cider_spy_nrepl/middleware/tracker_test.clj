@@ -33,6 +33,13 @@
   (tracker-harness
    (let [file "(ns foo.bar) (println \"hi\")"]
      (track-msg! {:op "load-file" :file file} session)
-     (is (= 1 (get-in @session [:tracking :nses-loaded 'foo.bar])))
+     (is (= 1 (get-in @session [:tracking :nses-loaded "foo.bar"])))
+     (is (= (list "foo.bar") (map :ns (-> @session :tracking :ns-trail))))
      (track-msg! {:op "load-file" :file file} session)
-     (is (= 2 (get-in @session [:tracking :nses-loaded 'foo.bar]))))))
+     (is (= 2 (get-in @session [:tracking :nses-loaded "foo.bar"]))))))
+
+(deftest test-track-namespace-and-loaded
+  (tracker-harness
+   (track-msg! {:ns "foo-ns"} session)
+   (track-msg! {:op "load-file" :file "(ns foo-ns) (println \"hi\")"} session)
+   (is (= (list "foo-ns") (map :ns (-> @session :tracking :ns-trail))))))

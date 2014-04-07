@@ -47,11 +47,12 @@
 
 (defn summary
   "Build a summary of the users REPL session."
-  [{:keys [session-started ns-trail commands files-loaded registrations]}]
-  (let [tracking-data (remove empty? [(summary-nses ns-trail)
-                             (summary-frequencies "Your function calls:" commands)
-                             (summary-frequencies "Your files loaded:" files-loaded)
-                             (summary-hackers registrations)])]
+  [{:keys [session-started registrations tracking]}]
+  (let [{:keys [ns-trail commands nses-loaded]} tracking
+        tracking-data (remove empty? [(summary-hackers registrations)
+                                      (summary-nses ns-trail)
+                                      (summary-frequencies "Your function calls:" commands)
+                                      (summary-frequencies "Your nses loaded:" nses-loaded)])]
     (if (not-empty tracking-data)
       (clojure.string/join "\n\n"
                            (remove empty?

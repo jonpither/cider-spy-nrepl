@@ -31,7 +31,6 @@
     (when-let [[hub-session nrepl-session m] (<! hub-chan)]
       (binding [server-events/broadcast-msg!
                 (fn [op & {:as msg}]
-                  (println "server broadcast" msg)
                   (go (>! nrepl-server-chan [nrepl-session (assoc msg :op op)])))]
         (server-events/process nil hub-session m))
       (recur))

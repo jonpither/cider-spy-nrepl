@@ -13,26 +13,26 @@
          msg2 {:ns "foo2-ns"}]
      (track-msg! msg1 session)
      (track-msg! msg2 session)
-     (is (= (list msg2 msg1) (:messages @session))))))
+     (is (= (list msg2 msg1)  (-> @session :tracking :messages))))))
 
 (deftest test-track-namespace
   (tracker-harness
    (track-msg! {:ns "foo-ns"} session)
    (track-msg! {:ns "foo-ns2"} session)
-   (is (= (list "foo-ns2" "foo-ns") (map :ns (:ns-trail @session))))))
+   (is (= (list "foo-ns2" "foo-ns") (map :ns (-> @session :tracking :ns-trail))))))
 
 (deftest test-track-command
   (tracker-harness
    (let [code "(println \"bob\")"]
      (track-msg! {:code code} session)
-     (is (= 1 (get (:commands @session) code)))
+     (is (= 1 (get-in @session [:tracking :commands code])))
      (track-msg! {:code code} session)
-     (is (= 2 (get (:commands @session) code))))))
+     (is (= 2 (get-in @session [:tracking :commands code]))))))
 
-(deftest test-track-file-loaded
+(deftest test-track-ns-loaded
   (tracker-harness
-   (let [file-path "some-file"]
-     (track-msg! {:op "load-file" :file-path file-path} session)
-     (is (= 1 (get (:files-loaded @session) file-path)))
-     (track-msg! {:op "load-file" :file-path file-path} session)
-     (is (= 2 (get (:files-loaded @session) file-path))))))
+   (let [file "(ns foo.bar) (println \"hi\")"]
+     (track-msg! {:op "load-file" :file file} session)
+     (is (= 1 (get-in @session [:tracking :nses-loaded 'foo.bar])))
+     (track-msg! {:op "load-file" :file file} session)
+     (is (= 2 (get-in @session [:tracking :nses-loaded 'foo.bar]))))))

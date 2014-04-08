@@ -3,7 +3,9 @@
   (:require [clojure.test :refer :all]
             [cider-spy-nrepl.hub.server-events :as server-events]
             [cider-spy-nrepl.hub.client-events :as client-events]
-            [cider-spy-nrepl.middleware.cider :as cider]))
+            [cider-spy-nrepl.middleware.cider :as cider]
+            [cheshire.core :as json])
+  (:import [org.joda.time LocalDateTime]))
 
 ;; TODO - this bypasses all the handler code which is fair enough. Perhaps need a dedicated test?
 ;; TODO - wider scope so that everything is client initiated rather than triggering server events
@@ -55,7 +57,8 @@
    (let [hub-session (atom {:id "fooid"})
          nrepl-session (atom {:id "fooid"
                               :transport "a-transport"
-                              :summary-message-id "summary-msg-id"})]
+                              :summary-message-id "summary-msg-id"
+                              :session-started (LocalDateTime.)})]
      (>!! hub-chan [hub-session nrepl-session {:op :register :alias "Jon"}])
 
      (let [[transport session-id message-id s]
@@ -65,21 +68,25 @@
        (is (= (:id @nrepl-session) session-id))
        (is (= (:summary-message-id @nrepl-session) message-id))
 
-       (is (re-find #"Devs hacking:\s*Jon" s))))))
+       (is (= ["Jon"] (:devs (json/parse-string s true))))))))
 
 (defn- cider-msg
   "Utility to extract string message sent to CIDER."
   [cider-chan]
   (let [[_ _ _ s]
         (first (alts!! [(timeout 4000) cider-chan]))]
-    s))
+    (json/parse-string s true)))
 
 (deftest user-registrations
   (spy-harness
-   (>!! hub-chan [(atom {}) (atom {}) {:session-id 1 :op :register :alias "Jon"}])
-   (re-find #"Devs hacking:\s*Jon" (cider-msg cider-chan))
-   (>!! hub-chan [(atom {:id 2}) (atom {}) {:session-id 2 :op :register :alias "Dave"}])
-   (re-find #"Devs hacking:\s*Jon, Dave" (cider-msg cider-chan))
-   (>!! hub-chan [(atom {:id 2}) (atom {}) {:op :unregister}])
-   (re-find #"Devs hacking:\s*Jon" (cider-msg cider-chan))
-))
+   (>!! hub-chan [(atom {}) (atom {:session-started (LocalDateTime.)})
+                  {:session-id 1
+                   :op :register
+                   :alias "Jon"}])
+   (is (= ["Jon"] (:devs (cider-msg cider-chan))))
+   (>!! hub-chan [(atom {:id 2}) (atom {:session-started (LocalDateTime.)})
+                  {:session-id 2 :op :register :alias "Dave"}])
+   (is (= ["Jon" "Dave"] (:devs (cider-msg cider-chan))))
+   (>!! hub-chan [(atom {:id 2}) (atom {:session-started (LocalDateTime.)})
+                  {:op :unregister}])
+   (is (= ["Jon"] (:devs (cider-msg cider-chan))))))

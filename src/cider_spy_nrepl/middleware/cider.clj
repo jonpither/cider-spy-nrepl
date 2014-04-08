@@ -1,7 +1,8 @@
 (ns cider-spy-nrepl.middleware.cider
   (:require [clojure.tools.nrepl.transport :as transport]
             [clojure.tools.nrepl.misc :refer [response-for]]
-            [cider-spy-nrepl.middleware.summary-builder :as summary-builder]))
+            [cider-spy-nrepl.middleware.summary-builder :as summary-builder]
+            [cheshire.core :as json]))
 
 (defn ^:dynamic send-back-to-cider! [transport session-id message-id s]
   (transport/send transport
@@ -14,7 +15,7 @@
   [session]
   (let [summary (summary-builder/summary @session)
         {:keys [id summary-message-id transport]} @session]
-    (send-back-to-cider! transport id summary-message-id summary)))
+    (send-back-to-cider! transport id summary-message-id (json/encode summary))))
 
 (defn update-session-for-summary-msg!
   "Update the session with SUMMARY-MESSAGE-ID."

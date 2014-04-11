@@ -24,10 +24,10 @@
 (deftest test-track-command
   (tracker-harness
    (let [code "(println \"bob\")"]
-     (track-msg! {:code code} session)
-     (is (= 1 (get-in @session [:tracking :commands code])))
-     (track-msg! {:code code} session)
-     (is (= 2 (get-in @session [:tracking :commands code]))))))
+     (track-msg! {:code code :ns "user"} session)
+     (is (= 1 (get-in @session [:tracking :commands "clojure.core/println"])))
+     (track-msg! {:code code :ns "user"} session)
+     (is (= 2 (get-in @session [:tracking :commands "clojure.core/println"]))))))
 
 (deftest test-track-ns-loaded
   (tracker-harness

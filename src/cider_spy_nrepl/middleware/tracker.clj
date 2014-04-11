@@ -36,6 +36,7 @@
   "Add message to supplied tracking."
   [tracking {:keys [op ns code] :as msg}]
   (let [{:keys [op fn]} (and (not= "load-file" op) ns code
+                             (not (re-find #"^clojure\.core/apply clojure.core/require" code))
                              (get-ast ns code))]
     (if fn
       (let [command (format "%s/%s"

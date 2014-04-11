@@ -1,4 +1,5 @@
 (ns cider-spy-nrepl.connections-test
+  (:use [clojure.core.async :only [chan timeout <!! alts!! >! go close!]])
   (:require [clojure.test :refer :all]
             [cider-spy-nrepl.hub.server :as hub-server]
             [cider-spy-nrepl.hub.client :as hubc]
@@ -10,7 +11,6 @@
 
 ;; TODO worried about never shutting down individual connections to hub
 ;; TODO test someone in a different session gets registered notice
-;; TODO rework sleeps with core async, much nicer
 ;; TODO Manually test diff emacs CIDERs with diff aliases connect to same nrepl-server then on to the hub.
 ;; TODO fn on client-facade - other users (uses diff between session-ids)
 
@@ -22,9 +22,10 @@
        (finally
          (hub-server/shutdown ~server-name)))))
 
-(defmacro test-with-client [client-name session-name alias & forms]
+(defmacro test-with-client [session-name alias & forms]
   `(do
-     (let [session-id# (str (UUID/randomUUID))]
+     (let [session-id# (str (UUID/randomUUID))
+           ~'cider-chan (chan)]
 
        ;; Handle a middleware request to connect to CIDER SPY HUB
        ((middleware-spy-hub/wrap-cider-spy-hub nil)
@@ -34,28 +35,40 @@
          :hub-alias ~alias
          :session session-id#
          :transport (reify transport/Transport
-                      (send [_ _]
-                        (println "Stubbed sending back to CIDER")))})
+                      (send [_ r#]
+                        (when-not (re-find #"Connecting to SPY HUB" (:value r#))
+                          (go
+                            (>! ~'cider-chan (:value r#))))))})
 
        ;; Allow time for registration message to do a round trip
-       (Thread/sleep 500)
+
+       (is (first (alts!! [~'cider-chan (timeout 1000)])))
+
        (let [~'session (get @middleware-sessions/sessions session-id#)
-             ~session-name ~'session
-             ~client-name (:hub-client @~'session)]
+             ~session-name ~'session]
          (try
            ~@forms
            (finally
-             (hubc/shutdown! ~client-name)))))))
+             (when (:hub-client @~session-name)
+               (hubc/shutdown! (:hub-client @~session-name)))
+             (close! ~'cider-chan)))))))
+
+(defn- assert-summary-msg-sent-to-cider-with-user-in [cider-chan & users]
+  (let [msg (first (alts!! [cider-chan (timeout 1000)]))]
+    (doseq [user users]
+      (is (re-find (re-pattern user) msg)))))
 
 (deftest test-client-should-register-and-unregister
   (test-with-server
    server1 9812
    (test-with-client
-    client1 session1 "jonnyboy"
+    session1 "jonnyboy"
+
+    (assert-summary-msg-sent-to-cider-with-user-in cider-chan "jonnyboy")
     (is (= #{"jonnyboy"} (set (register/aliases))))
     (is (= #{"jonnyboy"} (:registrations @session)))
 
-    (hubc/shutdown! client1)
+    (hubc/shutdown! (:hub-client @session1))
 
     (Thread/sleep 500)
 
@@ -65,15 +78,20 @@
   (test-with-server
    server1 9812
    (test-with-client
-    client1 session1 "jonnyboy"
+    session1 "jonnyboy"
+
+    (assert-summary-msg-sent-to-cider-with-user-in cider-chan "jonnyboy")
 
     (test-with-client
-     client2 session2 "frank"
+     session2 "frank"
 
+     ;; Ensure frank registered    ;; Ensure jonnyboy registered
+     (assert-summary-msg-sent-to-cider-with-user-in cider-chan "jonnyboy" "frank")
      (is (= #{"jonnyboy" "frank"} (:registrations @session1)))
      (is (= #{"jonnyboy" "frank"} (:registrations @session2))))
 
-    (Thread/sleep 500)
+    (assert-summary-msg-sent-to-cider-with-user-in cider-chan "jonnyboy")
+    (assert-summary-msg-sent-to-cider-with-user-in cider-chan "jonnyboy")
 
     (is (= #{"jonnyboy"} (:registrations @session1)))
     (is (= #{"jonnyboy"} (set (register/aliases)))))))
@@ -82,12 +100,16 @@
   (test-with-server
    server1 9812
    (test-with-client
-    client1 session1 "jonnyboy"
+    session1 "jonnyboy"
+
+    (assert-summary-msg-sent-to-cider-with-user-in cider-chan "jonnyboy")
 
     (test-with-server
      server2 9813
      (test-with-client
-      client2 session2 "frank"
+      session2 "frank"
+
+      (assert-summary-msg-sent-to-cider-with-user-in cider-chan "frank")
 
       (is (= #{"jonnyboy"} (:registrations @session1)))
       (is (= #{"frank"} (:registrations @session2)))))

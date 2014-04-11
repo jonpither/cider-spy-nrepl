@@ -7,9 +7,10 @@
                  [cider/cider-nrepl "0.1.0-SNAPSHOT"]
                  [joda-time "2.3"]
                  [io.netty/netty-all "5.0.0.Alpha1"]
-                 [org.clojure/tools.logging "0.2.6"]
                  [org.clojure/core.async "0.1.278.0-76b25b-alpha"]
+                 [org.clojure/tools.logging "0.2.6"]
                  [org.clojure/tools.namespace "0.2.4"]
+                 [org.clojure/tools.reader "0.8.4"]
                  [cheshire "5.2.0"]]
   :profiles {:dev {:dependencies [[org.clojure/core.async "0.1.278.0-76b25b-alpha"]]}}
   :main cider-spy-nrepl.hub.server

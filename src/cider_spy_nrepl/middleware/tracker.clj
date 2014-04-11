@@ -1,7 +1,8 @@
 (ns cider-spy-nrepl.middleware.tracker
   (:import [org.joda.time LocalDateTime]
            [java.io PushbackReader])
-  (:require [clojure.tools.namespace.parse]))
+  (:require [clojure.tools.namespace.parse]
+            [clojure.tools.reader.edn :as edn]))
 
 (defn- safe-inc [v]
   (if v (inc v) 1))

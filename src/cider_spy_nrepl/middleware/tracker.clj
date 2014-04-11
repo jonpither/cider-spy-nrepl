@@ -2,7 +2,9 @@
   (:import [org.joda.time LocalDateTime]
            [java.io PushbackReader])
   (:require [clojure.tools.namespace.parse]
-            [clojure.tools.reader.edn :as edn]))
+            [clojure.tools.reader.edn :as edn]
+            [clojure.tools.analyzer :as ana]
+            [clojure.tools.analyzer.jvm :as ana.jvm]))
 
 (defn- safe-inc [v]
   (if v (inc v) 1))
@@ -22,17 +24,25 @@
   [tracking {:keys [ns] :as msg}]
   (add-to-ns-trail tracking (:ns msg)))
 
-;; TODO commands can be simply changed to functions. Args etc are bullshit.
+(defn- get-ast [ns code-str]
+  (binding [ana/macroexpand-1 ana.jvm/macroexpand-1
+            ana/create-var    ana.jvm/create-var
+            ana/parse         ana.jvm/parse
+            ana/var?          var?]
+    (ana/analyze (edn/read-string code-str)
+                 (assoc (ana.jvm/empty-env) :ns (symbol ns)))))
+
 (defn- track-command
   "Add message to supplied tracking."
-  [tracking {:keys [code op] :as msg}]
-  (if (and code (not= "load-file" op)
-           (not (re-find #"^\(try\n?\s*\(:arglists\n?\s*\(clojure\.core/meta" code))
-           (not (re-find #"^\(try\n?\s*\(eval\n?\s*\(quote\n?\s*\(clojure.repl/doc" code))
-           (not (re-find #"^\(defn?-? " code))
-           (read-string (format "(%s)" code)))
-    (update-in tracking [:commands code] safe-inc)
-    tracking))
+  [tracking {:keys [op ns code] :as msg}]
+  (let [{:keys [op fn]} (and (not= "load-file" op) ns code
+                             (get-ast ns code))]
+    (if fn
+      (let [command (format "%s/%s"
+                            (-> fn :var meta :ns)
+                            (-> fn :var meta :name))]
+        (update-in tracking [:commands command] safe-inc))
+      tracking)))
 
 (defn- track-load-file [tracking {:keys [op file] :as msg}]
   (if-let [ns (and (= "load-file" op)

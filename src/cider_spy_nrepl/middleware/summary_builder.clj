@@ -1,15 +1,18 @@
 (ns cider-spy-nrepl.middleware.summary-builder
   (:import [org.joda.time LocalDateTime Seconds]))
 
-;; TODO: keep summary and tracking encapsulated together
-;; Form a protocol
+(defn- remove-duplicate-entries
+  "[:a :a :b] -> [:a :b]"
+  [msgs]
+  (when msgs
+    (map first (partition-by :ns msgs))))
 
 (defn- seconds-between [msg1 msg2]
   (.getSeconds (Seconds/secondsBetween (:dt msg1) (:dt msg2))))
 
 (defn enrich-with-duration [msgs]
   (when msgs
-    (loop [processed '() [msg & the-rest] (reverse msgs)]
+    (loop [processed '() [msg & the-rest] msgs]
       (if (not-empty the-rest)
         (recur (cons (assoc msg :seconds (seconds-between msg (first the-rest))) processed)
                the-rest)
@@ -19,7 +22,7 @@
   "Build a summary of the users REPL session."
   [{:keys [session-started registrations tracking]}]
   (let [{:keys [ns-trail commands nses-loaded]} tracking]
-    {:ns-trail (->> ns-trail enrich-with-duration (map #(dissoc % :dt)))
+    {:ns-trail (->> ns-trail reverse remove-duplicate-entries enrich-with-duration (map #(dissoc % :dt)))
      :nses-loaded nses-loaded
      :fns commands
      :devs registrations

@@ -42,4 +42,4 @@
   (tracker-harness
    (track-msg! {:ns "foo-ns"} session)
    (track-msg! {:op "load-file" :file "(ns foo-ns) (println \"hi\")"} session)
-   (is (= (list "foo-ns") (map :ns (-> @session :tracking :ns-trail))))))
+   (is (= (list "foo-ns" "foo-ns") (map :ns (-> @session :tracking :ns-trail))))))

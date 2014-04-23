@@ -13,8 +13,7 @@
   "The user namespace is ignored. If the same ns is given as currently
    at the head, it is also ignored."
   [tracking ns]
-  (if (and ns (not= "user" ns)
-           (not= ns (-> tracking :ns-trail first :ns)))
+  (if (and ns (not= "user" ns))
     (update-in tracking [:ns-trail] conj {:dt (LocalDateTime.) :ns ns})
     tracking))
 

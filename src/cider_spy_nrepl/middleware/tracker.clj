@@ -74,7 +74,8 @@
 (defn track-msg! [msg session]
   (let [old-session @session
         new-session (swap! session apply-trackers msg)]
-    (doseq [{:keys [ns dt]} (second (clojure.data/diff (get-in old-session [:tracking :ns-trail])
-                                                  (get-in new-session [:tracking :ns-trail])))
+    (doseq [{:keys [ns dt]}
+            (drop (count (get-in old-session [:tracking :ns-trail]))
+                  (reverse (get-in new-session [:tracking :ns-trail])))
             :when ns]
       (hub-client/update-location session ns dt))))

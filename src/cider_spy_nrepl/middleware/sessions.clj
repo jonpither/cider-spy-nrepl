@@ -11,7 +11,5 @@
    If a session does not exist then one will be created."
   [{:keys [session] :as msg}]
   (when session
-    (when-not (get @sessions session)
-      (swap! sessions assoc session (new-session msg)))
-
-    (get @sessions session)))
+    (or (get @sessions session)
+        (get (swap! sessions assoc session (new-session msg)) session))))

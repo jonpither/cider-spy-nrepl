@@ -27,5 +27,8 @@
   (register/unregister! session)
   (broadcast-msg! :unregistered :alias (:alias @session) :registered (set (register/aliases))))
 
+(defmethod process :location [_ session m]
+  (println "Some tracking stuf"))
+
 (defn unregister! [session]
   (process nil session {:op :unregister}))

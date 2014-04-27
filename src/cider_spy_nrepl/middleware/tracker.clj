@@ -4,7 +4,9 @@
   (:require [clojure.tools.namespace.parse]
             [clojure.tools.reader.edn :as edn]
             [clojure.tools.analyzer :as ana]
-            [clojure.tools.analyzer.jvm :as ana.jvm]))
+            [clojure.tools.analyzer.jvm :as ana.jvm]
+            [cider-spy-nrepl.hub.client-facade :as hub-client]
+            [clojure.data]))
 
 (defn- safe-inc [v]
   (if v (inc v) 1))
@@ -70,4 +72,9 @@
              #(reduce (fn [tracking f] (f tracking msg)) % trackers)))
 
 (defn track-msg! [msg session]
-  (swap! session apply-trackers msg))
+  (let [old-session @session
+        new-session (swap! session apply-trackers msg)]
+    (doseq [{:keys [ns dt]} (second (clojure.data/diff (get-in old-session [:tracking :ns-trail])
+                                                  (get-in new-session [:tracking :ns-trail])))
+            :when ns]
+      (hub-client/update-location session ns dt))))

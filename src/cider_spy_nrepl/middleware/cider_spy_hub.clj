@@ -7,38 +7,45 @@
             [clojure.tools.nrepl.transport :as transport]
             [clojure.tools.logging :as log]))
 
-(defn- send-connected-msg! [{:keys [transport hub-host hub-port hub-alias] :as msg} s]
+(defn- send-connected-msg!
+  [{:keys [transport] :as msg} s]
   (transport/send transport (response-for msg :value (str "CIDER-SPY-NREPL: " s))))
 
-(defn- connect-to-hub! [{:keys [hub-client] :as session} session-atom
-                        {:keys [hub-host hub-port hub-alias] :as msg}]
-  (if-not hub-client
+(defn- connect-to-hub! [session msg hub-host hub-port hub-alias]
+  (if (and (:hub-client @session) (.isOpen (last (:hub-client @session))))
+    (send-connected-msg! msg "Already connected to SPY HUB")
     (do
       (send-connected-msg! msg (format "Connecting to SPY HUB %s:%s with alias %s" hub-host hub-port hub-alias))
-      (if-let [hub-client (hub-client/connect-to-hub! hub-host (Integer/parseInt hub-port) hub-alias session-atom)]
-        (do
-          (send-connected-msg! msg (format "You are connected to the CIDER SPY HUB."))
-          (assoc session :hub-client hub-client))
-        (do
-          (send-connected-msg! msg (format "You are NOT connected to the CIDER SPY HUB."))
-          session)))
-    (do
-      (send-connected-msg! msg "Already connected to SPY HUB")
-      session)))
+      (if-let [hub-client (:hub-client (swap! session hub-client/connect-to-hub! session hub-host hub-port hub-alias))]
+        (send-connected-msg! msg (format "You are connected to the CIDER SPY HUB."))
+        (send-connected-msg! msg (format "You are NOT connected to the CIDER SPY HUB."))))))
 
-(defn- handle-connect-to-hub-request [msg]
+(defn- reconnect-if-necessary! [msg]
+  (let [session (sessions/session! msg)]
+    (when (and session (:hub-message-id @session)
+               ;; hub client not already connected
+               (not (and (:hub-client @session) (.isOpen (last (:hub-client @session))))))
+      (let [msg (assoc msg :id (:hub-message-id @session))
+            {:keys [host port alias]} (:hub-setup @session)]
+        (send-connected-msg! msg "SPY HUB connection closed, reconnecting")
+        (connect-to-hub! session msg host port alias)))))
+
+(defn- handle-connect-to-hub-request [{:keys [hub-host hub-port hub-alias] :as msg}]
   (future
-    (let [session (sessions/session! msg)]
-      (if session
-        (swap! session connect-to-hub! session msg)
-        (log/warn "Expected session for connection to hub.")))))
+    (if-let [session (sessions/session! msg)]
+      (do
+        (connect-to-hub! session msg hub-host (Integer/parseInt hub-port) hub-alias)
+        (swap! session assoc :hub-message-id (:id msg)))
+      (log/warn "Expected session for connection to hub."))))
 
 (defn wrap-cider-spy-hub
   [handler]
   (fn [{:keys [op] :as msg}]
     (if (= "cider-spy-hub-connect" op)
       (handle-connect-to-hub-request msg)
-      (handler msg))))
+      (do
+        (reconnect-if-necessary! msg)
+        (handler msg)))))
 
 (set-descriptor!
  #'wrap-cider-spy-hub

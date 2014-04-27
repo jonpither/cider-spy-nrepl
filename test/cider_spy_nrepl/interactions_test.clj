@@ -90,3 +90,11 @@
    (>!! hub-chan [(atom {:id 2}) (atom {:session-started (LocalDateTime.)})
                   {:op :unregister}])
    (is (= ["Jon"] (:devs (cider-msg cider-chan))))))
+
+(deftest dev-locations
+  (spy-harness
+   (>!! hub-chan [(atom {:id 1}) (atom {:id 1})
+                  {:session-id 1
+                   :op :location
+                   :alias "Dave"}])
+   (is (not (nil? (cider-msg cider-chan))))))

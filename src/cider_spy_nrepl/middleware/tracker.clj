@@ -19,7 +19,6 @@
     (update-in tracking [:ns-trail] conj {:dt (LocalDateTime.) :ns ns})
     tracking))
 
-;; TODO need a decent way of recording where people are "at", a smart trail
 (defn- track-namespace
   "Add message to supplied tracking."
   [tracking {:keys [ns] :as msg}]

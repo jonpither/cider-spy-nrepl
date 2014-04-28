@@ -21,14 +21,15 @@
 
 (defmethod process :register [_ session {:keys [session-id alias]}]
   (register/register! session session-id alias)
-  (broadcast-msg! :registered :alias alias :registered (set (register/aliases))))
+  (broadcast-msg! :registered :alias alias :registered (register/users)))
 
 (defmethod process :unregister [_ session _]
   (register/unregister! session)
-  (broadcast-msg! :unregistered :alias (:alias @session) :registered (set (register/aliases))))
+  (broadcast-msg! :unregistered :alias (:alias @session) :registered (register/users)))
 
-(defmethod process :location [_ session m]
-  (println "Some tracking stuf"))
+(defmethod process :location [_ session {:keys [ns dt]}]
+  (register/update-location! session ns dt)
+  (broadcast-msg! :location :alias (:alias @session) :registered (register/users)))
 
 (defn unregister! [session]
   (process nil session {:op :unregister}))

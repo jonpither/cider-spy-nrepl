@@ -16,3 +16,8 @@
   (log/info (format "Unregistered: %s" alias))
   (swap! s assoc-in [:registrations] registered)
   (cider/update-spy-buffer-summary! s))
+
+(defmethod process :location [s {:keys [alias registered] :as msg}]
+  (log/info (format "Location change: %s" alias))
+  (swap! s assoc-in [:registrations] registered)
+  (cider/update-spy-buffer-summary! s))

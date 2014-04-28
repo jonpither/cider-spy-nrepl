@@ -68,7 +68,7 @@
        (is (= (:id @nrepl-session) session-id))
        (is (= (:summary-message-id @nrepl-session) message-id))
 
-       (is (= ["Jon"] (:devs (json/parse-string s true))))))))
+       (is (= {:Jon []} (:devs (json/parse-string s true))))))))
 
 (defn- cider-msg
   "Utility to extract string message sent to CIDER."
@@ -83,17 +83,17 @@
                   {:session-id 1
                    :op :register
                    :alias "Jon"}])
-   (is (= ["Jon"] (:devs (cider-msg cider-chan))))
+   (is (= {:Jon []} (:devs (cider-msg cider-chan))))
    (>!! hub-chan [(atom {:id 2}) (atom {:session-started (LocalDateTime.)})
                   {:session-id 2 :op :register :alias "Dave"}])
-   (is (= ["Jon" "Dave"] (:devs (cider-msg cider-chan))))
+   (is (= {:Jon [] :Dave []} (:devs (cider-msg cider-chan))))
    (>!! hub-chan [(atom {:id 2}) (atom {:session-started (LocalDateTime.)})
                   {:op :unregister}])
-   (is (= ["Jon"] (:devs (cider-msg cider-chan))))))
+   (is (= {:Jon []} (:devs (cider-msg cider-chan))))))
 
 (deftest dev-locations
   (spy-harness
-   (>!! hub-chan [(atom {:id 1}) (atom {:id 1})
+   (>!! hub-chan [(atom {:id 1}) (atom {:session-started (LocalDateTime.)})
                   {:session-id 1
                    :op :location
                    :alias "Dave"}])

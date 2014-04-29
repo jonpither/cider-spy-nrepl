@@ -4,6 +4,7 @@
             [cider-spy-nrepl.hub.server-events :as server-events]
             [cider-spy-nrepl.hub.client-events :as client-events]
             [cider-spy-nrepl.middleware.cider :as cider]
+            [cider-spy-nrepl.hub.register]
             [cheshire.core :as json])
   (:import [org.joda.time LocalDateTime]))
 
@@ -42,6 +43,7 @@
   `(let [~'hub-chan (chan)
          ~'nrepl-server-chan (chan)
          ~'cider-chan (chan)]
+     (reset! cider-spy-nrepl.hub.register/sessions {})
 
      (try
        (run-hub-stub ~'hub-chan ~'nrepl-server-chan)
@@ -93,8 +95,11 @@
 
 (deftest dev-locations
   (spy-harness
-   (>!! hub-chan [(atom {:id 1}) (atom {:session-started (LocalDateTime.)})
-                  {:session-id 1
-                   :op :location
-                   :alias "Dave"}])
-   (is (not (nil? (cider-msg cider-chan))))))
+   (let [hub-session (atom {})
+         nrepl-session (atom {:id 1 :session-started (LocalDateTime.)})]
+     (>!! hub-chan [hub-session nrepl-session
+                    {:session-id 1 :op :register :alias "Jon"}])
+     (is (= {:Jon []} (:devs (cider-msg cider-chan))))
+     (>!! hub-chan [hub-session nrepl-session
+                    {:op :location :alias "Jon" :ns "foo" :dt (java.util.Date.)}])
+     (is (= {:Jon ["foo"]} (:devs (cider-msg cider-chan)))))))

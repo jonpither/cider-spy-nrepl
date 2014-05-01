@@ -1,4 +1,4 @@
-(ns cider-spy-nrepl.middleware.ns-trail-test
+(ns cider-spy-nrepl.ns-trail-test
   (:require [cider-spy-nrepl.ns-trail :refer :all]
             [clojure.test :refer :all])
   (import [org.joda.time LocalDateTime Seconds]))

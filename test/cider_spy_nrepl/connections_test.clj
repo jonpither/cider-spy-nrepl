@@ -66,7 +66,7 @@
 
     (assert-summary-msg-sent-to-cider-with-user-in cider-chan "jonnyboy")
     (is (= #{"jonnyboy"} (set (register/aliases))))
-    (is (= #{"jonnyboy"} (:registrations @session)))
+    (is (= #{"jonnyboy"} (set (map key (:registrations @session)))))
 
     (hubc/shutdown! (:hub-client @session1))
 
@@ -87,13 +87,13 @@
 
      ;; Ensure frank registered    ;; Ensure jonnyboy registered
      (assert-summary-msg-sent-to-cider-with-user-in cider-chan "jonnyboy" "frank")
-     (is (= #{"jonnyboy" "frank"} (:registrations @session1)))
-     (is (= #{"jonnyboy" "frank"} (:registrations @session2))))
+     (is (= #{"jonnyboy" "frank"} (set (map key (:registrations @session1)))))
+     (is (= #{"jonnyboy" "frank"} (set (map key (:registrations @session2))))))
 
     (assert-summary-msg-sent-to-cider-with-user-in cider-chan "jonnyboy")
     (assert-summary-msg-sent-to-cider-with-user-in cider-chan "jonnyboy")
 
-    (is (= #{"jonnyboy"} (:registrations @session1)))
+    (is (= #{"jonnyboy"} (set (map key (:registrations @session1)))))
     (is (= #{"jonnyboy"} (set (register/aliases)))))))
 
 (deftest test-two-registrations-on-different-servers
@@ -111,9 +111,9 @@
 
       (assert-summary-msg-sent-to-cider-with-user-in cider-chan "frank")
 
-      (is (= #{"jonnyboy"} (:registrations @session1)))
-      (is (= #{"frank"} (:registrations @session2)))))
+      (is (= #{"jonnyboy"} (set (map key (:registrations @session1)))))
+      (is (= #{"frank"} (set (map key (:registrations @session2)))))))
 
     (Thread/sleep 500)
 
-    (is (= #{"jonnyboy"} (:registrations @session1))))))
+    (is (= #{"jonnyboy"} (set (map key (:registrations @session1))))))))

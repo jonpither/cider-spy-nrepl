@@ -6,6 +6,7 @@
             [cider-spy-nrepl.hub.register :as register]
             [cider-spy-nrepl.middleware.cider-spy-hub :as middleware-spy-hub]
             [cider-spy-nrepl.middleware.sessions :as middleware-sessions]
+            [cider-spy-nrepl.middleware.hub-settings :as hub-settings]
             [clojure.tools.nrepl.transport :as transport])
   (:import [java.util UUID]))
 
@@ -26,19 +27,19 @@
   `(do
      (let [session-id# (str (UUID/randomUUID))
            ~'cider-chan (chan)]
+       (binding [hub-settings/hub-host-and-port
+                 (fn [] ["localhost" 9812])]
 
-       ;; Handle a middleware request to connect to CIDER SPY HUB
-       ((middleware-spy-hub/wrap-cider-spy-hub nil)
-        {:op "cider-spy-hub-connect"
-         :hub-host "localhost"
-         :hub-port "9812"
-         :hub-alias ~alias
-         :session session-id#
-         :transport (reify transport/Transport
-                      (send [_ r#]
-                        (when-not (re-find #"Connecting to SPY HUB" (:value r#))
-                          (go
-                            (>! ~'cider-chan (:value r#))))))})
+         ;; Handle a middleware request to connect to CIDER SPY HUB
+         ((middleware-spy-hub/wrap-cider-spy-hub nil)
+          {:op "cider-spy-hub-connect"
+           :hub-alias ~alias
+           :session session-id#
+           :transport (reify transport/Transport
+                        (send [_ r#]
+                          (when-not (re-find #"Connecting to SPY HUB" (:value r#))
+                            (go
+                              (>! ~'cider-chan (:value r#))))))}))
 
        ;; Allow time for registration message to do a round trip
 

@@ -19,9 +19,9 @@
       (do
         (send-connected-msg! msg (format "Connecting to SPY HUB %s:%s with alias %s" hub-host hub-port hub-alias))
         (if-let [hub-client (:hub-client (swap! session hub-client/connect-to-hub! session hub-host hub-port hub-alias))]
-          (send-connected-msg! msg (format "You are connected to the CIDER SPY HUB."))
-          (send-connected-msg! msg (format "You are NOT connected to the CIDER SPY HUB."))))
-      (send-connected-msg! msg (format "No CIDER-SPY-HUB host and port specified.")))))
+          (send-connected-msg! msg "You are connected to the CIDER SPY HUB.")
+          (send-connected-msg! msg "You are NOT connected to the CIDER SPY HUB.")))
+      (send-connected-msg! msg "No CIDER-SPY-HUB host and port specified."))))
 
 (defn- reconnect-if-necessary! [msg]
   (let [session (sessions/session! msg)]

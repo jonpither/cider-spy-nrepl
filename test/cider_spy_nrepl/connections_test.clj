@@ -25,21 +25,29 @@
 
 (defmacro test-with-client [session-name alias & forms]
   `(do
-     (let [session-id# (str (UUID/randomUUID))
-           ~'cider-chan (chan)]
+     (let [~'cider-chan (chan)
+           session-id# (str (UUID/randomUUID))
+           transport# (reify transport/Transport
+                        (send [_ r#]
+                          (when-not (re-find #"Connecting to SPY HUB" (:value r#))
+                            (go
+                              (>! ~'cider-chan (:value r#))))))]
        (binding [hub-settings/hub-host-and-port
-                 (fn [] ["localhost" 9812])]
+                 (fn [] ["localhost" 9812])
+                 middleware-spy-hub/create-alias
+                 (constantly ~alias)]
 
          ;; Handle a middleware request to connect to CIDER SPY HUB
          ((middleware-spy-hub/wrap-cider-spy-hub nil)
           {:op "cider-spy-hub-connect"
            :hub-alias ~alias
            :session session-id#
-           :transport (reify transport/Transport
-                        (send [_ r#]
-                          (when-not (re-find #"Connecting to SPY HUB" (:value r#))
-                            (go
-                              (>! ~'cider-chan (:value r#))))))}))
+           :transport transport#})
+
+         ((middleware-spy-hub/wrap-cider-spy-hub (constantly nil))
+          {:op "random-op"
+           :session session-id#
+           :transport transport#}))
 
        ;; Allow time for registration message to do a round trip
 
@@ -55,9 +63,11 @@
              (close! ~'cider-chan)))))))
 
 (defn- assert-summary-msg-sent-to-cider-with-user-in [cider-chan & users]
-  (let [msg (first (alts!! [cider-chan (timeout 1000)]))]
-    (doseq [user users]
-      (is (re-find (re-pattern user) msg)))))
+  (let [[msg c] (alts!! [cider-chan (timeout 1000)])]
+    (is (= cider-chan c))
+    (when (= cider-chan c)
+      (doseq [user users]
+        (is (re-find (re-pattern user) msg))))))
 
 (deftest test-client-should-register-and-unregister
   (test-with-server

@@ -24,14 +24,15 @@
       (send-connected-msg! msg "No CIDER-SPY-HUB host and port specified."))))
 
 (defn- reconnect-if-necessary! [msg]
-  (let [session (sessions/session! msg)]
-    (when (and session (:hub-message-id @session)
-               ;; hub client not already connected
-               (not (and (:hub-client @session) (.isOpen (last (:hub-client @session))))))
-      (let [msg (assoc msg :id (:hub-message-id @session))
-            {:keys [alias]} (:hub-setup @session)]
-        (send-connected-msg! msg "SPY HUB connection closed, reconnecting")
-        (connect-to-hub! session msg alias)))))
+  (future
+    (let [session (sessions/session! msg)]
+      (when (and session (:hub-message-id @session)
+                 ;; hub client not already connected
+                 (not (and (:hub-client @session) (.isOpen (last (:hub-client @session))))))
+        (let [msg (assoc msg :id (:hub-message-id @session))
+              {:keys [alias]} (:hub-setup @session)]
+          (send-connected-msg! msg "SPY HUB connection closed, reconnecting")
+          (connect-to-hub! session msg alias))))))
 
 (defn- handle-connect-to-hub-request [{:keys [hub-alias] :as msg}]
   (future

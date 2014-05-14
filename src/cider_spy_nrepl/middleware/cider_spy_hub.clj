@@ -15,10 +15,9 @@
 (defn ^:dynamic create-alias []
   (str "anon-" (rand-int 100)))
 
-;;connection buf may not be there
 (defn- connect-to-hub! [msg]
   (let [session (sessions/session! msg)
-        connected? (and (:hub-client @session) (.isOpen (last (:hub-client @session))))]
+        connected? (and session (:hub-client @session) (.isOpen (last (:hub-client @session))))]
     (when (and session (not connected?))
       (let [msg (assoc msg :id (:hub-connection-buffer-id @session))]
         (if-let [[hub-host hub-port] (settings/hub-host-and-port)]

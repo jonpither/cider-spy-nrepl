@@ -12,9 +12,6 @@
   [{:keys [transport] :as msg} s]
   (transport/send transport (response-for msg :value (str "CIDER-SPY-NREPL: " s))))
 
-(defn ^:dynamic create-alias []
-  (str "anon-" (rand-int 100)))
-
 (defn- connect-to-hub! [msg]
   (let [session (sessions/session! msg)
         connected? (and session (:hub-client @session) (.isOpen (last (:hub-client @session))))]
@@ -24,11 +21,10 @@
           (do
             (when (and (:hub-client @session) (not (.isOpen (last (:hub-client @session)))))
               (send-connected-msg! msg "SPY HUB connection closed, reconnecting"))
-            (let [hub-alias (create-alias)]
-              (send-connected-msg! msg (format "Connecting to SPY HUB %s:%s with alias %s" hub-host hub-port hub-alias))
-              (if-let [hub-client (:hub-client (swap! session hub-client/connect-to-hub! session hub-host hub-port hub-alias))]
-                (send-connected-msg! msg "You are connected to the CIDER SPY HUB.")
-                (send-connected-msg! msg "You are NOT connected to the CIDER SPY HUB."))))
+            (send-connected-msg! msg (format "Connecting to SPY HUB %s:%s with alias %s" hub-host hub-port (:hub-alias @session)))
+            (if-let [hub-client (:hub-client (swap! session hub-client/connect-to-hub! session hub-host hub-port))]
+              (send-connected-msg! msg "You are connected to the CIDER SPY HUB.")
+              (send-connected-msg! msg "You are NOT connected to the CIDER SPY HUB.")))
           (send-connected-msg! msg "No CIDER-SPY-HUB host and port specified."))))))
 
 (defn- handle-register-hub-buffer-msg

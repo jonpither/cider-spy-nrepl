@@ -14,15 +14,17 @@
 
 (defn- connect-to-hub! [msg]
   (let [session (sessions/session! msg)
-        connected? (and session (:hub-client @session) (.isOpen (last (:hub-client @session))))]
-    (when (and session (not connected?))
+        {:keys [hub-client hub-alias]} @session
+        connected? (and hub-client (.isOpen (last hub-client)))
+        closed? (and hub-client (not connected?))]
+    (when (not connected?)
       (let [msg (assoc msg :id (:hub-connection-buffer-id @session))]
         (if-let [[hub-host hub-port] (settings/hub-host-and-port)]
           (do
-            (when (and (:hub-client @session) (not (.isOpen (last (:hub-client @session)))))
+            (when closed?
               (send-connected-msg! msg "SPY HUB connection closed, reconnecting"))
-            (send-connected-msg! msg (format "Connecting to SPY HUB %s:%s with alias %s" hub-host hub-port (:hub-alias @session)))
-            (if-let [hub-client (:hub-client (swap! session hub-client/connect-to-hub! session hub-host hub-port))]
+            (send-connected-msg! msg (format "Connecting to SPY HUB %s:%s with alias %s" hub-host hub-port :hub-alias))
+            (if (:hub-client (swap! session hub-client/connect-to-hub! session hub-host hub-port))
               (send-connected-msg! msg "You are connected to the CIDER SPY HUB.")
               (send-connected-msg! msg "You are NOT connected to the CIDER SPY HUB.")))
           (send-connected-msg! msg "No CIDER-SPY-HUB host and port specified."))))))

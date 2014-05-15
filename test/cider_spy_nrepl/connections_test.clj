@@ -5,6 +5,7 @@
             [cider-spy-nrepl.hub.client :as hubc]
             [cider-spy-nrepl.hub.register :as register]
             [cider-spy-nrepl.middleware.cider-spy-hub :as middleware-spy-hub]
+            [cider-spy-nrepl.middleware.alias :as alias]
             [cider-spy-nrepl.middleware.sessions :as middleware-sessions]
             [cider-spy-nrepl.middleware.hub-settings :as hub-settings]
             [clojure.tools.nrepl.transport :as transport])
@@ -34,7 +35,7 @@
                               (>! ~'cider-chan (:value r#))))))]
        (binding [hub-settings/hub-host-and-port
                  (fn [] ["localhost" 9812])
-                 middleware-spy-hub/create-alias
+                 alias/alias-from-env
                  (constantly ~alias)]
 
          ;; Handle a middleware request to connect to CIDER SPY HUB

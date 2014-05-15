@@ -16,7 +16,9 @@
       (if (not-empty the-rest)
         (recur (cons (assoc msg :seconds (seconds-between msg (first the-rest))) processed)
                the-rest)
-        (cons msg processed)))))
+        (if msg
+          (cons msg processed)
+          processed)))))
 
 (defn summary
   "Build a summary of the users REPL session."

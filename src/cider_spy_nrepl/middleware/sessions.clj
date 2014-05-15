@@ -11,7 +11,13 @@
 
 (defn session!
   "Return the session for the given msg.
-   If a session does not exist then one will be created."
+   If a session does not exist then one will be created.
+
+   Note: if the msg does not contain a `session` attribute then a
+   session cannot be created. This is often the case for certain
+   nREPL middleware operations such clone and describe.
+
+   Calling code should therefore deal with a nil return value."
   [{:keys [session] :as msg}]
   (when session
     (or (get @sessions session)

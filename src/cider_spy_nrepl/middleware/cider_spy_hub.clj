@@ -13,21 +13,21 @@
   (transport/send transport (response-for msg :value (str "CIDER-SPY-NREPL: " s))))
 
 (defn- connect-to-hub! [msg]
-  (let [session (sessions/session! msg)
-        {:keys [hub-client hub-alias]} @session
-        connected? (and hub-client (.isOpen (last hub-client)))
-        closed? (and hub-client (not connected?))]
-    (when (not connected?)
-      (let [msg (assoc msg :id (:hub-connection-buffer-id @session))]
-        (if-let [[hub-host hub-port] (settings/hub-host-and-port)]
-          (do
-            (when closed?
-              (send-connected-msg! msg "SPY HUB connection closed, reconnecting"))
-            (send-connected-msg! msg (format "Connecting to SPY HUB %s:%s with alias %s" hub-host hub-port :hub-alias))
-            (if (:hub-client (swap! session hub-client/connect-to-hub! session hub-host hub-port))
-              (send-connected-msg! msg "You are connected to the CIDER SPY HUB.")
-              (send-connected-msg! msg "You are NOT connected to the CIDER SPY HUB.")))
-          (send-connected-msg! msg "No CIDER-SPY-HUB host and port specified."))))))
+  (when-let [session (sessions/session! msg)]
+    (let [{:keys [hub-client hub-alias]} @session
+          connected? (and hub-client (.isOpen (last hub-client)))
+          closed? (and hub-client (not connected?))]
+      (when (not connected?)
+        (let [msg (assoc msg :id (:hub-connection-buffer-id @session))]
+          (if-let [[hub-host hub-port] (settings/hub-host-and-port)]
+            (do
+              (when closed?
+                (send-connected-msg! msg "SPY HUB connection closed, reconnecting"))
+              (send-connected-msg! msg (format "Connecting to SPY HUB %s:%s with alias %s" hub-host hub-port :hub-alias))
+              (if (:hub-client (swap! session hub-client/connect-to-hub! session hub-host hub-port))
+                (send-connected-msg! msg "You are connected to the CIDER SPY HUB.")
+                (send-connected-msg! msg "You are NOT connected to the CIDER SPY HUB.")))
+            (send-connected-msg! msg "No CIDER-SPY-HUB host and port specified.")))))))
 
 (defn- handle-register-hub-buffer-msg
   "We register the buffer in EMACS used for displaying connection information

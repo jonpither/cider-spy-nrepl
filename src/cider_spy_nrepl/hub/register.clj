@@ -32,4 +32,5 @@
   []
   (into {}
         (for [[id s] @sessions :let [s @s]]
-          [(:alias s) (take 3 (ns-trail/top-nses (LocalDateTime.) (-> s :tracking :ns-trail)))])))
+          [id {:alias (:alias s)
+               :nses (take 3 (ns-trail/top-nses (LocalDateTime.) (-> s :tracking :ns-trail)))}])))

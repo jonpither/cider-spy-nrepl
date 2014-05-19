@@ -32,18 +32,19 @@
     (ana/analyze (edn/read-string code-str)
                  (assoc (ana.jvm/empty-env) :ns (symbol ns)))))
 
+(defn- is-trackeable-msg? [op ns code]
+  (and ns code (not= "load-file" op) (not (re-find #"^clojure\.core/apply clojure.core/require" code)) ))
+
 (defn- track-command
   "Add message to supplied tracking."
   [tracking {:keys [op ns code] :as msg}]
-  (let [{:keys [op fn]} (and (not= "load-file" op) ns code
-                             (not (re-find #"^clojure\.core/apply clojure.core/require" code))
-                             (get-ast ns code))]
-    (if fn
-      (let [command (format "%s/%s"
+  (if (is-trackeable-msg? op ns code)
+      (let [{:keys [op fn]} (get-ast ns code)
+            command (format "%s/%s"
                             (-> fn :var meta :ns)
                             (-> fn :var meta :name))]
-        (update-in tracking [:commands command] safe-inc))
-      tracking)))
+         (update-in tracking [:commands command] safe-inc))
+      tracking))
 
 (defn- track-load-file [tracking {:keys [op file] :as msg}]
   (if-let [ns (and (= "load-file" op)
@@ -71,10 +72,10 @@
              #(reduce (fn [tracking f] (f tracking msg)) % trackers)))
 
 (defn track-msg! [msg session]
-  (let [old-session @session
-        new-session (swap! session apply-trackers msg)]
-    (doseq [{:keys [ns dt]}
-            (drop (count (get-in old-session [:tracking :ns-trail]))
-                  (reverse (get-in new-session [:tracking :ns-trail])))
-            :when ns]
-      (hub-client/update-location session ns dt))))
+ (let [session-tracked (swap! session apply-trackers msg)
+      [old-session-msgs new-session-msgs] (map #(get-in % [:tracking :ns-trail]) '(@session session-tracked))
+      messages-searched (drop (count old-session-msgs) (reverse new-session-msgs))]
+  (doseq [{:keys [ns dt]}
+          messages-searched
+          :when ns]
+    (hub-client/update-location session ns dt))))

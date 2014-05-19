@@ -33,7 +33,8 @@
                  (assoc (ana.jvm/empty-env) :ns (symbol ns)))))
 
 (defn- is-trackeable-msg? [op ns code]
-  (and ns code (not= "load-file" op) (not (re-find #"^clojure\.core/apply clojure.core/require" code)) ))
+  (and ns code (not= "load-file" op)
+       (not (re-find #"^clojure\.core/apply clojure.core/require" code))))
 
 (defn- track-command
   "Add message to supplied tracking."
@@ -73,9 +74,8 @@
 
 (defn track-msg! [msg session]
  (let [session-tracked (swap! session apply-trackers msg)
-      [old-session-msgs new-session-msgs] (map #(get-in % [:tracking :ns-trail]) '(@session session-tracked))
+       [old-session-msgs new-session-msgs] (map #(get-in % [:tracking :ns-trail])
+                                                [@session session-tracked])
       messages-searched (drop (count old-session-msgs) (reverse new-session-msgs))]
-  (doseq [{:keys [ns dt]}
-          messages-searched
-          :when ns]
+  (doseq [{:keys [ns dt]} messages-searched :when ns]
     (hub-client/update-location session ns dt))))

@@ -1,5 +1,6 @@
 (ns cider-spy-nrepl.middleware.sessions
-  (:require [cider-spy-nrepl.middleware.alias :as alias])
+  (:require [cider-spy-nrepl.middleware.alias :as alias]
+            [cider-spy-nrepl.middleware.tooling-session :as tooling])
   (:import [org.joda.time LocalDateTime]))
 
 (def sessions (atom {}))
@@ -17,8 +18,13 @@
    session cannot be created. This is often the case for certain
    nREPL middleware operations such clone and describe.
 
+   Nil will also be returned if the msg concerns CIDER tooling
+   operations. We want to ignore these, see the tooling-session
+   ns for more details.
+
    Calling code should therefore deal with a nil return value."
   [{:keys [session] :as msg}]
   (when session
     (or (get @sessions session)
-        (get (swap! sessions assoc session (new-session msg)) session))))
+        (and (not (tooling/tooling-session? msg))
+             (get (swap! sessions assoc session (new-session msg)) session)))))

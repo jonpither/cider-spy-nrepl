@@ -21,8 +21,6 @@
       {:op "eval"
        :code "(ns clojure.test.mode"})))
 
-(require 'complete.core)
-
   (testing "Non tooling op returns false"
     (is
      (not (tooling-msg?

@@ -57,11 +57,10 @@
 (deftest registration-should-bubble-to-cider
   (spy-harness
    (let [hub-session (atom {:id "fooid"})
-         nrepl-session (atom {:id "fooid"
-                              :transport "a-transport"
+         nrepl-session (atom {:transport "a-transport"
                               :summary-message-id "summary-msg-id"
                               :session-started (LocalDateTime.)})]
-     (>!! hub-chan [hub-session nrepl-session {:op :register :alias "Jon"}])
+     (>!! hub-chan [hub-session nrepl-session {:op :register :alias "Jon" :session-id 1}])
 
      (let [[transport session-id message-id s]
            (first (alts!! [(timeout 2000) cider-chan]))]
@@ -70,7 +69,7 @@
        (is (= (:id @nrepl-session) session-id))
        (is (= (:summary-message-id @nrepl-session) message-id))
 
-       (is (= {:Jon []} (:devs (json/parse-string s true))))))))
+       (is (= {:1 {:alias "Jon" :nses []}} (:devs (json/parse-string s true))))))))
 
 (defn- cider-msg
   "Utility to extract string message sent to CIDER."
@@ -85,13 +84,13 @@
                   {:session-id 1
                    :op :register
                    :alias "Jon"}])
-   (is (= {:Jon []} (:devs (cider-msg cider-chan))))
+   (is (= {:1 {:alias "Jon" :nses []}} (:devs (cider-msg cider-chan))))
    (>!! hub-chan [(atom {:id 2}) (atom {:session-started (LocalDateTime.)})
                   {:session-id 2 :op :register :alias "Dave"}])
-   (is (= {:Jon [] :Dave []} (:devs (cider-msg cider-chan))))
+   (is (= {:1 {:alias "Jon" :nses []} :2 {:alias "Dave" :nses []}} (:devs (cider-msg cider-chan))))
    (>!! hub-chan [(atom {:id 2}) (atom {:session-started (LocalDateTime.)})
                   {:op :unregister}])
-   (is (= {:Jon []} (:devs (cider-msg cider-chan))))))
+   (is (= {:1 {:alias "Jon" :nses []}} (:devs (cider-msg cider-chan))))))
 
 (deftest dev-locations
   (spy-harness
@@ -99,7 +98,7 @@
          nrepl-session (atom {:id 1 :session-started (LocalDateTime.)})]
      (>!! hub-chan [hub-session nrepl-session
                     {:session-id 1 :op :register :alias "Jon"}])
-     (is (= {:Jon []} (:devs (cider-msg cider-chan))))
+     (is (= {:1 {:alias "Jon" :nses []}} (:devs (cider-msg cider-chan))))
      (>!! hub-chan [hub-session nrepl-session
                     {:op :location :alias "Jon" :ns "foo" :dt (java.util.Date.)}])
-     (is (= {:Jon ["foo"]} (:devs (cider-msg cider-chan)))))))
+     (is (= {:1 {:alias "Jon" :nses ["foo"]}} (:devs (cider-msg cider-chan)))))))

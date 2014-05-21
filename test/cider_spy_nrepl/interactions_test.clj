@@ -102,3 +102,14 @@
      (>!! hub-chan [hub-session nrepl-session
                     {:op :location :alias "Jon" :ns "foo" :dt (java.util.Date.)}])
      (is (= {:1 {:alias "Jon" :nses ["foo"]}} (:devs (cider-msg cider-chan)))))))
+
+(deftest change-alias
+  (spy-harness
+   (let [hub-session (atom {})
+         nrepl-session (atom {:id 1 :session-started (LocalDateTime.)})]
+     (>!! hub-chan [hub-session nrepl-session
+                    {:session-id 1 :op :register :alias "Jon"}])
+     (is (= {:1 {:alias "Jon" :nses []}} (:devs (cider-msg cider-chan))))
+     (>!! hub-chan [hub-session nrepl-session
+                    {:session-id 1 :op :register :alias "Jon2"}])
+     (is (= {:1 {:alias "Jon2" :nses []}} (:devs (cider-msg cider-chan)))))))

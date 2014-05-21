@@ -38,7 +38,7 @@
      group]))
 
 ;; TODO, some (.shutdownGracefully group) action
-(defn connect
+(defn ^:dynamic connect
   "Connect to CIDER-SPY-HUB.
    Returns a vector containing a client bootstrap, a group and a channel."
   [host port session]

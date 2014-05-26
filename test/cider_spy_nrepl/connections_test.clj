@@ -1,6 +1,7 @@
 (ns cider-spy-nrepl.connections-test
   (:use [clojure.core.async :only [chan timeout <!! alts!! >! go close!]])
   (:require [clojure.test :refer :all]
+            [cider-spy-nrepl.utils :refer :all]
             [cider-spy-nrepl.hub.server :as hub-server]
             [cider-spy-nrepl.hub.client :as hubc]
             [cider-spy-nrepl.hub.register :as register]
@@ -23,15 +24,6 @@
        ~@forms
        (finally
          (hub-server/shutdown ~server-name)))))
-
-(defn- assert-expected-cider-connection-msgs
-  "Take msg patterns, asserts all accounted for in chan"
-  [c msgs]
-  (let [received-msgs (for [_ msgs]
-                        (first (alts!! [(timeout 2000) c])))]
-    (doseq [m msgs]
-      (is (some (partial re-find (re-pattern m)) (remove nil? received-msgs))
-          (str "Could not find msg: " m)))))
 
 (defmacro test-with-client [session-name alias & forms]
   `(do
@@ -61,7 +53,7 @@
 
        ;; Allow time for connection and registration messages to do a round trip
 
-       (assert-expected-cider-connection-msgs
+       (assert-async-msgs
         ~'cider-chan ["You are connected" "Setting alias on CIDER SPY HUB"])
 
        (let [~'session (get @middleware-sessions/sessions session-id#)

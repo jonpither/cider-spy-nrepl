@@ -1,5 +1,6 @@
 (ns cider-spy-nrepl.middleware.cider-spy-hub-test
-  (:require [cider-spy-nrepl.middleware.cider-spy-hub :refer :all]
+  (:require [cider-spy-nrepl.utils :refer :all]
+            [cider-spy-nrepl.middleware.cider-spy-hub :refer :all]
             [cider-spy-nrepl.middleware.sessions :as sessions]
             [cider-spy-nrepl.middleware.hub-settings :as settings]
             [cider-spy-nrepl.hub.client :as client]
@@ -48,15 +49,6 @@
 
 (use-fixtures :each handler-fixture)
 
-(defn- assert-expected-cider-connection-msgs
-  "Take msg patterns, asserts all accounted for in chan"
-  [msgs]
-  (let [received-msgs (for [_ msgs]
-                        (first (alts!! [(timeout 2000) *transport-chan*])))]
-    (doseq [m msgs]
-      (is (some (partial re-find (re-pattern m)) (remove nil? received-msgs))
-          (str "Could not find msg: " m)))))
-
 (deftest register-hub-buffer-msg
   (testing "Registering the buffer ID for displaying connection messages in CIDER"
     ((wrap-cider-spy-hub handler-fn) {:op "cider-spy-hub-connect"
@@ -69,8 +61,8 @@
     ((wrap-cider-spy-hub handler-fn) {:op "some-random-op"
                                       :session "bob-id"
                                       :transport *transport*})
-    (assert-expected-cider-connection-msgs ["Connecting to SPY HUB"
-                                            "You are connected to the CIDER SPY HUB"])
+    (assert-async-msgs *transport-chan* ["Connecting to SPY HUB"
+                                         "You are connected to the CIDER SPY HUB"])
     (is (first (alts!! [(timeout 2000) *handler-chan*])))))
 
 (deftest re-connect-to-hub
@@ -79,9 +71,9 @@
                                     :session "bob-id"
                                     :transport *transport*})
 
-  (assert-expected-cider-connection-msgs ["SPY HUB connection closed, reconnecting"
-                                          "Connecting to SPY HUB"
-                                          "You are connected to the CIDER SPY HUB"])
+  (assert-async-msgs *transport-chan* ["SPY HUB connection closed, reconnecting"
+                                       "Connecting to SPY HUB"
+                                       "You are connected to the CIDER SPY HUB"])
 
   (is (first (alts!! [(timeout 2000) *handler-chan*]))))
 
@@ -101,8 +93,8 @@
                                       :session "bob-id"
                                       :transport *transport*}))
 
-  (assert-expected-cider-connection-msgs ["Connecting to SPY HUB"
-                                          "You are NOT connected to the CIDER SPY HUB"])
+  (assert-async-msgs *transport-chan* ["Connecting to SPY HUB"
+                                       "You are NOT connected to the CIDER SPY HUB"])
 
   (is (first (alts!! [(timeout 2000) *handler-chan*]))))
 
@@ -112,7 +104,7 @@
                                       :session "bob-id"
                                       :transport *transport*}))
 
-  (assert-expected-cider-connection-msgs ["No CIDER-SPY-HUB host and port specified."])
+  (assert-async-msgs *transport-chan* ["No CIDER-SPY-HUB host and port specified."])
 
   (is (first (alts!! [(timeout 2000) *handler-chan*]))))
 
@@ -125,4 +117,5 @@
                                         :session "bob-id"
                                         :transport *transport*}))
 
-    (assert-expected-cider-connection-msgs ["Setting alias on CIDER SPY HUB to foobar"])))
+    (assert-async-msgs *transport-chan* ["Setting alias on CIDER SPY HUB to foobar"])
+    (assert-async-msgs *hub-channel-chan* [":op :register"])))

@@ -24,6 +24,15 @@
        (finally
          (hub-server/shutdown ~server-name)))))
 
+(defn- assert-expected-cider-connection-msgs
+  "Take msg patterns, asserts all accounted for in chan"
+  [c msgs]
+  (let [received-msgs (for [_ msgs]
+                        (first (alts!! [(timeout 2000) c])))]
+    (doseq [m msgs]
+      (is (some (partial re-find (re-pattern m)) (remove nil? received-msgs))
+          (str "Could not find msg: " m)))))
+
 (defmacro test-with-client [session-name alias & forms]
   `(do
      (let [~'cider-chan (chan)
@@ -50,9 +59,10 @@
            :session session-id#
            :transport transport#}))
 
-       ;; Allow time for registration message to do a round trip
+       ;; Allow time for connection and registration messages to do a round trip
 
-       (is (first (alts!! [~'cider-chan (timeout 1000)])))
+       (assert-expected-cider-connection-msgs
+        ~'cider-chan ["You are connected" "Setting alias on CIDER SPY HUB"])
 
        (let [~'session (get @middleware-sessions/sessions session-id#)
              ~session-name ~'session]

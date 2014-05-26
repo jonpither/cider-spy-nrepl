@@ -8,6 +8,11 @@
             [clojure.test :refer :all])
   (:import [java.net ConnectException]))
 
+(def ^:dynamic *handler-chan*)
+(def ^:dynamic *transport*)
+(def ^:dynamic *transport-chan*)
+(def ^:dynamic *hub-channel-chan*)
+
 (defprotocol CanBeOpen
   (isOpen [this])
   (writeAndFlush [this m])
@@ -17,13 +22,10 @@
   CanBeOpen
   (isOpen [this] open?)
   (writeAndFlush [this m]
+    (go (>! *hub-channel-chan* m))
     this)
   (sync [this]
     this))
-
-(def ^:dynamic *handler-chan*)
-(def ^:dynamic *transport*)
-(def ^:dynamic *transport-chan*)
 
 (defn- handler-fn [msg]
   (go (>! *handler-chan* msg)))
@@ -31,10 +33,10 @@
 (defn- handler-fixture [f]
   (binding [*handler-chan* (chan)
             *transport-chan* (chan)
+            *hub-channel-chan* (chan)
             *transport* (reify transport/Transport
                           (send [_ r]
-                            (go
-                              (>! *transport-chan* (:value r)))))
+                            (go (>! *transport-chan* (:value r)))))
             client/connect (constantly [nil nil (MockChannel. true)])
             settings/hub-host-and-port (constantly ["some-host" 999])]
 
@@ -52,7 +54,8 @@
   (let [received-msgs (for [_ msgs]
                         (first (alts!! [(timeout 2000) *transport-chan*])))]
     (doseq [m msgs]
-      (is (some (partial re-find (re-pattern m)) received-msgs)))))
+      (is (some (partial re-find (re-pattern m)) (remove nil? received-msgs))
+          (str "Could not find msg: " m)))))
 
 (deftest register-hub-buffer-msg
   (testing "Registering the buffer ID for displaying connection messages in CIDER"
@@ -112,3 +115,14 @@
   (assert-expected-cider-connection-msgs ["No CIDER-SPY-HUB host and port specified."])
 
   (is (first (alts!! [(timeout 2000) *handler-chan*]))))
+
+(deftest register-alias-on-hub
+  (testing "Vanilla case of an existing connection and session, user just wants to change their alias"
+    (swap! sessions/sessions assoc "bob-id" (atom {:hub-client [nil nil (MockChannel. true)]}))
+    (binding [settings/hub-host-and-port (constantly nil)]
+      ((wrap-cider-spy-hub handler-fn) {:op "cider-spy-hub-alias"
+                                        :alias "foobar"
+                                        :session "bob-id"
+                                        :transport *transport*}))
+
+    (assert-expected-cider-connection-msgs ["Setting alias on CIDER SPY HUB to foobar"])))

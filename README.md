@@ -14,9 +14,8 @@ Communicate and track fellow REPL hackers by running a hub:
 
 ## TODO
 
-Need a ping/pong to test the round loop
-Handle server going down - clients become orphaned and nrepl needs bouncing.
-Uses clojure.tools.analyzer to filter multiple forms in code
+Need a ping/pong from client to test the round loop
+Warn if changing alias but no connection
 
 # License
 

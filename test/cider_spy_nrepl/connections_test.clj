@@ -1,7 +1,7 @@
 (ns cider-spy-nrepl.connections-test
   (:use [clojure.core.async :only [chan timeout <!! alts!! >! go close!]])
   (:require [clojure.test :refer :all]
-            [cider-spy-nrepl.utils :refer :all]
+            [cider-spy-nrepl.test-utils :refer :all]
             [cider-spy-nrepl.hub.server :as hub-server]
             [cider-spy-nrepl.hub.client :as hubc]
             [cider-spy-nrepl.hub.register :as register]

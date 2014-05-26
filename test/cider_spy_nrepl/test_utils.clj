@@ -1,4 +1,4 @@
-(ns cider-spy-nrepl.utils
+(ns cider-spy-nrepl.test-utils
   (:require [clojure.test :refer :all]
             [clojure.core.async :refer [chan timeout >!! <!! buffer alts!! go-loop >! close! go]]))
 

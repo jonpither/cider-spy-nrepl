@@ -50,9 +50,11 @@
 (defn- handle-register-hub-buffer-msg
   "We register the buffer in EMACS used for displaying connection information
    about the CIDER-SPY-HUB."
-  [msg]
+  [{:keys [id hub-alias] :as msg}]
   (when-let [session (sessions/session! msg)]
-    (swap! session assoc :hub-connection-buffer-id (:id msg))))
+    (swap! session assoc :hub-connection-buffer-id (:id msg))
+    (when hub-alias
+      (swap! session assoc :hub-alias hub-alias))))
 
 (defn- handle-change-hub-alias
   "Change alias in CIDER-SPY-HUB."

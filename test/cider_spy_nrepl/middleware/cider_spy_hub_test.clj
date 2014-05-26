@@ -1,5 +1,5 @@
 (ns cider-spy-nrepl.middleware.cider-spy-hub-test
-  (:require [cider-spy-nrepl.utils :refer :all]
+  (:require [cider-spy-nrepl.test-utils :refer :all]
             [cider-spy-nrepl.middleware.cider-spy-hub :refer :all]
             [cider-spy-nrepl.middleware.sessions :as sessions]
             [cider-spy-nrepl.middleware.hub-settings :as settings]
@@ -119,3 +119,16 @@
 
     (assert-async-msgs *transport-chan* ["Setting alias on CIDER SPY HUB to foobar"])
     (assert-async-msgs *hub-channel-chan* [":op :register"])))
+
+(deftest prepare-alias-on-hub-through-connect-message
+  ((wrap-cider-spy-hub handler-fn) {:op "cider-spy-hub-connect"
+                                    :hub-alias "foobar2"
+                                    :session "bob-id"
+                                    :transport *transport*})
+  ((wrap-cider-spy-hub handler-fn) {:op "some-random-op"
+                                    :session "bob-id"
+                                    :transport *transport*})
+
+  (assert-async-msgs *transport-chan* ["Connecting to SPY HUB"
+                                       "You are connected to the CIDER SPY HUB"
+                                       "Setting alias on CIDER SPY HUB to foobar2"]))

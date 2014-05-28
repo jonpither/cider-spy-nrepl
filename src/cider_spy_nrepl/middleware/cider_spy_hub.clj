@@ -66,13 +66,9 @@
 (defn wrap-cider-spy-hub
   [handler]
   (fn [{:keys [op] :as msg}]
-    (condp = op
-      "cider-spy-hub-connect"
-      (handle-register-hub-buffer-msg msg)
-
-      "cider-spy-hub-alias"
-      (handle-change-hub-alias msg)
-
+    (case op
+      "cider-spy-hub-connect" (handle-register-hub-buffer-msg msg)
+      "cider-spy-hub-alias" (handle-change-hub-alias msg)
       (do
         (connect-to-hub! msg)
         (handler msg)))))

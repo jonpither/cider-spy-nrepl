@@ -22,7 +22,7 @@
 (defn- track-namespace
   "Add message to supplied tracking."
   [tracking {:keys [ns] :as msg}]
-  (add-to-ns-trail tracking (:ns msg)))
+  (add-to-ns-trail tracking ns))
 
 (defn- get-ast [ns code-str]
   (binding [ana/macroexpand-1 ana.jvm/macroexpand-1

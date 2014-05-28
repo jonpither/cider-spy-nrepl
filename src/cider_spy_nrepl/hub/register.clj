@@ -17,15 +17,20 @@
   [session]
   (swap! sessions dissoc (:id @session)))
 
-(defn update-location!
-  "Update a users location."
-  [session ns dt]
-  (swap! session update-in [:tracking :ns-trail] conj {:dt (LocalDateTime. dt) :ns ns}))
+(defn update!
+  "Updates the session with the given function."
+  [session f & args]
+  (swap! session #(apply f % args)))
 
 (defn aliases
   "Return aliases of registered sessions."
   []
   (map (comp :alias deref) (vals @sessions)))
+
+(defn channels
+  "Return channels of registered sessions."
+  []
+  (map (comp :channel deref) (vals @sessions)))
 
 (defn users
   "Return a map of users and the location of where they currently are."

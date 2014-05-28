@@ -31,7 +31,7 @@
   "Cider Spy Middleware."
   [handler]
   (fn [{:keys [op] :as msg}]
-    (condp = op
+    (case op
       "cider-spy-summary" (handle-summary msg)
       "cider-spy-reset" (handle-reset msg)
       (wrap-tracking handler msg))))

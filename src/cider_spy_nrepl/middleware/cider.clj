@@ -2,6 +2,7 @@
   (:require [clojure.tools.nrepl.transport :as transport]
             [clojure.tools.nrepl.misc :refer [response-for]]
             [cider-spy-nrepl.middleware.summary-builder :as summary-builder]
+            [cider-spy-nrepl.middleware.sessions :as sessions]
             [cheshire.core :as json]))
 
 (defn ^:dynamic send-back-to-cider! [transport session-id message-id s]
@@ -20,4 +21,4 @@
 (defn update-session-for-summary-msg!
   "Update the session with SUMMARY-MESSAGE-ID."
   [session {:keys [id]}]
-  (swap! session assoc :summary-message-id id))
+  (sessions/update! session assoc :summary-message-id id))

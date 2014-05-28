@@ -25,3 +25,6 @@
    A location is a namespace and a timestamp."
   [session ns ts]
   (send! (:hub-client @session) :location {:ns ns :dt (.toDate ts)}))
+
+(defn send-msg [session recipient message]
+  (send! (:hub-client @session) :message {:message message :recipient recipient}))

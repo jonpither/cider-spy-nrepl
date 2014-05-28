@@ -22,3 +22,7 @@
   (log/debug (format "Location change: %s" alias))
   (register/update! session assoc-in [:registrations] registered)
   (cider/update-spy-buffer-summary! session))
+
+(defmethod process :message [s {:keys [message] :as msg}]
+  (log/debug (format "Message received: %s" message))
+  (cider/send-connected-msg! s message))

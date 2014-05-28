@@ -3,36 +3,33 @@
   (:require [cider-spy-nrepl.hub.client-facade :as hub-client]
             [cider-spy-nrepl.middleware.sessions :as sessions]
             [cider-spy-nrepl.middleware.hub-settings :as settings]
+            [cider-spy-nrepl.middleware.cider :as cider]
             [clojure.tools.nrepl.misc :refer [response-for]]
             [clojure.tools.nrepl.middleware :refer [set-descriptor!]]
             [clojure.tools.nrepl.transport :as transport]
             [clojure.tools.logging :as log]))
 
-(defn- send-connected-msg!
-  "Send a message back to CIDER-SPY pertaining to CIDER-SPY-HUB connectivity.
-   The correct ID is used as to ensure the message shows up in the relevant
-   CIDER-SPY buffer."
-  [{:keys [transport] :as msg} s]
-  (let [{:keys [hub-connection-buffer-id]} @(sessions/session! msg)
-        msg (assoc msg :id hub-connection-buffer-id)]
-    (transport/send transport (response-for msg :value (str "CIDER-SPY-NREPL: " s)))))
-
 (defn- register
   "Register the alias for the users session on the CIDER-SPY-HUB."
   [session msg]
-  (send-connected-msg! msg (format "Setting alias on CIDER SPY HUB to %s." (:hub-alias @session)))
+  (cider/send-connected-msg! session (format "Setting alias on CIDER SPY HUB to %s." (:hub-alias @session)))
   (hub-client/register session))
 
 (defn- connect
   "Connect to the CIDER-SPY-HUB.
    Once connected, we attempt to register the user with an alias."
   [session msg hub-host hub-port]
+<<<<<<< HEAD
   (send-connected-msg! msg (format "Connecting to SPY HUB %s:%s." hub-host hub-port))
   (if (:hub-client (sessions/update! session assoc :hub-client (hub-client/connect session hub-host hub-port)))
+=======
+  (cider/send-connected-msg! session (format "Connecting to SPY HUB %s:%s." hub-host hub-port))
+  (if (:hub-client (swap! session assoc :hub-client (hub-client/connect session hub-host hub-port)))
+>>>>>>> WIP for message sending
     (do
-      (send-connected-msg! msg "You are connected to the CIDER SPY HUB.")
+      (cider/send-connected-msg! session "You are connected to the CIDER SPY HUB.")
       (register session msg))
-    (send-connected-msg! msg "You are NOT connected to the CIDER SPY HUB.")))
+    (cider/send-connected-msg! session "You are NOT connected to the CIDER SPY HUB.")))
 
 (defn- connect-to-hub! [msg]
   (when-let [session (sessions/session! msg)]
@@ -43,9 +40,9 @@
         (if-let [[hub-host hub-port] (settings/hub-host-and-port)]
           (do
             (when closed?
-              (send-connected-msg! msg "SPY HUB connection closed, reconnecting"))
+              (cider/send-connected-msg! session "SPY HUB connection closed, reconnecting"))
             (connect session msg hub-host hub-port))
-          (send-connected-msg! msg "No CIDER-SPY-HUB host and port specified."))))))
+          (cider/send-connected-msg! session "No CIDER-SPY-HUB host and port specified."))))))
 
 (defn- handle-register-hub-buffer-msg
   "We register the buffer in EMACS used for displaying connection information
@@ -63,12 +60,21 @@
     (sessions/update! session assoc :hub-alias alias)
     (register session msg)))
 
+(defn- handle-send-msg
+  "Send a message to a developer registered on the CIDER-SPY-HUB."
+  [{:keys [recipient message] :as msg}]
+  (when-let [session (sessions/session! msg)]
+    (cider/send-connected-msg! session "Sending message to recipient on CIDER SPY HUB.")
+    (hub-client/send-msg session recipient message)))
+
 (defn wrap-cider-spy-hub
   [handler]
   (fn [{:keys [op] :as msg}]
     (case op
       "cider-spy-hub-connect" (handle-register-hub-buffer-msg msg)
       "cider-spy-hub-alias" (handle-change-hub-alias msg)
+      "cider-spy-hub-send-msg" (handle-send-msg msg)
+
       (do
         (connect-to-hub! msg)
         (handler msg)))))

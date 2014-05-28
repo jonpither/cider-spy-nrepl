@@ -10,10 +10,14 @@
     (.write ctx (prn-str msg))
     (.flush ctx)))
 
+(defn- send-to-nrepl [c msg]
+  (when c
+    (.writeAndFlush c (prn-str msg))))
+
 (defn ^:dynamic broadcast-msg! [op & {:as msg}]
   (let [msg (assoc msg :op op)]
     (doseq [c (register/channels) :when c]
-      (.writeAndFlush c (prn-str msg)))))
+      (send-to-nrepl c msg))))
 
 (defmulti process (fn [_ _ request] (-> request :op keyword)))
 
@@ -31,6 +35,9 @@
 (defmethod process :location [_ session {:keys [ns dt] :as request}]
   (register/update! session update-in [:tracking :ns-trail] conj {:dt dt :ns ns})
   (broadcast-msg! :location :alias (:alias @session) :registered (register/users)))
+
+(defmethod process :message [_ session {:keys [message recipient]}]
+  (send-to-nrepl (:channel @(@register/sessions recipient)) {:op :message  :message message}))
 
 (defn unregister! [session]
   (process nil session {:op :unregister}))

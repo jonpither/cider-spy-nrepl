@@ -22,3 +22,12 @@
   "Update the session with SUMMARY-MESSAGE-ID."
   [session {:keys [id]}]
   (sessions/update! session assoc :summary-message-id id))
+
+(defn send-connected-msg!
+  "Send a message back to CIDER-SPY pertaining to CIDER-SPY-HUB connectivity.
+   The correct ID is used as to ensure the message shows up in the relevant
+   CIDER-SPY buffer."
+  [session s]
+  (let [{:keys [id hub-connection-buffer-id transport]} @session]
+    (transport/send transport (response-for {:session id :id hub-connection-buffer-id}
+                                            :value (str "CIDER-SPY-NREPL: " s)))))

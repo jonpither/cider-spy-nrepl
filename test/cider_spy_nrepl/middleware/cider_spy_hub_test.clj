@@ -66,10 +66,10 @@
     (is (first (alts!! [(timeout 2000) *handler-chan*])))))
 
 (deftest re-connect-to-hub
-  (swap! sessions/sessions assoc "bob-id" (atom {:hub-client [nil nil (MockChannel. false)]}))
+  (swap! sessions/sessions assoc "bob-id" (atom {:hub-client [nil nil (MockChannel. false)]
+                                                 :transport *transport*}))
   ((wrap-cider-spy-hub handler-fn) {:op "some-random-op"
-                                    :session "bob-id"
-                                    :transport *transport*})
+                                    :session "bob-id"})
 
   (assert-async-msgs *transport-chan* ["SPY HUB connection closed, reconnecting"
                                        "Connecting to SPY HUB"
@@ -110,12 +110,12 @@
 
 (deftest register-alias-on-hub
   (testing "Vanilla case of an existing connection and session, user just wants to change their alias"
-    (swap! sessions/sessions assoc "bob-id" (atom {:hub-client [nil nil (MockChannel. true)]}))
+    (swap! sessions/sessions assoc "bob-id" (atom {:hub-client [nil nil (MockChannel. true)]
+                                                   :transport *transport*}))
     (binding [settings/hub-host-and-port (constantly nil)]
       ((wrap-cider-spy-hub handler-fn) {:op "cider-spy-hub-alias"
                                         :alias "foobar"
-                                        :session "bob-id"
-                                        :transport *transport*}))
+                                        :session "bob-id"}))
 
     (assert-async-msgs *transport-chan* ["Setting alias on CIDER SPY HUB to foobar"])
     (assert-async-msgs *hub-channel-chan* [":op :register"])))
@@ -126,8 +126,7 @@
                                     :session "bob-id"
                                     :transport *transport*})
   ((wrap-cider-spy-hub handler-fn) {:op "some-random-op"
-                                    :session "bob-id"
-                                    :transport *transport*})
+                                    :session "bob-id"})
 
   (assert-async-msgs *transport-chan* ["Connecting to SPY HUB"
                                        "You are connected to the CIDER SPY HUB"

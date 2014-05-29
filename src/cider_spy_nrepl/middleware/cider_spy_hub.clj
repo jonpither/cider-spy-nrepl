@@ -19,13 +19,8 @@
   "Connect to the CIDER-SPY-HUB.
    Once connected, we attempt to register the user with an alias."
   [session msg hub-host hub-port]
-<<<<<<< HEAD
-  (send-connected-msg! msg (format "Connecting to SPY HUB %s:%s." hub-host hub-port))
-  (if (:hub-client (sessions/update! session assoc :hub-client (hub-client/connect session hub-host hub-port)))
-=======
   (cider/send-connected-msg! session (format "Connecting to SPY HUB %s:%s." hub-host hub-port))
-  (if (:hub-client (swap! session assoc :hub-client (hub-client/connect session hub-host hub-port)))
->>>>>>> WIP for message sending
+  (if (:hub-client (sessions/update! session assoc :hub-client (hub-client/connect session hub-host hub-port)))
     (do
       (cider/send-connected-msg! session "You are connected to the CIDER SPY HUB.")
       (register session msg))

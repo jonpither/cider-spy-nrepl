@@ -82,5 +82,6 @@
 (set-descriptor!
  #'wrap-cider-spy-hub
  {:handles
-  {"spy-hub-connect"
-   {:doc "Connects to CIDER SPY HUB."}}})
+  {"cider-spy-hub-connect" {:doc "Connects to CIDER SPY HUB."}
+   "cider-spy-hub-alias" {:doc "Set CIDER SPY HUB alias."}
+   "cider-spy-hub-send-msg" {:doc "Send a message via CIDER SPY HUB."}}})

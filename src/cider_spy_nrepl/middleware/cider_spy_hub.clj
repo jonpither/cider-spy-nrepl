@@ -28,7 +28,7 @@
    Once connected, we attempt to register the user with an alias."
   [session msg hub-host hub-port]
   (send-connected-msg! msg (format "Connecting to SPY HUB %s:%s." hub-host hub-port))
-  (if (:hub-client (swap! session assoc :hub-client (hub-client/connect session hub-host hub-port)))
+  (if (:hub-client (sessions/update! session assoc :hub-client (hub-client/connect session hub-host hub-port)))
     (do
       (send-connected-msg! msg "You are connected to the CIDER SPY HUB.")
       (register session msg))
@@ -52,27 +52,23 @@
    about the CIDER-SPY-HUB."
   [{:keys [id hub-alias] :as msg}]
   (when-let [session (sessions/session! msg)]
-    (swap! session assoc :hub-connection-buffer-id (:id msg))
+    (sessions/update! session assoc :hub-connection-buffer-id (:id msg))
     (when hub-alias
-      (swap! session assoc :hub-alias hub-alias))))
+      (sessions/update! session assoc :hub-alias hub-alias))))
 
 (defn- handle-change-hub-alias
   "Change alias in CIDER-SPY-HUB."
   [{:keys [alias] :as msg}]
   (when-let [session (sessions/session! msg)]
-    (swap! session assoc :hub-alias alias)
+    (sessions/update! session assoc :hub-alias alias)
     (register session msg)))
 
 (defn wrap-cider-spy-hub
   [handler]
   (fn [{:keys [op] :as msg}]
-    (condp = op
-      "cider-spy-hub-connect"
-      (handle-register-hub-buffer-msg msg)
-
-      "cider-spy-hub-alias"
-      (handle-change-hub-alias msg)
-
+    (case op
+      "cider-spy-hub-connect" (handle-register-hub-buffer-msg msg)
+      "cider-spy-hub-alias" (handle-change-hub-alias msg)
       (do
         (connect-to-hub! msg)
         (handler msg)))))

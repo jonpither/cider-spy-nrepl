@@ -28,3 +28,8 @@
     (or (get @sessions session)
         (and (not (tooling/tooling-session? msg))
              (get (swap! sessions assoc session (new-session msg)) session)))))
+
+(defn update!
+  "Updates the session with the given function."
+  [session f & args]
+  (swap! session #(apply f % args)))

@@ -13,10 +13,13 @@
   (let [seconds (.getSeconds (Seconds/secondsBetween (LocalDateTime. most-recent-visit) now))]
     (double (/ (time-weight seconds) 100))))
 
-(defn top-nses [now ns-trail]
+(defn nses-with-score [now ns-trail]
   (->> ns-trail
        (map #(hash-map (:ns %) (score now (:dt %))))
-       (apply merge-with +)
+       (apply merge-with +)))
+
+(defn top-nses [now ns-trail]
+  (->> (nses-with-score now ns-trail)
        (sort-by val)
        (reverse)
        (map key)))

@@ -15,7 +15,7 @@
   "Reset CIDER-SPY tracking."
   [msg]
   (when-let [session (sessions/session! msg)]
-    (swap! session dissoc :tracking)
+    (sessions/update! session dissoc :tracking)
     (cider/update-spy-buffer-summary! session)))
 
 (defn- wrap-tracking
@@ -31,7 +31,7 @@
   "Cider Spy Middleware."
   [handler]
   (fn [{:keys [op] :as msg}]
-    (condp = op
+    (case op
       "cider-spy-summary" (handle-summary msg)
       "cider-spy-reset" (handle-reset msg)
       (wrap-tracking handler msg))))

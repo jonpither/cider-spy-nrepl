@@ -25,4 +25,4 @@
 
 (defmethod process :message [s {:keys [message] :as msg}]
   (log/debug (format "Message received: %s" message))
-  (cider/send-connected-msg! s message))
+  (cider/send-connected-msg! s (format "Message Received: \n\n%s\n\n" message)))

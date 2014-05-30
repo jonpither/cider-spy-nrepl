@@ -59,7 +59,7 @@
   "Send a message to a developer registered on the CIDER-SPY-HUB."
   [{:keys [recipient message] :as msg}]
   (when-let [session (sessions/session! msg)]
-    (cider/send-connected-msg! session "Sending message to recipient on CIDER SPY HUB.")
+    (cider/send-connected-msg! session (format "Sending message to recipient %s on CIDER SPY HUB." recipient))
     (hub-client/send-msg session recipient message)))
 
 (defn wrap-cider-spy-hub

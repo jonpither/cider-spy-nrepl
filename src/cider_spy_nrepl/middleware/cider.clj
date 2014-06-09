@@ -31,3 +31,11 @@
   (let [{:keys [id hub-connection-buffer-id transport]} @session]
     (transport/send transport (response-for {:session id :id hub-connection-buffer-id}
                                             :value (str "CIDER-SPY-NREPL: " s)))))
+
+(defn send-received-msg!
+  "Send a message back to CIDER-SPY informing that a msg has been received
+   from another developer on the HUB."
+  [session s]
+  (let [{:keys [id hub-connection-buffer-id transport]} @session]
+    (transport/send transport (response-for {:session id :id hub-connection-buffer-id}
+                                            :msg s))))

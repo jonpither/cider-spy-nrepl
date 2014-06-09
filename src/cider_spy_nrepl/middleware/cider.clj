@@ -5,9 +5,14 @@
             [cider-spy-nrepl.middleware.sessions :as sessions]
             [cheshire.core :as json]))
 
-(defn ^:dynamic send-back-to-cider! [transport session-id message-id s]
+(defn update-session-for-summary-msg!
+  "Update the session with SUMMARY-MESSAGE-ID."
+  [session {:keys [id]}]
+  (sessions/update! session assoc :summary-message-id id))
+
+(defn ^:dynamic send-back-to-cider! [transport session-id message-id & opts]
   (transport/send transport
-                  (response-for {:session session-id :id message-id} :value s)))
+                  (apply response-for {:session session-id :id message-id} opts)))
 
 (defn update-spy-buffer-summary!
   "Send this string back to the users CIDER SPY buffer.
@@ -16,12 +21,7 @@
   [session]
   (let [summary (summary-builder/summary @session)
         {:keys [id summary-message-id transport]} @session]
-    (send-back-to-cider! transport id summary-message-id (json/encode summary))))
-
-(defn update-session-for-summary-msg!
-  "Update the session with SUMMARY-MESSAGE-ID."
-  [session {:keys [id]}]
-  (sessions/update! session assoc :summary-message-id id))
+    (send-back-to-cider! transport id summary-message-id :value (json/encode summary))))
 
 (defn send-connected-msg!
   "Send a message back to CIDER-SPY pertaining to CIDER-SPY-HUB connectivity.
@@ -29,13 +29,11 @@
    CIDER-SPY buffer."
   [session s]
   (let [{:keys [id hub-connection-buffer-id transport]} @session]
-    (transport/send transport (response-for {:session id :id hub-connection-buffer-id}
-                                            :value (str "CIDER-SPY-NREPL: " s)))))
+    (send-back-to-cider! transport id hub-connection-buffer-id :value (str "CIDER-SPY-NREPL: " s))))
 
 (defn send-received-msg!
   "Send a message back to CIDER-SPY informing that a msg has been received
    from another developer on the HUB."
   [session s]
   (let [{:keys [id hub-connection-buffer-id transport]} @session]
-    (transport/send transport (response-for {:session id :id hub-connection-buffer-id}
-                                            :msg s))))
+    (send-back-to-cider! transport id hub-connection-buffer-id :msg s)))

@@ -37,7 +37,8 @@
   (broadcast-msg! :location :alias (:alias @session) :registered (register/users)))
 
 (defmethod process :message [_ session {:keys [message recipient]}]
-  (send-to-nrepl (:channel @(@register/sessions recipient)) {:op :message  :message message}))
+  (send-to-nrepl (:channel @(@register/sessions recipient))
+                 {:op :message :message message :from (:alias @session)}))
 
 (defn unregister! [session]
   (process nil session {:op :unregister}))

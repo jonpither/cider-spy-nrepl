@@ -23,6 +23,6 @@
   (register/update! session assoc-in [:registrations] registered)
   (cider/update-spy-buffer-summary! session))
 
-(defmethod process :message [s {:keys [message] :as msg}]
-  (log/debug (format "Message received: %s" message))
-  (cider/send-received-msg! s message))
+(defmethod process :message [s {:keys [message from] :as msg}]
+  (log/debug (format "Message received from %s: %s" from message))
+  (cider/send-received-msg! s from message))

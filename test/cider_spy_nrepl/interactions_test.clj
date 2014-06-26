@@ -19,8 +19,8 @@
   (go-loop []
     (when-let [[session msg] (<! nrepl-server-chan)]
       (binding [cider/send-back-to-cider!
-                (fn [transport session-id message-id s]
-                  (go (>! cider-chan [transport session-id message-id s])))]
+                (fn [transport session-id message-id & {:as opts}]
+                  (go (>! cider-chan [transport session-id message-id opts])))]
         (client-events/process session msg))
       (recur))
     (close! cider-chan)))
@@ -62,21 +62,21 @@
                               :session-started (LocalDateTime.)})]
      (>!! hub-chan [hub-session nrepl-session {:op :register :alias "Jon" :session-id 1}])
 
-     (let [[transport session-id message-id s]
+     (let [[transport session-id message-id {:keys [value] :as fo}]
            (first (alts!! [(timeout 2000) cider-chan]))]
 
        (is (= (:transport @nrepl-session) transport))
        (is (= (:id @nrepl-session) session-id))
        (is (= (:summary-message-id @nrepl-session) message-id))
 
-       (is (= {:1 {:alias "Jon" :nses []}} (:devs (json/parse-string s true))))))))
+       (is (= {:1 {:alias "Jon" :nses []}} (:devs (json/parse-string value true))))))))
 
 (defn- cider-msg
   "Utility to extract string message sent to CIDER."
   [cider-chan]
-  (let [[_ _ _ s]
+  (let [[_ _ _ {:keys [value]}]
         (first (alts!! [(timeout 4000) cider-chan]))]
-    (json/parse-string s true)))
+    (json/parse-string value true)))
 
 (deftest user-registrations
   (spy-harness

@@ -1,7 +1,6 @@
 (ns cider-spy-nrepl.hub.client-facade
   (:require [cider-spy-nrepl.hub.client :as hubc]
-            [cider-spy-nrepl.hub.client-events :as client-events]
-            [clojure.tools.logging :as log]))
+            [cider-spy-nrepl.hub.client-events :as client-events]))
 
 (defn- send!
   [bootstrap op msg]
@@ -14,14 +13,14 @@
     (send! hub-client :register {:alias hub-alias :session-id id})))
 
 (defn connect
-  "Connect to the hub."
+  "Connect to the hub.
+   If a connection cannot be returned, then nil will be passed through to the callback."
   [session host port callback-fn]
   (future
     (when-let [hub-client
                (try
                  (hubc/connect host port session)
                  (catch java.net.SocketException e
-                   (log/warn "Couldn't connect to HUB." host port)
                    nil))]
       (callback-fn hub-client))))
 

@@ -6,8 +6,7 @@
             [cider-spy-nrepl.middleware.cider :as cider]
             [clojure.tools.nrepl.misc :refer [response-for]]
             [clojure.tools.nrepl.middleware :refer [set-descriptor!]]
-            [clojure.tools.nrepl.transport :as transport]
-            [clojure.tools.logging :as log]))
+            [clojure.tools.nrepl.transport :as transport]))
 
 (defn- register
   "Register the alias for the users session on the CIDER-SPY-HUB."

@@ -4,17 +4,11 @@
   (:import [java.util UUID]
            [org.joda.time LocalDateTime]))
 
-(defn- send-response! [ctx op & {:as msg}]
-  (let [msg (assoc msg :op op)]
-    (log/info "Sending response:" msg)
-    (.write ctx (prn-str msg))
-    (.flush ctx)))
-
 (defn- send-to-nrepl [c msg]
   (when c
     (.writeAndFlush c (prn-str msg))))
 
-(defn ^:dynamic broadcast-msg! [op & {:as msg}]
+(defn- broadcast-msg! [op & {:as msg}]
   (let [msg (assoc msg :op op)]
     (doseq [c (register/channels) :when c]
       (send-to-nrepl c msg))))

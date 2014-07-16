@@ -53,7 +53,7 @@
   "Change alias in CIDER-SPY-HUB."
   [{:keys [alias] :as msg} session]
   (sessions/update! session assoc :hub-alias alias)
-  (register session msg))
+  (register session))
 
 (defn- handle-send-msg
   "Send a message to a developer registered on the CIDER-SPY-HUB."

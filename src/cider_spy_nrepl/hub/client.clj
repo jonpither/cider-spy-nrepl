@@ -42,10 +42,8 @@
   "Connect to CIDER-SPY-HUB.
    Returns a vector containing a client bootstrap, a group and a channel."
   [host port session]
-  (try
-    (let [[b group] (client-bootstrap session)]
-      [b group (.channel (.sync (.connect b (InetSocketAddress. host port))))])
-    (catch ConnectException e (println (format "Could not connect to %s:%s, sorry." host port)))))
+  (let [[b group] (client-bootstrap session)]
+    [b group (.channel (.sync (.connect b (InetSocketAddress. host port))))]))
 
 (defn shutdown!
   "Shut down the netty Client Bootstrap

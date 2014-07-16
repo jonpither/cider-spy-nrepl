@@ -4,112 +4,96 @@
             [cider-spy-nrepl.hub.server-events :as server-events]
             [cider-spy-nrepl.hub.client-events :as client-events]
             [cider-spy-nrepl.middleware.cider :as cider]
+            [clojure.tools.nrepl.transport :as transport]
             [cider-spy-nrepl.hub.register]
-            [cheshire.core :as json])
-  (:import [org.joda.time LocalDateTime]))
+            [cheshire.core :as json]
+            [clojure.edn])
+  (:import [org.joda.time LocalDateTime]
+           [io.netty.channel ChannelHandlerContext]))
 
 ;; TODO - this bypasses all the handler code which is fair enough. Perhaps need a dedicated test?
 ;; TODO - wider scope so that everything is client initiated rather than triggering server events
 
-(defn- run-nrepl-server-stub
-  "Process messages on NREPL-SERVER-CHAN delegating to CIDER-NREPL server.
-   When the server raises a response We stub out a function as to
-   pass a message on to CIDER-CHAN, as though CIDER were receiving the msg."
-  [nrepl-server-chan cider-chan]
-  (go-loop []
-    (when-let [[session msg] (<! nrepl-server-chan)]
-      (binding [cider/send-back-to-cider!
-                (fn [transport session-id message-id & {:as opts}]
-                  (go (>! cider-chan [transport session-id message-id opts])))]
-        (client-events/process session msg))
-      (recur))
-    (close! cider-chan)))
-
-(defn- run-hub-stub
-  "Process messages on HUB-CHAN delegating to CIDER-SPY server.
-   When the server raises a response We stub out a function as to
-   pass a message on to NREPL-SERVER-CHAN, bypassing Netty."
-  [hub-chan nrepl-server-chan]
-  (go-loop []
-    (when-let [[hub-session nrepl-session m] (<! hub-chan)]
-      (binding [server-events/broadcast-msg!
-                (fn [op & {:as msg}]
-                  (go (>! nrepl-server-chan [nrepl-session (assoc msg :op op)])))]
-        (server-events/process nil hub-session m))
-      (recur))
-    (close! nrepl-server-chan)))
-
 (defmacro spy-harness [& body]
-  `(let [~'hub-chan (chan)
-         ~'nrepl-server-chan (chan)
-         ~'cider-chan (chan)]
+  `(do
      (reset! cider-spy-nrepl.hub.register/sessions {})
+     ~@body))
 
-     (try
-       (run-hub-stub ~'hub-chan ~'nrepl-server-chan)
-       (run-nrepl-server-stub ~'nrepl-server-chan ~'cider-chan)
+(defn- end-to-end-fixture []
+  (let [nrepl-server-chan (chan)
+        cider-chan (chan)
+        hub-chan (chan)
+        hub-session (atom {:channel (reify ChannelHandlerContext
+                                      (writeAndFlush [this msg]
+                                        (go (>! nrepl-server-chan msg))
+                                        nil))})
+        nrepl-session (atom {;; :summary-message-id "summary-msg-id" todo use this to ignore connection msgs?
+                             :session-started (LocalDateTime.)
+                             :transport (reify transport/Transport
+                                          (send [_ r]
+                                            (go (>! cider-chan r))
+                                            nil))})]
 
-       ~@body
+    (go-loop []
+      (when-let [msg (<! nrepl-server-chan)]
+        (client-events/process nrepl-session (clojure.edn/read-string msg))
+        (recur))
+      (close! cider-chan))
 
-       (finally (close! ~'hub-chan)))))
+    (go-loop []
+      (when-let [m (<! hub-chan)]
+        (server-events/process nil hub-session m)
+        (recur))
+      (close! nrepl-server-chan))
 
-;; Test to ensure correctness of message sent to CIDER
-(deftest registration-should-bubble-to-cider
-  (spy-harness
-   (let [hub-session (atom {:id "fooid"})
-         nrepl-session (atom {:transport "a-transport"
-                              :summary-message-id "summary-msg-id"
-                              :session-started (LocalDateTime.)})]
-     (>!! hub-chan [hub-session nrepl-session {:op :register :alias "Jon" :session-id 1}])
-
-     (let [[transport session-id message-id {:keys [value] :as fo}]
-           (first (alts!! [(timeout 2000) cider-chan]))]
-
-       (is (= (:transport @nrepl-session) transport))
-       (is (= (:id @nrepl-session) session-id))
-       (is (= (:summary-message-id @nrepl-session) message-id))
-
-       (is (= {:1 {:alias "Jon" :nses []}} (:devs (json/parse-string value true))))))))
+    {:hub-session hub-session
+     :nrepl-session nrepl-session
+     :cider-chan cider-chan
+     :hub-chan hub-chan}))
 
 (defn- cider-msg
   "Utility to extract string message sent to CIDER."
   [cider-chan]
-  (let [[_ _ _ {:keys [value]}]
-        (first (alts!! [(timeout 4000) cider-chan]))]
+  (when-let [{:keys [value]} (first (alts!! [(timeout 2000) cider-chan]))]
     (json/parse-string value true)))
+
+;; Test to ensure correctness of message sent to CIDER
+(deftest registration-should-bubble-to-cider
+  (spy-harness
+   (let [{:keys [hub-chan cider-chan]} (end-to-end-fixture) ]
+     (>!! hub-chan {:op :register :alias "Jon" :session-id 1})
+
+     (is (= {:1 {:alias "Jon" :nses []}} (:devs (cider-msg cider-chan)))))))
 
 (deftest user-registrations
   (spy-harness
-   (>!! hub-chan [(atom {}) (atom {:session-started (LocalDateTime.)})
-                  {:session-id 1
-                   :op :register
-                   :alias "Jon"}])
-   (is (= {:1 {:alias "Jon" :nses []}} (:devs (cider-msg cider-chan))))
-   (>!! hub-chan [(atom {:id 2}) (atom {:session-started (LocalDateTime.)})
-                  {:session-id 2 :op :register :alias "Dave"}])
-   (is (= {:1 {:alias "Jon" :nses []} :2 {:alias "Dave" :nses []}} (:devs (cider-msg cider-chan))))
-   (>!! hub-chan [(atom {:id 2}) (atom {:session-started (LocalDateTime.)})
-                  {:op :unregister}])
-   (is (= {:1 {:alias "Jon" :nses []}} (:devs (cider-msg cider-chan))))))
+   (let [fixture1 (end-to-end-fixture)
+         fixture2 (end-to-end-fixture)]
+
+     (>!! (:hub-chan fixture1) {:session-id 1 :op :register :alias "Jon"})
+     (is (= {:1 {:alias "Jon" :nses []}} (:devs (cider-msg (:cider-chan fixture1)))))
+
+     (>!! (:hub-chan fixture2) {:session-id 2 :op :register :alias "Dave"})
+     (is (= {:1 {:alias "Jon" :nses []} :2 {:alias "Dave" :nses []}} (:devs (cider-msg (:cider-chan fixture1)))))
+     (is (= {:1 {:alias "Jon" :nses []} :2 {:alias "Dave" :nses []}} (:devs (cider-msg (:cider-chan fixture2)))))
+
+     (>!! (:hub-chan fixture2) {:op :unregister})
+     (is (= {:1 {:alias "Jon" :nses []}} (:devs (cider-msg (:cider-chan fixture1))))))))
 
 (deftest dev-locations
   (spy-harness
-   (let [hub-session (atom {})
-         nrepl-session (atom {:id 1 :session-started (LocalDateTime.)})]
-     (>!! hub-chan [hub-session nrepl-session
-                    {:session-id 1 :op :register :alias "Jon"}])
+   (let [{:keys [hub-chan cider-chan]} (end-to-end-fixture)]
+
+     (>!! hub-chan {:session-id 1 :op :register :alias "Jon"})
      (is (= {:1 {:alias "Jon" :nses []}} (:devs (cider-msg cider-chan))))
-     (>!! hub-chan [hub-session nrepl-session
-                    {:op :location :alias "Jon" :ns "foo" :dt (java.util.Date.)}])
+
+     (>!! hub-chan {:op :location :alias "Jon" :ns "foo" :dt (java.util.Date.)})
      (is (= {:1 {:alias "Jon" :nses ["foo"]}} (:devs (cider-msg cider-chan)))))))
 
 (deftest change-alias
   (spy-harness
-   (let [hub-session (atom {})
-         nrepl-session (atom {:id 1 :session-started (LocalDateTime.)})]
-     (>!! hub-chan [hub-session nrepl-session
-                    {:session-id 1 :op :register :alias "Jon"}])
+   (let [{:keys [hub-chan cider-chan]} (end-to-end-fixture)]
+     (>!! hub-chan {:session-id 1 :op :register :alias "Jon"})
      (is (= {:1 {:alias "Jon" :nses []}} (:devs (cider-msg cider-chan))))
-     (>!! hub-chan [hub-session nrepl-session
-                    {:session-id 1 :op :register :alias "Jon2"}])
+     (>!! hub-chan {:session-id 1 :op :register :alias "Jon2"})
      (is (= {:1 {:alias "Jon2" :nses []}} (:devs (cider-msg cider-chan)))))))

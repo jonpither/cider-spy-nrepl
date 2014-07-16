@@ -8,12 +8,13 @@
            [io.netty.channel.socket.nio NioServerSocketChannel]
            [io.netty.handler.codec.string StringDecoder]
            [io.netty.handler.codec.string StringEncoder]
-           [io.netty.handler.codec DelimiterBasedFrameDecoder Delimiters]))
+           [io.netty.handler.codec DelimiterBasedFrameDecoder Delimiters]
+           [io.netty.channel ChannelHandlerContext]))
 
 (defn simple-handler [ch]
   (let [session (atom {:channel ch})]
     (proxy [SimpleChannelInboundHandler] []
-      (messageReceived [ctx request]
+      (messageReceived [^ChannelHandlerContext ctx request]
         (log/info "Server got request" (prn-str request))
         (server-events/process ctx session request))
       (channelInactive [ctx]

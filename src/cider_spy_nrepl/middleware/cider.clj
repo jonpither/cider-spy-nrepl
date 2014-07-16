@@ -10,7 +10,7 @@
   [session {:keys [id]}]
   (sessions/update! session assoc :summary-message-id id))
 
-(defn ^:dynamic send-back-to-cider! [transport session-id message-id & opts]
+(defn- send-back-to-cider! [transport session-id message-id & opts]
   (transport/send transport
                   (apply response-for {:session session-id :id message-id} opts)))
 

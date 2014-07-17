@@ -6,7 +6,8 @@
 (def sessions (atom {}))
 
 (defn- new-session [{:keys [session transport]}]
-  (atom {:id session :transport transport
+  (atom {:id session
+         :transport transport
          :session-started (LocalDateTime.)
          :hub-alias (alias/alias-from-env)}))
 

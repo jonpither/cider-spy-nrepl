@@ -30,10 +30,10 @@
   (hub-client/connect session hub-host hub-port (partial on-connect session)))
 
 (defn- connect-to-hub! [session]
-  (let [{:keys [hub-client hub-alias]} @session
+  (let [{:keys [hub-client hub-alias user-disconnect]} @session
         connected? (and hub-client (.isOpen (last hub-client)))
         closed? (and hub-client (not connected?))]
-    (when (not connected?)
+    (when (and (not connected?) (not user-disconnect))
       (if-let [[hub-host hub-port] (settings/hub-host-and-port)]
         (do
           (when closed?
@@ -61,6 +61,15 @@
   (cider/send-connected-msg! session (format "Sending message to recipient %s on CIDER SPY HUB." recipient))
   (hub-client/send-msg session recipient message))
 
+(defn- handle-cider-spy-disconnect
+  "Disconnect permantently the user from the CIDER-SPY-HUB."
+  [session]
+  (sessions/update! session assoc :user-disconnect true)
+  (sessions/update! session dissoc :registrations)
+  (.close (last (:hub-client @session)))
+  (cider/send-connected-msg! session "Disconnected from the HUB")
+  (cider/update-spy-buffer-summary! session))
+
 (defn wrap-cider-spy-hub
   [handler]
   (fn [{:keys [op] :as msg}]
@@ -69,6 +78,7 @@
         "cider-spy-hub-connect" (handle-register-hub-buffer-msg msg session)
         "cider-spy-hub-alias" (handle-change-hub-alias msg session)
         "cider-spy-hub-send-msg" (handle-send-msg msg session)
+        "cider-spy-hub-disconnect" (handle-cider-spy-disconnect session)
 
         (do
           (connect-to-hub! session)
@@ -79,5 +89,6 @@
  #'wrap-cider-spy-hub
  {:handles
   {"cider-spy-hub-connect" {:doc "Connects to CIDER SPY HUB."}
+   "cider-spy-hub-disconnect" {:doc "Disconnects from the CIDER SPY HUB."}
    "cider-spy-hub-alias" {:doc "Set CIDER SPY HUB alias."}
    "cider-spy-hub-send-msg" {:doc "Send a message via CIDER SPY HUB."}}})

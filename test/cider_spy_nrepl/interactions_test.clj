@@ -16,7 +16,6 @@
 
 ;; todo reuse code across this and connections test
 ;; todo clj-refactor clean up the require
-;; todo add tests for sending msgs between sessions
 
 (defprotocol CanBeOpen
   (isOpen [this])
@@ -50,8 +49,9 @@
   (let [cider-chan (chan)
         cider-transport (reify transport/Transport
                           (send [_ r]
-                            (when-not (= "connection-buffer-msg" (:id r))
-                              (go (>! cider-chan (:value r))))))]
+                            (when (or (not (= "connection-buffer-msg" (:id r)))
+                                      (:msg r))
+                              (go (>! cider-chan r)))))]
 
     ;; Handle a middleware request to connect to CIDER SPY HUB
     ((hub-middleware/wrap-cider-spy-hub nil)
@@ -68,11 +68,16 @@
 
     cider-chan))
 
+(defn raw-cider-msg
+  "Utility to extract string message sent to CIDER."
+  [cider-chan]
+  (first (alts!! [(timeout 2000) cider-chan])))
+
 (defn- cider-msg
   "Utility to extract string message sent to CIDER."
   [cider-chan]
-  (when-let [value (first (alts!! [(timeout 2000) cider-chan]))]
-    (json/parse-string value true)))
+  (when-let [msg (:value (raw-cider-msg cider-chan))]
+    (json/parse-string msg true)))
 
 (deftest alias-should-bubble-to-cider
   (spy-harness
@@ -112,3 +117,29 @@
 
      (is (= {:1 {:alias "Jon" :nses []}} (:devs (cider-msg cider-chan))))
      (is (= {:1 {:alias "Jon" :nses ["foo.bar"]}} (:devs (cider-msg cider-chan)))))))
+
+(deftest send-messages
+  (spy-harness
+   (let [cider-chan1 (foo 1 "Jon")]
+     (is (= {:1 {:alias "Jon" :nses []}} (:devs (cider-msg cider-chan1))))
+     (let [cider-chan2 (foo 2 "Dave")]
+       (is (= {:1 {:alias "Jon" :nses []} :2 {:alias "Dave" :nses []}} (:devs (cider-msg cider-chan1))))
+       (is (= {:1 {:alias "Jon" :nses []} :2 {:alias "Dave" :nses []}} (:devs (cider-msg cider-chan2))))
+
+       ((hub-middleware/wrap-cider-spy-hub nil)
+        {:op "cider-spy-hub-send-msg"
+         :recipient 2
+         :message "Hows it going?"
+         :session 1})
+
+       (is (= {:msg "Hows it going?" :from "Jon"}
+              (select-keys (raw-cider-msg cider-chan2) [:msg :from])))
+
+       ((hub-middleware/wrap-cider-spy-hub nil)
+        {:op "cider-spy-hub-send-msg"
+         :recipient 1
+         :message "Not bad dude."
+         :session 2})
+
+       (is (= {:msg "Not bad dude." :from "Dave"}
+              (select-keys (raw-cider-msg cider-chan1) [:msg :from])))))))

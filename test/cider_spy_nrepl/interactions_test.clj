@@ -15,14 +15,14 @@
            [io.netty.channel ChannelHandlerContext]))
 
 ;; todo reuse code across this and connections test
-;; todo get close connection working in the registrations example. This probable needs a close feature implemented.
 ;; todo clj-refactor clean up the require
 ;; todo add tests for sending msgs between sessions
 
 (defprotocol CanBeOpen
   (isOpen [this])
   (writeAndFlush [this m])
-  (sync [this]))
+  (sync [this])
+  (close [this]))
 
 (defmacro spy-harness [& body]
   `(do
@@ -41,6 +41,9 @@
                  (server-events/process nil hub-session (clojure.edn/read-string m))
                  nil)
                (sync [this]
+                 this)
+               (close [this]
+                 (server-events/unregister! hub-session)
                  this))]))
 
 (defn- foo [session-id alias]
@@ -91,9 +94,11 @@
        (is (= {:1 {:alias "Jon" :nses []} :2 {:alias "Dave" :nses []}} (:devs (cider-msg cider-chan1))))
        (is (= {:1 {:alias "Jon" :nses []} :2 {:alias "Dave" :nses []}} (:devs (cider-msg cider-chan2)))))
 
-     ;; (>!! (:hub-chan fixture2) {:op :unregister})
-     ;; (is (= {:1 {:alias "Jon" :nses []}} (:devs (cider-msg (:cider-chan fixture1)))))
-)))
+     ((hub-middleware/wrap-cider-spy-hub nil)
+      {:op "cider-spy-hub-disconnect"
+       :session 2})
+
+     (is (= {:1 {:alias "Jon" :nses []}} (:devs (cider-msg cider-chan1)))))))
 
 (deftest dev-locations
   (spy-harness

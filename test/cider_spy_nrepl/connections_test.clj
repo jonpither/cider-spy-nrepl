@@ -1,14 +1,14 @@
 (ns cider-spy-nrepl.connections-test
   (:use [clojure.core.async :only [chan timeout <!! alts!! >! go close!]])
-  (:require [clojure.test :refer :all]
-            [cider-spy-nrepl.test-utils :refer :all]
-            [cider-spy-nrepl.hub.server :as hub-server]
-            [cider-spy-nrepl.hub.client :as hubc]
+  (:require [cider-spy-nrepl.hub.client :as hubc]
             [cider-spy-nrepl.hub.register :as register]
-            [cider-spy-nrepl.middleware.cider-spy-hub :as middleware-spy-hub]
+            [cider-spy-nrepl.hub.server :as hub-server]
             [cider-spy-nrepl.middleware.alias :as alias]
-            [cider-spy-nrepl.middleware.sessions :as middleware-sessions]
+            [cider-spy-nrepl.middleware.cider-spy-hub :as middleware-spy-hub]
             [cider-spy-nrepl.middleware.hub-settings :as hub-settings]
+            [cider-spy-nrepl.middleware.sessions :as middleware-sessions]
+            [cider-spy-nrepl.test-utils :refer :all]
+            [clojure.test :refer :all]
             [clojure.tools.nrepl.transport :as transport])
   (:import [java.util UUID]))
 

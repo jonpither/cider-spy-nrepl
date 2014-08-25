@@ -39,6 +39,6 @@
 (defn send-received-msg!
   "Send a message back to CIDER-SPY informing that a msg has been received
    from another developer on the HUB."
-  [session from s]
+  [session from recipient s]
   (let [{:keys [id hub-connection-buffer-id transport]} @session]
-    (send-back-to-cider! transport id hub-connection-buffer-id :from from :msg s)))
+    (send-back-to-cider! transport id hub-connection-buffer-id :from from :recipient recipient :msg s)))

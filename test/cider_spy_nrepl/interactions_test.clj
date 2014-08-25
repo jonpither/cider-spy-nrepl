@@ -126,7 +126,7 @@
 
        ((hub-middleware/wrap-cider-spy-hub nil)
         {:op "cider-spy-hub-send-msg"
-         :recipient 2
+         :recipient "Dave"
          :from "Jon"
          :message "Hows it going?"
          :session 1})
@@ -136,7 +136,7 @@
 
        ((hub-middleware/wrap-cider-spy-hub nil)
         {:op "cider-spy-hub-send-msg"
-         :recipient 1
+         :recipient "Jon"
          :from "Dave"
          :message "Not bad dude."
          :session 2})

@@ -32,10 +32,11 @@
   (broadcast-msg! :location :alias (:alias @session) :registered (register/users)))
 
 (defmethod process :message [_ _ {:keys [message from recipient]}]
-  (if-let [recipient-session (@register/sessions recipient)]
+  (if-let [recipient-session (register/session-from-alias recipient)]
     (do
       (log/info "Message from" from "to" (:alias @recipient-session))
-      (send-to-nrepl (:channel @recipient-session) {:op :message :message message :from from}))
+      (send-to-nrepl (:channel @recipient-session)
+                     {:op :message :message message :from from :recipient recipient}))
     (log/warn "Message from" from "to unregistered user" recipient)))
 
 (defn unregister! [session]

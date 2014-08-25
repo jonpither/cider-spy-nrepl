@@ -11,15 +11,21 @@
            [io.netty.handler.codec DelimiterBasedFrameDecoder Delimiters]
            [io.netty.channel ChannelHandlerContext]))
 
-(defn simple-handler [ch]
+(defn- server-request [ctx session request]
+  (log/info "Server got request" (prn-str request))
+  (server-events/process ctx session request))
+
+(defn- server-close-session [ctx session]
+  (log/info "Client Disconnected")
+  (server-events/unregister! session))
+
+(defn- simple-handler [ch]
   (let [session (atom {:channel ch})]
     (proxy [SimpleChannelInboundHandler] []
       (messageReceived [^ChannelHandlerContext ctx request]
-        (log/info "Server got request" (prn-str request))
-        (server-events/process ctx session request))
+        (server-request ctx session request))
       (channelInactive [ctx]
-        (server-events/unregister! session)
-        (log/info "Client Disconnected")))))
+        (server-close-session ctx session)))))
 
 (defn start-netty-server
   "Returns a vector consisting of a channel, boss group and worker group"

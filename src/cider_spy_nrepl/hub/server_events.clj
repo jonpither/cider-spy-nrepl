@@ -31,13 +31,12 @@
   (register/update! session update-in [:tracking :ns-trail] conj {:dt dt :ns ns})
   (broadcast-msg! :location :alias (:alias @session) :registered (register/users)))
 
-(defmethod process :message [_ session {:keys [message recipient]}]
-  (if (@register/sessions recipient)
+(defmethod process :message [_ _ {:keys [message from recipient]}]
+  (if-let [recipient-session (@register/sessions recipient)]
     (do
-      (log/info "Message from" (:alias @session) "to" (:alias @(@register/sessions recipient)))
-      (send-to-nrepl (:channel @(@register/sessions recipient))
-                     {:op :message :message message :from (:alias @session)}))
-    (log/warn "Message from" (:alias @session) (:id @session) "to unregistered user" recipient)))
+      (log/info "Message from" from "to" (:alias @recipient-session))
+      (send-to-nrepl (:channel @recipient-session) {:op :message :message message :from from}))
+    (log/warn "Message from" from "to unregistered user" recipient)))
 
 (defn unregister! [session]
   (process nil session {:op :unregister}))

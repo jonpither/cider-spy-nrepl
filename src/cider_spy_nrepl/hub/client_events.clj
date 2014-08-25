@@ -8,6 +8,10 @@
 (defmethod process :default [session msg]
   (println "Did not understand message from hub" msg))
 
+(defmethod process :connected [session {:keys [alias] :as msg}]
+  (log/debug (format "Connected on hub as: %s" alias))
+  (cider/send-connected-on-hub-msg! session alias))
+
 (defmethod process :registered [session {:keys [alias registered] :as msg}]
   (log/debug (format "Registered: %s" alias))
   (register/update! session assoc-in [:registrations] registered)

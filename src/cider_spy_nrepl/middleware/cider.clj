@@ -23,6 +23,11 @@
         {:keys [id summary-message-id transport]} @session]
     (send-back-to-cider! transport id summary-message-id :value (json/encode summary))))
 
+(defn send-connected-on-hub-msg!
+  [session alias]
+  (let [{:keys [id hub-connection-buffer-id transport]} @session]
+    (send-back-to-cider! transport id hub-connection-buffer-id :hub-registered-alias alias)))
+
 (defn send-connected-msg!
   "Send a message back to CIDER-SPY pertaining to CIDER-SPY-HUB connectivity.
    The correct ID is used as to ensure the message shows up in the relevant

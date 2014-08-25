@@ -1,6 +1,7 @@
 (ns cider-spy-nrepl.hub.client
   (:require [cider-spy-nrepl.hub.edn-codec :as edn-codec]
-            [cider-spy-nrepl.hub.client-events :as client-events])
+            [cider-spy-nrepl.hub.client-events :as client-events]
+            [clojure.tools.logging :as log])
   (:import [io.netty.channel ChannelHandlerAdapter SimpleChannelInboundHandler ChannelInitializer]
            [io.netty.channel.nio NioEventLoopGroup]
            [io.netty.channel.socket.nio NioSocketChannel]
@@ -15,7 +16,11 @@
   [session]
   (proxy [SimpleChannelInboundHandler] []
     (messageReceived [ctx request]
-      (client-events/process session request)
+      (try
+        (client-events/process session request)
+        (catch Throwable t
+          (println "Error occuring processing CIDER-SPY-HUB message. Check for compatibility.")
+          (log/error t)))
       (.flush ctx))))
 
 (defn- client-bootstrap

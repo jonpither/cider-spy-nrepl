@@ -27,19 +27,21 @@
    Once connected, we attempt to register the user with an alias."
   [session hub-host hub-port]
   (cider/send-connected-msg! session (format "Connecting to SPY HUB %s:%s." hub-host hub-port))
-  (hub-client/connect session hub-host hub-port (partial on-connect session)))
+  (on-connect session (hub-client/connect session hub-host hub-port)))
 
 (defn- connect-to-hub! [session]
-  (let [{:keys [hub-client hub-alias user-disconnect]} @session
-        connected? (and hub-client (.isOpen (last hub-client)))
-        closed? (and hub-client (not connected?))]
-    (when (and (not connected?) (not user-disconnect))
-      (if-let [[hub-host hub-port] (settings/hub-host-and-port)]
-        (do
-          (when closed?
-            (cider/send-connected-msg! session "SPY HUB connection closed, reconnecting"))
-          (connect session hub-host hub-port))
-        (cider/send-connected-msg! session "No CIDER-SPY-HUB host and port specified.")))))
+  (future
+    (locking session
+      (let [{:keys [hub-client hub-alias user-disconnect]} @session
+            connected? (and hub-client (.isOpen (last hub-client)))
+            closed? (and hub-client (not connected?))]
+        (when (and (not connected?) (not user-disconnect))
+          (if-let [[hub-host hub-port] (settings/hub-host-and-port)]
+            (do
+              (when closed?
+                (cider/send-connected-msg! session "SPY HUB connection closed, reconnecting"))
+              (connect session hub-host hub-port))
+            (cider/send-connected-msg! session "No CIDER-SPY-HUB host and port specified.")))))))
 
 (defn- handle-register-hub-buffer-msg
   "We register the buffer in EMACS used for displaying connection information

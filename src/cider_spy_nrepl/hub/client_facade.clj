@@ -15,12 +15,11 @@
 (defn connect
   "Connect to the hub.
    If a connection cannot be returned, then nil will be passed through to the callback."
-  [session host port callback-fn]
-  (future
-    (callback-fn (try
-                   (hubc/connect host port session)
-                   (catch java.net.SocketException e
-                     nil)))))
+  [session host port]
+  (try
+    (hubc/connect host port session)
+    (catch java.net.SocketException e
+      nil)))
 
 (defn update-location
   "Update the location of where this developer is on the hub.

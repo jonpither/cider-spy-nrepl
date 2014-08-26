@@ -43,6 +43,11 @@
                  (server-events/unregister! hub-session)
                  this))]))
 
+(defn raw-cider-msg
+  "Utility to extract string message sent to CIDER."
+  [cider-chan]
+  (first (alts!! [(timeout 2000) cider-chan])))
+
 (defn- foo [session-id alias]
   (let [cider-chan (chan)
         cider-transport (reify transport/Transport
@@ -50,6 +55,15 @@
                             (when (or (not (= "connection-buffer-msg" (:id r)))
                                       (:msg r))
                               (go (>! cider-chan r)))))]
+
+    ((spy-middleware/wrap-cider-spy nil)
+     {:id "summary-buffer-msg"
+      :op "cider-spy-summary"
+      :session session-id
+      :transport cider-transport})
+
+    ;; drain the first summary message
+    (raw-cider-msg cider-chan)
 
     ;; Handle a middleware request to connect to CIDER SPY HUB
     ((hub-middleware/wrap-cider-spy-hub nil)
@@ -65,11 +79,6 @@
         :session session-id}))
 
     cider-chan))
-
-(defn raw-cider-msg
-  "Utility to extract string message sent to CIDER."
-  [cider-chan]
-  (first (alts!! [(timeout 2000) cider-chan])))
 
 (defn- cider-msg
   "Utility to extract string message sent to CIDER."

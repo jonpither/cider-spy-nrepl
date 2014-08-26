@@ -4,6 +4,7 @@
             [cider-spy-nrepl.hub.register :as register]
             [cider-spy-nrepl.hub.server :as hub-server]
             [cider-spy-nrepl.middleware.alias :as alias]
+            [cider-spy-nrepl.middleware.cider-spy :as middleware-spy]
             [cider-spy-nrepl.middleware.cider-spy-hub :as middleware-spy-hub]
             [cider-spy-nrepl.middleware.hub-settings :as hub-settings]
             [cider-spy-nrepl.middleware.sessions :as middleware-sessions]
@@ -39,10 +40,20 @@
                  alias/alias-from-env
                  (constantly ~alias)]
 
+         ((middleware-spy/wrap-cider-spy nil)
+          {:op "cider-spy-summary"
+           :id "summary-id"
+           :session session-id#
+           :transport transport#})
+
+         ;; drain the first summary message
+         (alts!! [~'cider-chan (timeout 1000)])
+
          ;; Handle a middleware request to connect to CIDER SPY HUB
          ((middleware-spy-hub/wrap-cider-spy-hub nil)
           {:op "cider-spy-hub-connect"
            :hub-alias ~alias
+           :id "connection-id"
            :session session-id#
            :transport transport#})
 

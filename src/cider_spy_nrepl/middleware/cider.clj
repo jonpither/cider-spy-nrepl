@@ -10,9 +10,11 @@
   [session {:keys [id]}]
   (sessions/update! session assoc :summary-message-id id))
 
+;; Todo maybe make a macro to save unnecessary work if cider-spy is not place
 (defn- send-back-to-cider! [transport session-id message-id & opts]
-  (transport/send transport
-                  (apply response-for {:session session-id :id message-id} opts)))
+  (when message-id
+    (transport/send transport
+                    (apply response-for {:session session-id :id message-id} opts))))
 
 (defn update-spy-buffer-summary!
   "Send this string back to the users CIDER SPY buffer.

@@ -14,7 +14,9 @@
        (or
         (re-find #"\(clojure\.core\/apply clojure\.core\/require" code)
         (re-find #"\(ns clojure\.test\.mode" code)
-        (re-find #"\(clojure\.core\/require \'complete\.core\)" code))))
+        (re-find #"\(clojure\.core\/require \'complete\.core\)" code)
+        (re-find #"\(clojure\.core\/binding \[clojure\.core" code))))
+
 
 (defn tooling-session?
   "Determine if the session in this message is for tooling, or

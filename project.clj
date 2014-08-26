@@ -14,8 +14,4 @@
                  [org.clojure/tools.analyzer.jvm "0.1.0-beta10"]
                  [cheshire "5.2.0"]]
   :profiles {:dev {:dependencies [[org.clojure/core.async "0.1.278.0-76b25b-alpha"]]}}
-  :main cider-spy-nrepl.hub.server
-  ;;:profiles
-  ;; {:dev {:repl-options {:nrepl-middleware [cider-spy-nrepl.middleware.summary/wrap-info]}
-  ;;        }}
-)
+  :main cider-spy-nrepl.hub.server)

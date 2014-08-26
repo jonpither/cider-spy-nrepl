@@ -1,5 +1,4 @@
 (ns cider-spy-nrepl.middleware.cider-spy-hub
-  (:use [clojure.core.async :only [chan thread]])
   (:require [cider-spy-nrepl.hub.client-facade :as hub-client]
             [cider-spy-nrepl.middleware.sessions :as sessions]
             [cider-spy-nrepl.middleware.hub-settings :as settings]

@@ -34,19 +34,18 @@
                  (assoc (ana.jvm/empty-env) :ns (symbol ns)))))
 
 (defn- is-trackeable-msg? [op ns code]
-  (and ns code (not= "load-file" op)
+  (and (not-empty ns) (not-empty code) (not= "load-file" op)
        (not (re-find #"^clojure\.core/apply clojure.core/require" code))))
 
 (defn- track-command
-  "Add message to supplied tracking."
+  "Add invoked fn to supplied tracking."
   [tracking {:keys [op ns code] :as msg}]
-  (if (is-trackeable-msg? op ns code)
-      (let [{:keys [op fn]} (get-ast ns code)
-            command (format "%s/%s"
-                            (-> fn :var meta :ns)
-                            (-> fn :var meta :name))]
-         (update-in tracking [:commands command] safe-inc))
-      tracking))
+  (if-let [fn (and (is-trackeable-msg? op ns code)
+                   (:fn (get-ast ns code)))]
+    (update-in tracking [:commands (format "%s/%s"
+                                           (-> fn :var meta :ns)
+                                           (-> fn :var meta :name))] safe-inc)
+    tracking))
 
 (defn- track-load-file [tracking {:keys [op file] :as msg}]
   (if-let [ns (and (= "load-file" op)

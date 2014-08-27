@@ -29,6 +29,12 @@
      (track-msg! {:code code :ns "user"} session)
      (is (= 2 (get-in @session [:tracking :commands "clojure.core/println"]))))))
 
+(deftest test-do-not-track-nil-fn
+  (tracker-harness
+   (let [code "(+ 1 1)"]
+     (track-msg! {:code code :ns "user"} session)
+     (is (nil? (get-in @session [:tracking :commands]))))))
+
 (deftest test-track-ns-loaded
   (tracker-harness
    (let [file "(ns foo.bar) (println \"hi\")"]

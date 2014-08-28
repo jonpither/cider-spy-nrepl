@@ -32,7 +32,7 @@
 
    Calling code should therefore deal with a nil return value."
   [{:keys [session] :as msg}]
-  (when session
+  (when (string? session)
     (or (get @sessions session)
         (and (not (tooling/tooling-session? msg))
              (register-new-session msg)))))

@@ -11,6 +11,13 @@
          :session-started (LocalDateTime.)
          :hub-alias (alias/alias-from-env)}))
 
+(defn- register-new-session [{:keys [session] :as msg}]
+  (locking sessions
+    (or (get @sessions session)
+        (do
+;;          (println "New session" msg)
+          (get (swap! sessions assoc session (new-session msg)) session)))))
+
 (defn session!
   "Return the session for the given msg.
    If a session does not exist then one will be created.
@@ -28,7 +35,7 @@
   (when session
     (or (get @sessions session)
         (and (not (tooling/tooling-session? msg))
-             (get (swap! sessions assoc session (new-session msg)) session)))))
+             (register-new-session msg)))))
 
 (defn update!
   "Updates the session with the given function."

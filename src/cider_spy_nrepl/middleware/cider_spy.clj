@@ -6,7 +6,7 @@
 
 (defn- handle-summary
   "Handle the CIDER-SPY request for summary information."
-  [{:keys [transport hub-host hub-port hub-alias] :as msg}]
+  [msg]
   (when-let [session (sessions/session! msg)]
     (cider/update-session-for-summary-msg! session msg)
     (cider/update-spy-buffer-summary! session)))

@@ -88,48 +88,48 @@
 
 (deftest alias-should-bubble-to-cider
   (spy-harness
-   (let [cider-chan (foo 1 "Jon")]
+   (let [cider-chan (foo "1" "Jon")]
      (is (= {:1 {:alias "Jon" :nses []}} (:devs (cider-msg cider-chan))))
 
      ((hub-middleware/wrap-cider-spy-hub nil)
       {:op "cider-spy-hub-alias"
        :alias "Jon2"
-       :session 1})
+       :session "1"})
 
      (is (= {:1 {:alias "Jon2" :nses []}} (:devs (cider-msg cider-chan)))))))
 
 (deftest user-registrations
   (spy-harness
-   (let [cider-chan1 (foo 1 "Jon")]
+   (let [cider-chan1 (foo "1" "Jon")]
      (is (= {:1 {:alias "Jon" :nses []}} (:devs (cider-msg cider-chan1))))
-     (let [cider-chan2 (foo 2 "Dave")]
+     (let [cider-chan2 (foo "2" "Dave")]
        (is (= {:1 {:alias "Jon" :nses []} :2 {:alias "Dave" :nses []}} (:devs (cider-msg cider-chan1))))
        (is (= {:1 {:alias "Jon" :nses []} :2 {:alias "Dave" :nses []}} (:devs (cider-msg cider-chan2)))))
 
      ((hub-middleware/wrap-cider-spy-hub nil)
       {:op "cider-spy-hub-disconnect"
-       :session 2})
+       :session "2"})
 
      (is (= {:1 {:alias "Jon" :nses []}} (:devs (cider-msg cider-chan1)))))))
 
 (deftest dev-locations
   (spy-harness
-   (let [cider-chan (foo 1 "Jon")]
+   (let [cider-chan (foo "1" "Jon")]
      (is (= {:1 {:alias "Jon" :nses []}} (:devs (cider-msg cider-chan))))
 
      ((spy-middleware/wrap-cider-spy (constantly nil))
       {:op "load-file"
        :file "(ns foo.bar) (println \"hi\")"
-       :session 1})
+       :session "1"})
 
      (is (= {:1 {:alias "Jon" :nses []}} (:devs (cider-msg cider-chan))))
      (is (= {:1 {:alias "Jon" :nses ["foo.bar"]}} (:devs (cider-msg cider-chan)))))))
 
 (deftest send-messages
   (spy-harness
-   (let [cider-chan1 (foo 1 "Jon")]
+   (let [cider-chan1 (foo "1" "Jon")]
      (is (= {:1 {:alias "Jon" :nses []}} (:devs (cider-msg cider-chan1))))
-     (let [cider-chan2 (foo 2 "Dave")]
+     (let [cider-chan2 (foo "2" "Dave")]
        (is (= {:1 {:alias "Jon" :nses []} :2 {:alias "Dave" :nses []}} (:devs (cider-msg cider-chan1))))
        (is (= {:1 {:alias "Jon" :nses []} :2 {:alias "Dave" :nses []}} (:devs (cider-msg cider-chan2))))
 
@@ -138,7 +138,7 @@
          :recipient "Dave"
          :from "Jon"
          :message "Hows it going?"
-         :session 1})
+         :session "1"})
 
        (is (= {:msg "Hows it going?" :from "Jon"}
               (select-keys (raw-cider-msg cider-chan2) [:msg :from])))
@@ -148,7 +148,7 @@
          :recipient "Jon"
          :from "Dave"
          :message "Not bad dude."
-         :session 2})
+         :session "2"})
 
        (is (= {:msg "Not bad dude." :from "Dave"}
               (select-keys (raw-cider-msg cider-chan1) [:msg :from])))))))

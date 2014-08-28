@@ -15,6 +15,7 @@
         (re-find #"\(clojure\.core\/apply clojure\.core\/require" code)
         (re-find #"\(ns clojure\.test\.mode" code)
         (re-find #"\(clojure\.core\/require \'complete\.core\)" code)
+        (re-find #"\(require 'complete\.core\)" code)
         (re-find #"\(clojure\.core\/binding \[clojure\.core" code))))
 
 (defn- new-tooling-session [{:keys [session] :as msg}]

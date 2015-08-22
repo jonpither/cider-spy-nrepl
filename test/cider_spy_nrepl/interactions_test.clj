@@ -8,7 +8,8 @@
             [clojure.core.async :refer [alts!! chan go timeout]]
             [clojure.test :refer :all]
             [clojure.tools.nrepl.transport :as transport])
-  (:import (io.netty.channel ChannelHandlerContext)))
+  (:import (io.netty.channel ChannelHandlerContext))
+  (:refer-clojure :exclude [sync]))
 
 ;; todo reuse code across this and connections test
 

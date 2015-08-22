@@ -7,7 +7,8 @@
             [clojure.core.async :refer [alts!! chan close! go timeout]]
             [clojure.test :refer :all]
             [clojure.tools.nrepl.transport :as transport])
-  (:import (java.net ConnectException)))
+  (:import (java.net ConnectException))
+  (:refer-clojure :exclude [sync]))
 
 (def ^:dynamic *handler-chan*)
 (def ^:dynamic *transport*)

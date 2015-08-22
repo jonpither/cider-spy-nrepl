@@ -15,7 +15,8 @@
 
 ;; TODO worried about never shutting down individual connections to hub
 ;; TODO test someone in a different session gets registered notice
-;; TODO Manually test diff emacs CIDERs with diff aliases connect to same nrepl-server then on to the hub.
+;; TODO Manually test diff emacs CIDERs with diff aliases connect to same
+;;      nrepl-server then on to the hub.
 ;; TODO fn on client-facade - other users (uses diff between session-ids)
 
 (defmacro test-with-server [server-name port & forms]
@@ -112,8 +113,10 @@
 
      ;; Ensure frank registered    ;; Ensure jonnyboy registered
      (assert-summary-msg-sent-to-cider-with-user-in cider-chan "jonnyboy" "frank")
-     (is (= #{"jonnyboy" "frank"} (set (map (comp :alias val) (:registrations @session1)))))
-     (is (= #{"jonnyboy" "frank"} (set (map (comp :alias val) (:registrations @session2))))))
+     (is (= #{"jonnyboy" "frank"}
+            (set (map (comp :alias val) (:registrations @session1)))))
+     (is (= #{"jonnyboy" "frank"}
+            (set (map (comp :alias val) (:registrations @session2))))))
 
     (assert-summary-msg-sent-to-cider-with-user-in cider-chan "jonnyboy")
     (assert-summary-msg-sent-to-cider-with-user-in cider-chan "jonnyboy")

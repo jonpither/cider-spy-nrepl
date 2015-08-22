@@ -28,10 +28,12 @@
      ~@body))
 
 (defn- stub-connect-to-hub [_ _ nrepl-session]
-  (let [hub-session (atom {:channel (reify ChannelHandlerContext
-                                      (writeAndFlush [this msg]
-                                        (client-events/process nrepl-session (clojure.edn/read-string msg))
-                                        nil))})]
+  (let [hub-session
+        (atom {:channel
+               (reify ChannelHandlerContext
+                 (writeAndFlush [this msg]
+                   (client-events/process nrepl-session (clojure.edn/read-string msg))
+                   nil))})]
     [nil nil (reify CanBeOpen
                (isOpen [this] true)
                (writeAndFlush [this m]
@@ -103,8 +105,10 @@
    (let [cider-chan1 (foo "1" "Jon")]
      (is (= {:1 {:alias "Jon" :nses []}} (:devs (cider-msg cider-chan1))))
      (let [cider-chan2 (foo "2" "Dave")]
-       (is (= {:1 {:alias "Jon" :nses []} :2 {:alias "Dave" :nses []}} (:devs (cider-msg cider-chan1))))
-       (is (= {:1 {:alias "Jon" :nses []} :2 {:alias "Dave" :nses []}} (:devs (cider-msg cider-chan2)))))
+       (is (= {:1 {:alias "Jon" :nses []} :2 {:alias "Dave" :nses []}}
+              (:devs (cider-msg cider-chan1))))
+       (is (= {:1 {:alias "Jon" :nses []} :2 {:alias "Dave" :nses []}}
+              (:devs (cider-msg cider-chan2)))))
 
      ((hub-middleware/wrap-cider-spy-hub nil)
       {:op "cider-spy-hub-disconnect"
@@ -130,8 +134,10 @@
    (let [cider-chan1 (foo "1" "Jon")]
      (is (= {:1 {:alias "Jon" :nses []}} (:devs (cider-msg cider-chan1))))
      (let [cider-chan2 (foo "2" "Dave")]
-       (is (= {:1 {:alias "Jon" :nses []} :2 {:alias "Dave" :nses []}} (:devs (cider-msg cider-chan1))))
-       (is (= {:1 {:alias "Jon" :nses []} :2 {:alias "Dave" :nses []}} (:devs (cider-msg cider-chan2))))
+       (is (= {:1 {:alias "Jon" :nses []} :2 {:alias "Dave" :nses []}}
+              (:devs (cider-msg cider-chan1))))
+       (is (= {:1 {:alias "Jon" :nses []} :2 {:alias "Dave" :nses []}}
+              (:devs (cider-msg cider-chan2))))
 
        ((hub-middleware/wrap-cider-spy-hub nil)
         {:op "cider-spy-hub-send-msg"

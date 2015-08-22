@@ -4,7 +4,7 @@
   (:require [clojure.tools.namespace.parse]
             [clojure.tools.reader.edn :as edn]
             [clojure.tools.analyzer :as ana]
-            [clojure.tools.analyzer.jvm :as ana.jvm]
+            [clojure.tools.analyzer.jvm :as ana-jvm]
             [cider-spy-nrepl.middleware.sessions :as sessions]
             [cider-spy-nrepl.hub.client-facade :as hub-client]
             [clojure.data]))
@@ -26,12 +26,12 @@
   (add-to-ns-trail tracking ns))
 
 (defn- get-ast [ns code-str]
-  (binding [ana/macroexpand-1 ana.jvm/macroexpand-1
-            ana/create-var    ana.jvm/create-var
-            ana/parse         ana.jvm/parse
+  (binding [ana/macroexpand-1 ana-jvm/macroexpand-1
+            ana/create-var    ana-jvm/create-var
+            ana/parse         ana-jvm/parse
             ana/var?          var?]
     (ana/analyze (edn/read-string code-str)
-                 (assoc (ana.jvm/empty-env) :ns (symbol ns)))))
+                 (assoc (ana-jvm/empty-env) :ns (symbol ns)))))
 
 (defn- is-trackeable-msg? [op ns code]
   (and (not-empty ns) (not-empty code) (not= "load-file" op)

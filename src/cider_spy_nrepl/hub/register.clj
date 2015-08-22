@@ -1,7 +1,7 @@
 (ns cider-spy-nrepl.hub.register
   "Manage HUB registrations."
   (:require [cider-spy-nrepl.ns-trail :as ns-trail])
-  (:import [org.joda.time LocalDateTime]))
+  (:import (org.joda.time LocalDateTime)))
 
 (def sessions (atom {}))
 

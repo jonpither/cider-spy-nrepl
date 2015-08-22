@@ -1,11 +1,9 @@
 (ns cider-spy-nrepl.middleware.cider-spy-hub
   (:require [cider-spy-nrepl.hub.client-facade :as hub-client]
-            [cider-spy-nrepl.middleware.sessions :as sessions]
-            [cider-spy-nrepl.middleware.hub-settings :as settings]
             [cider-spy-nrepl.middleware.cider :as cider]
-            [clojure.tools.nrepl.misc :refer [response-for]]
-            [clojure.tools.nrepl.middleware :refer [set-descriptor!]]
-            [clojure.tools.nrepl.transport :as transport]))
+            [cider-spy-nrepl.middleware.hub-settings :as settings]
+            [cider-spy-nrepl.middleware.sessions :as sessions]
+            [clojure.tools.nrepl.middleware :refer [set-descriptor!]]))
 
 (defn- register
   "Register the alias for the users session on the CIDER-SPY-HUB."

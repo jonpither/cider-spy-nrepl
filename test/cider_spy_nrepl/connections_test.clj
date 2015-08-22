@@ -1,5 +1,4 @@
 (ns cider-spy-nrepl.connections-test
-  (:use [clojure.core.async :only [chan timeout <!! alts!! >! go close!]])
   (:require [cider-spy-nrepl.hub.client :as hubc]
             [cider-spy-nrepl.hub.register :as register]
             [cider-spy-nrepl.hub.server :as hub-server]
@@ -8,10 +7,12 @@
             [cider-spy-nrepl.middleware.cider-spy-hub :as middleware-spy-hub]
             [cider-spy-nrepl.middleware.hub-settings :as hub-settings]
             [cider-spy-nrepl.middleware.sessions :as middleware-sessions]
-            [cider-spy-nrepl.test-utils :refer :all]
+            [cider-spy-nrepl.test-utils :refer [assert-async-msgs]]
+            [clojure.core.async :refer [>! alts!! chan close! go
+                                        timeout]]
             [clojure.test :refer :all]
             [clojure.tools.nrepl.transport :as transport])
-  (:import [java.util UUID]))
+  (:import (java.util UUID)))
 
 ;; TODO worried about never shutting down individual connections to hub
 ;; TODO test someone in a different session gets registered notice
@@ -19,7 +20,9 @@
 ;;      nrepl-server then on to the hub.
 ;; TODO fn on client-facade - other users (uses diff between session-ids)
 
-(defmacro test-with-server [server-name port & forms]
+(defmacro test-with-server
+  {:requires [hub-server/start-netty-server register/sessions]}
+  [server-name port & forms]
   `(let [~server-name (hub-server/start-netty-server :port ~port)]
      (reset! register/sessions {})
      (try
@@ -27,7 +30,9 @@
        (finally
          (hub-server/shutdown ~server-name)))))
 
-(defmacro test-with-client [session-name alias & forms]
+(defmacro test-with-client
+  {:requires [hub-settings/hub-host-and-port >!]}
+  [session-name alias & forms]
   `(do
      (let [~'cider-chan (chan)
            session-id# (str (UUID/randomUUID))

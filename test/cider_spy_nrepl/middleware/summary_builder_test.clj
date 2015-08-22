@@ -1,7 +1,7 @@
 (ns cider-spy-nrepl.middleware.summary-builder-test
   (:require [cider-spy-nrepl.middleware.summary-builder :refer :all]
             [clojure.test :refer :all])
-  (:import [org.joda.time LocalDateTime]))
+  (:import (org.joda.time LocalDateTime)))
 
 (deftest test-show-namespace-summary
   (is (= (list {:ns "bob"} {:ns "user" :seconds 29})

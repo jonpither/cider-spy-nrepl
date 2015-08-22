@@ -1,7 +1,7 @@
 (ns cider-spy-nrepl.middleware.sessions
   (:require [cider-spy-nrepl.middleware.alias :as alias]
             [cider-spy-nrepl.middleware.tooling-session :as tooling])
-  (:import [org.joda.time LocalDateTime]))
+  (:import (org.joda.time LocalDateTime)))
 
 (def sessions (atom {}))
 

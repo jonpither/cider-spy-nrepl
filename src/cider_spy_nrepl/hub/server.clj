@@ -1,15 +1,15 @@
 (ns cider-spy-nrepl.hub.server
-  (:require [clojure.tools.logging :as log]
-            [cider-spy-nrepl.hub.edn-codec :as edn-codec]
-            [cider-spy-nrepl.hub.server-events :as server-events])
-  (:import [io.netty.channel ChannelHandlerAdapter ChannelInitializer ChannelOption ChannelHandler SimpleChannelInboundHandler]
-           [io.netty.channel.nio NioEventLoopGroup]
-           [io.netty.bootstrap ServerBootstrap]
-           [io.netty.channel.socket.nio NioServerSocketChannel]
-           [io.netty.handler.codec.string StringDecoder]
-           [io.netty.handler.codec.string StringEncoder]
-           [io.netty.handler.codec DelimiterBasedFrameDecoder Delimiters]
-           [io.netty.channel ChannelHandlerContext]))
+  (:require [cider-spy-nrepl.hub.edn-codec :as edn-codec]
+            [cider-spy-nrepl.hub.server-events :as server-events]
+            [clojure.tools.logging :as log])
+  (:import (io.netty.bootstrap ServerBootstrap)
+           (io.netty.channel ChannelHandlerContext ChannelInitializer
+                             ChannelOption SimpleChannelInboundHandler)
+           (io.netty.channel.nio NioEventLoopGroup)
+           (io.netty.channel.socket.nio NioServerSocketChannel)
+           (io.netty.handler.codec DelimiterBasedFrameDecoder
+                                   Delimiters)
+           (io.netty.handler.codec.string StringDecoder StringEncoder)))
 
 (defn- server-request [ctx session request]
   (log/info "Server got request" (prn-str request))

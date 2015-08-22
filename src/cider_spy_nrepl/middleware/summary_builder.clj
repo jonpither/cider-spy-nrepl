@@ -1,5 +1,5 @@
 (ns cider-spy-nrepl.middleware.summary-builder
-  (:import [org.joda.time LocalDateTime Seconds]))
+  (:import (org.joda.time LocalDateTime Seconds)))
 
 (defn- remove-duplicate-entries
   "[:a :a :b] -> [:a :b]"

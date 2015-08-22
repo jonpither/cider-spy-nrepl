@@ -1,6 +1,5 @@
 (ns cider-spy-nrepl.hub.client-facade
-  (:require [cider-spy-nrepl.hub.client :as hubc]
-            [cider-spy-nrepl.hub.client-events :as client-events]))
+  (:require [cider-spy-nrepl.hub.client :as hubc]))
 
 (defn- send!
   [bootstrap op msg]

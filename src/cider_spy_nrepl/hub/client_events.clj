@@ -1,7 +1,7 @@
 (ns cider-spy-nrepl.hub.client-events
-  (:require [clojure.tools.logging :as log]
-            [cider-spy-nrepl.hub.register :as register]
-            [cider-spy-nrepl.middleware.cider :as cider]))
+  (:require [cider-spy-nrepl.hub.register :as register]
+            [cider-spy-nrepl.middleware.cider :as cider]
+            [clojure.tools.logging :as log]))
 
 (defmulti process (fn [session msg] (-> msg :op keyword)))
 

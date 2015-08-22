@@ -1,9 +1,9 @@
 (ns cider-spy-nrepl.middleware.cider
-  (:require [clojure.tools.nrepl.transport :as transport]
-            [clojure.tools.nrepl.misc :refer [response-for]]
-            [cider-spy-nrepl.middleware.summary-builder :as summary-builder]
+  (:require [cheshire.core :as json]
             [cider-spy-nrepl.middleware.sessions :as sessions]
-            [cheshire.core :as json]))
+            [cider-spy-nrepl.middleware.summary-builder :as summary-builder]
+            [clojure.tools.nrepl.misc :refer [response-for]]
+            [clojure.tools.nrepl.transport :as transport]))
 
 (defn update-session-for-summary-msg!
   "Update the session with SUMMARY-MESSAGE-ID."

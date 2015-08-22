@@ -1,15 +1,16 @@
 (ns cider-spy-nrepl.hub.client
-  (:require [cider-spy-nrepl.hub.edn-codec :as edn-codec]
-            [cider-spy-nrepl.hub.client-events :as client-events]
+  (:require [cider-spy-nrepl.hub.client-events :as client-events]
+            [cider-spy-nrepl.hub.edn-codec :as edn-codec]
             [clojure.tools.logging :as log])
-  (:import [io.netty.channel ChannelHandlerAdapter SimpleChannelInboundHandler ChannelInitializer]
-           [io.netty.channel.nio NioEventLoopGroup]
-           [io.netty.channel.socket.nio NioSocketChannel]
-           [io.netty.bootstrap Bootstrap]
-           [java.net InetSocketAddress ConnectException]
-           [io.netty.handler.codec.string StringDecoder]
-           [io.netty.handler.codec.string StringEncoder]
-           [io.netty.handler.codec DelimiterBasedFrameDecoder Delimiters]))
+  (:import (io.netty.bootstrap Bootstrap)
+           (io.netty.channel ChannelInitializer
+                             SimpleChannelInboundHandler)
+           (io.netty.channel.nio NioEventLoopGroup)
+           (io.netty.channel.socket.nio NioSocketChannel)
+           (io.netty.handler.codec DelimiterBasedFrameDecoder
+                                   Delimiters)
+           (io.netty.handler.codec.string StringDecoder StringEncoder)
+           (java.net InetSocketAddress)))
 
 (defn simple-handler
   "Handle messages coming back from the CIDER-SPY hub."

@@ -1,5 +1,5 @@
 (ns cider-spy-nrepl.ns-trail
-  (import [org.joda.time LocalDateTime Seconds]))
+  (:import (org.joda.time LocalDateTime Seconds)))
 
 (defn- time-weight [seconds]
   (let [minutes (/ seconds 60)]

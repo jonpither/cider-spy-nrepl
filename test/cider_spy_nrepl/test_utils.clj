@@ -1,6 +1,6 @@
 (ns cider-spy-nrepl.test-utils
-  (:require [clojure.test :refer :all]
-            [clojure.core.async :refer [chan timeout >!! <!! buffer alts!! go-loop >! close! go]]))
+  (:require [clojure.core.async :refer [alts!! timeout]]
+            [clojure.test :refer :all]))
 
 (defn assert-async-msgs
   "Take msg patterns, asserts all accounted for in chan"

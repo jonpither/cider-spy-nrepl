@@ -1,13 +1,13 @@
 (ns cider-spy-nrepl.middleware.cider-spy-hub-test
-  (:require [cider-spy-nrepl.test-utils :refer :all]
+  (:require [cider-spy-nrepl.hub.client :as client]
             [cider-spy-nrepl.middleware.cider-spy-hub :refer :all]
-            [cider-spy-nrepl.middleware.sessions :as sessions]
             [cider-spy-nrepl.middleware.hub-settings :as settings]
-            [cider-spy-nrepl.hub.client :as client]
-            [clojure.core.async :refer [chan timeout >!! <!! buffer alts!! go-loop >! close! go]]
-            [clojure.tools.nrepl.transport :as transport]
-            [clojure.test :refer :all])
-  (:import [java.net ConnectException]))
+            [cider-spy-nrepl.middleware.sessions :as sessions]
+            [cider-spy-nrepl.test-utils :refer :all]
+            [clojure.core.async :refer [alts!! chan close! go timeout]]
+            [clojure.test :refer :all]
+            [clojure.tools.nrepl.transport :as transport])
+  (:import (java.net ConnectException)))
 
 (def ^:dynamic *handler-chan*)
 (def ^:dynamic *transport*)

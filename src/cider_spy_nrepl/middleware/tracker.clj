@@ -1,13 +1,12 @@
 (ns cider-spy-nrepl.middleware.tracker
-  (:import [org.joda.time LocalDateTime]
-           [java.io PushbackReader])
-  (:require [clojure.tools.namespace.parse]
-            [clojure.tools.reader.edn :as edn]
+  (:require [cider-spy-nrepl.hub.client-facade :as hub-client]
+            [cider-spy-nrepl.middleware.sessions :as sessions]
             [clojure.tools.analyzer :as ana]
             [clojure.tools.analyzer.jvm :as ana-jvm]
-            [cider-spy-nrepl.middleware.sessions :as sessions]
-            [cider-spy-nrepl.hub.client-facade :as hub-client]
-            [clojure.data]))
+            [clojure.tools.namespace.parse :as clj-tools-namespace-parse]
+            [clojure.tools.reader.edn :as edn])
+  (:import (java.io PushbackReader)
+           (org.joda.time LocalDateTime)))
 
 (defn- safe-inc [v]
   (if v (inc v) 1))
@@ -49,7 +48,7 @@
 
 (defn- track-load-file [tracking {:keys [op file] :as msg}]
   (if-let [ns (and (= "load-file" op)
-                   (second (clojure.tools.namespace.parse/read-ns-decl
+                   (second (clj-tools-namespace-parse/read-ns-decl
                             (PushbackReader. (java.io.StringReader. file)))))]
     (-> tracking
         (update-in [:nses-loaded (str ns)] safe-inc)

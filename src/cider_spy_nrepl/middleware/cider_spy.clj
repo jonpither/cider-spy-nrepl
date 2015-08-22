@@ -1,6 +1,6 @@
 (ns cider-spy-nrepl.middleware.cider-spy
-  (:require [cider-spy-nrepl.middleware.sessions :as sessions]
-            [cider-spy-nrepl.middleware.cider :as cider]
+  (:require [cider-spy-nrepl.middleware.cider :as cider]
+            [cider-spy-nrepl.middleware.sessions :as sessions]
             [cider-spy-nrepl.middleware.tracker :as tracker]
             [clojure.tools.nrepl.middleware :refer [set-descriptor!]]))
 

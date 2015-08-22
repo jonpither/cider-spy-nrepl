@@ -1,8 +1,6 @@
 (ns cider-spy-nrepl.hub.server-events
-  (:require [clojure.tools.logging :as log]
-            [cider-spy-nrepl.hub.register :as register])
-  (:import [java.util UUID]
-           [org.joda.time LocalDateTime]))
+  (:require [cider-spy-nrepl.hub.register :as register]
+            [clojure.tools.logging :as log]))
 
 (defn- send-to-nrepl [c msg]
   (when c

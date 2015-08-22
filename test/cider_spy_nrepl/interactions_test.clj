@@ -1,17 +1,14 @@
 (ns cider-spy-nrepl.interactions-test
-  (:use [clojure.core.async :only [chan timeout >!! <!! buffer alts!! go-loop >! close! go]])
   (:require [cheshire.core :as json]
             [cider-spy-nrepl.hub.client :as client]
             [cider-spy-nrepl.hub.client-events :as client-events]
-            [cider-spy-nrepl.hub.register]
             [cider-spy-nrepl.hub.server-events :as server-events]
             [cider-spy-nrepl.middleware.cider-spy :as spy-middleware]
             [cider-spy-nrepl.middleware.cider-spy-hub :as hub-middleware]
-            [clojure.edn]
+            [clojure.core.async :refer [alts!! chan go timeout]]
             [clojure.test :refer :all]
             [clojure.tools.nrepl.transport :as transport])
-  (:import [io.netty.channel ChannelHandlerContext]
-           [org.joda.time LocalDateTime]))
+  (:import (io.netty.channel ChannelHandlerContext)))
 
 ;; todo reuse code across this and connections test
 

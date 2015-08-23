@@ -19,7 +19,6 @@
            (:ns-trail (summary {:session-started (LocalDateTime.)
                                 :tracking {}}))))))
 
-
 (deftest test-show-function-summary
   (let [code "(println \"hi\")"]
     (is (= {code 1}

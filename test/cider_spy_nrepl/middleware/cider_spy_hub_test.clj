@@ -55,7 +55,8 @@
     ((wrap-cider-spy-hub handler-fn) {:op "cider-spy-hub-connect"
                                       :id "hub-buffer-id"
                                       :session "bob-id"})
-    (is (= "hub-buffer-id" (:hub-connection-buffer-id @(@sessions/sessions "bob-id"))))))
+    (is (= "hub-buffer-id"
+           (:hub-connection-buffer-id @(@sessions/sessions "bob-id"))))))
 
 (deftest connect-to-hub
   (testing "Vanilla situation: a connection to hub is established"

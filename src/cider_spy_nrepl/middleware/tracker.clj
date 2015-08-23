@@ -69,13 +69,16 @@
 
 (defn- apply-trackers [session msg]
   (update-in session [:tracking]
-             #(reduce (fn [tracking f] (f tracking msg)) % trackers)))
+             #(reduce (fn [tracking f] (f tracking msg))
+                      %
+                      trackers)))
 
 (defn track-msg! [msg session]
   (let [old-session @session
         session-tracked (sessions/update! session apply-trackers msg)
         [old-session-msgs new-session-msgs] (map #(get-in % [:tracking :ns-trail])
                                                  [old-session session-tracked])
-        messages-searched (drop (count old-session-msgs) (reverse new-session-msgs))]
+        messages-searched (drop (count old-session-msgs)
+                                (reverse new-session-msgs))]
     (doseq [{:keys [ns dt]} messages-searched :when ns]
       (hub-client/update-location session ns dt))))

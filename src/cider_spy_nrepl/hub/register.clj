@@ -28,7 +28,8 @@
   (map (comp :alias deref) (vals @sessions)))
 
 (defn session-from-alias [alias]
-  (first (filter (comp (partial = alias) :alias deref) (vals @sessions))))
+  (first (filter (comp (partial = alias) :alias deref)
+                 (vals @sessions))))
 
 (defn channels
   "Return channels of registered sessions."

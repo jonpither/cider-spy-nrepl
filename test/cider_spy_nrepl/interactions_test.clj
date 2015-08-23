@@ -124,8 +124,10 @@
        :file "(ns foo.bar) (println \"hi\")"
        :session "1"})
 
-     (is (= {:1 {:alias "Jon" :nses []}} (:devs (cider-msg cider-chan))))
-     (is (= {:1 {:alias "Jon" :nses ["foo.bar"]}} (:devs (cider-msg cider-chan)))))))
+     (is (= {:1 {:alias "Jon" :nses []}}
+            (:devs (cider-msg cider-chan))))
+     (is (= {:1 {:alias "Jon" :nses ["foo.bar"]}}
+            (:devs (cider-msg cider-chan)))))))
 
 (deftest send-messages
   (spy-harness

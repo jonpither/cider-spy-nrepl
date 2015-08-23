@@ -8,5 +8,6 @@
   (let [received-msgs (for [_ msgs]
                         (first (alts!! [(timeout 2000) c])))]
     (doseq [m msgs]
-      (is (some (partial re-find (re-pattern m)) (remove nil? received-msgs))
+      (is (some (partial re-find (re-pattern m))
+                (remove nil? received-msgs))
           (str "Could not find msg: " m)))))

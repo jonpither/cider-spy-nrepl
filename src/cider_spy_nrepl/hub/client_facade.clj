@@ -27,4 +27,6 @@
   (send! (:hub-client @session) :location {:ns ns :dt (.toDate ts)}))
 
 (defn send-msg [session from recipient message]
-  (send! (:hub-client @session) :message {:message message :from from :recipient recipient}))
+  (send! (:hub-client @session) :message {:message message
+                                          :from from
+                                          :recipient recipient}))

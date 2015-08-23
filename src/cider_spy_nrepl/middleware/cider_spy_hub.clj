@@ -8,7 +8,8 @@
 (defn- register
   "Register the alias for the users session on the CIDER-SPY-HUB."
   [session]
-  (cider/send-connected-msg! session (format "Setting alias on CIDER SPY HUB to %s." (:hub-alias @session)))
+  (cider/send-connected-msg! session (format "Setting alias on CIDER SPY HUB to %s."
+                                             (:hub-alias @session)))
   (hub-client/register session))
 
 (defn- on-connect [session hub-client]
@@ -57,7 +58,9 @@
 (defn- handle-send-msg
   "Send a message to a developer registered on the CIDER-SPY-HUB."
   [{:keys [from recipient message]} session]
-  (cider/send-connected-msg! session (format "Sending message from %s to recipient %s on CIDER SPY HUB." from recipient))
+  (cider/send-connected-msg!
+   session
+   (format "Sending message from %s to recipient %s on CIDER SPY HUB." from recipient))
   (hub-client/send-msg session from recipient message))
 
 (defn- handle-cider-spy-disconnect

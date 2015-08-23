@@ -12,9 +12,11 @@
 
 (defn enrich-with-duration [msgs]
   (when msgs
-    (loop [processed '() [msg & the-rest] msgs]
+    (loop [processed '()
+           [msg & the-rest] msgs]
       (if (not-empty the-rest)
-        (recur (cons (assoc msg :seconds (seconds-between msg (first the-rest))) processed)
+        (recur (cons (assoc msg :seconds (seconds-between msg (first the-rest)))
+                     processed)
                the-rest)
         (if msg
           (cons msg processed)
@@ -24,9 +26,14 @@
   "Build a summary of the users REPL session."
   [{:keys [session-started registrations tracking]}]
   (let [{:keys [ns-trail commands nses-loaded]} tracking]
-    {:ns-trail (->> ns-trail reverse remove-duplicate-entries enrich-with-duration (map #(dissoc % :dt)))
+    {:ns-trail (->> ns-trail
+                    reverse
+                    remove-duplicate-entries
+                    enrich-with-duration
+                    (map #(dissoc % :dt)))
      :nses-loaded nses-loaded
      :fns commands
      :devs registrations
      :session {:started (.toString session-started "hh:mm:ss")
-               :seconds (.getSeconds (Seconds/secondsBetween session-started (LocalDateTime.)))}}))
+               :seconds (.getSeconds (Seconds/secondsBetween session-started
+                                                             (LocalDateTime.)))}}))

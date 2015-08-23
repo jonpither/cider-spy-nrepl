@@ -68,7 +68,7 @@
   [session]
   (sessions/update! session assoc :user-disconnect true)
   (sessions/update! session dissoc :registrations)
-  (.close (last (:hub-client @session)))
+  (-> (:hub-client @session) last .close)
   (cider/send-connected-msg! session "Disconnected from the HUB")
   (cider/update-spy-buffer-summary! session))
 

@@ -56,10 +56,10 @@
   "Shut down the netty Server Bootstrap
    Expects a vector containing a server bootstrap, boss group and worker group."
   [[b bg wg]]
-  (.sync (.awaitUninterruptibly b))
-  (-> b (.channel) (.close) (.sync))
-  (.sync (.shutdownGracefully wg))
-  (.sync (.shutdownGracefully bg)))
+  (-> b .awaitUninterruptibly .sync)
+  (-> b .channel .close .sync)
+  (-> wg .shutdownGracefully .sync)
+  (-> bg .shutdownGracefully .sync))
 
 (defn -main [& args]
   (let [port (or (first args) "7771")]

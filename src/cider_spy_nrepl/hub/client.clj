@@ -49,7 +49,10 @@
    Returns a vector containing a client bootstrap, a group and a channel."
   [host port session]
   (let [[b group] (client-bootstrap session)]
-    [b group (.channel (.sync (.connect b (InetSocketAddress. host port))))]))
+    [b group (-> b
+                 (.connect (InetSocketAddress. host port))
+                 .sync
+                 .channel)]))
 
 (defn shutdown!
   "Shut down the netty Client Bootstrap
@@ -57,9 +60,11 @@
    This operation can be run safely against a Client Bootstrap that is already shutdown."
   [[_ g c]]
   (when [(.isOpen c)]
-    (-> c (.close) (.sync)))
+    (-> c .close .sync))
   (when-not [(.isShutdown g)]
-    (.sync (.shutdownGracefully g))))
+    (-> g .shutdownGracefully .sync)))
 
 (defn send! [[_ _ c] msg]
-  (.sync (.writeAndFlush c (prn-str msg))))
+  (-> c
+      (.writeAndFlush (prn-str msg))
+      .sync))

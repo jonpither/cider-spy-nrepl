@@ -59,9 +59,9 @@
    Expects a vector containing a client bootstrap, group and channel.
    This operation can be run safely against a Client Bootstrap that is already shutdown."
   [[_ g c]]
-  (when [(.isOpen c)]
+  (when (.isOpen c)
     (-> c .close .sync))
-  (when-not [(.isShutdown g)]
+  (when-not (.isShutdown g)
     (-> g .shutdownGracefully .sync)))
 
 (defn send! [[_ _ c] msg]

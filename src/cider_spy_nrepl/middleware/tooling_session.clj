@@ -18,7 +18,7 @@
         (re-find #"\(require 'complete\.core\)" code)
         (re-find #"\(clojure\.core\/binding \[clojure\.core" code))))
 
-(defn- new-tooling-session [{:keys [session] :as msg}]
+(defn- new-tooling-session [{:keys [session]}]
 ;;  (println "Marking tooling session:" msg)
   ((swap! tooling-sessions conj session) session))
 

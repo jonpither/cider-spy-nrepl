@@ -21,7 +21,7 @@
 
 (defn- track-namespace
   "Add message to supplied tracking."
-  [tracking {:keys [ns] :as msg}]
+  [tracking {:keys [ns]}]
   (add-to-ns-trail tracking ns))
 
 (defn- get-ast [ns code-str]
@@ -38,7 +38,7 @@
 
 (defn- track-command
   "Add invoked fn to supplied tracking."
-  [tracking {:keys [op ns code] :as msg}]
+  [tracking {:keys [op ns code]}]
   (if-let [fn (and (is-trackeable-msg? op ns code)
                    (:fn (get-ast ns code)))]
     (update-in tracking [:commands (format "%s/%s"

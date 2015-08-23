@@ -16,16 +16,16 @@
 (defmethod process :default [_ _ request]
   (log/warn "Did not understand message" request))
 
-(defmethod process :register [_ session {:keys [session-id alias] :as request}]
+(defmethod process :register [_ session {:keys [session-id alias]}]
   (register/register! session session-id alias)
   (send-to-nrepl (:channel @session) {:op :connected :alias (:alias @session)})
   (broadcast-msg! :registered :alias alias :registered (register/users)))
 
-(defmethod process :unregister [_ session request]
+(defmethod process :unregister [_ session _]
   (register/unregister! session)
   (broadcast-msg! :unregistered :alias (:alias @session) :registered (register/users)))
 
-(defmethod process :location [_ session {:keys [ns dt] :as request}]
+(defmethod process :location [_ session {:keys [ns dt]}]
   (register/update! session update-in [:tracking :ns-trail] conj {:dt dt :ns ns})
   (broadcast-msg! :location :alias (:alias @session) :registered (register/users)))
 

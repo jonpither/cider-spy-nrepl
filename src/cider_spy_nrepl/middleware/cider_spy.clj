@@ -20,7 +20,7 @@
 
 (defn- wrap-tracking
   "Wrap the handler to apply tracking and to update the CIDER SPY summary buffer."
-  [handler {:keys [transport session] :as msg}]
+  [handler msg]
   (let [result (handler msg)]
     (when-let [session (sessions/session! msg)]
       (tracker/track-msg! msg session)

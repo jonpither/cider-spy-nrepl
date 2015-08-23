@@ -52,7 +52,7 @@
   (let [cider-chan (chan)
         cider-transport (reify transport/Transport
                           (send [_ r]
-                            (when (or (not (= "connection-buffer-msg" (:id r)))
+                            (when (or (not= "connection-buffer-msg" (:id r))
                                       (:msg r))
                               (go (>! cider-chan r)))))]
 

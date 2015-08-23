@@ -5,6 +5,11 @@
 
 (def sessions (atom {}))
 
+(defn update!
+  "Updates the session with the given function."
+  [session f & args]
+  (swap! session #(apply f % args)))
+
 (defn- new-session [{:keys [session transport]}]
   (atom {:id session
          :transport transport
@@ -14,7 +19,7 @@
 (defn- register-new-session [{:keys [session] :as msg}]
   (locking sessions
     (or (get @sessions session)
-        (get (swap! sessions assoc session (new-session msg))
+        (get (update! sessions assoc session (new-session msg))
              session))))
 
 (defn session!
@@ -35,8 +40,3 @@
     (or (get @sessions session)
         (and (not (tooling/tooling-session? msg))
              (register-new-session msg)))))
-
-(defn update!
-  "Updates the session with the given function."
-  [session f & args]
-  (swap! session #(apply f % args)))

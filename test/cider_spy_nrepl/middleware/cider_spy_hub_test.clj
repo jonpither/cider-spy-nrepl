@@ -60,8 +60,9 @@
 
 (deftest connect-to-hub
   (testing "Vanilla situation: a connection to hub is established"
-    (swap! sessions/sessions assoc "bob-id" (atom {:hub-connection-buffer-id "hub-buffer-id"
-                                                   :transport *transport*}))
+    (sessions/update!
+     sessions/sessions assoc "bob-id" (atom {:hub-connection-buffer-id "hub-buffer-id"
+                                             :transport *transport*}))
     ((wrap-cider-spy-hub handler-fn) {:op "some-random-op"
                                       :session "bob-id"})
     (assert-async-msgs *transport-chan* ["Connecting to SPY HUB"
@@ -69,9 +70,10 @@
     (is (first (alts!! [(timeout 2000) *handler-chan*])))))
 
 (deftest re-connect-to-hub
-  (swap! sessions/sessions assoc "bob-id" (atom {:hub-client [nil nil (MockChannel. false)]
-                                                 :hub-connection-buffer-id "hub-buffer-id"
-                                                 :transport *transport*}))
+  (sessions/update!
+   sessions/sessions assoc "bob-id" (atom {:hub-client [nil nil (MockChannel. false)]
+                                           :hub-connection-buffer-id "hub-buffer-id"
+                                           :transport *transport*}))
   ((wrap-cider-spy-hub handler-fn) {:op "some-random-op"
                                     :session "bob-id"})
 
@@ -82,9 +84,10 @@
   (is (first (alts!! [(timeout 2000) *handler-chan*]))))
 
 (deftest connect-to-hub-does-nothing-if-connected
-  (swap! sessions/sessions assoc "bob-id" (atom {:hub-client [nil nil (MockChannel. true)]
-                                                 :hub-connection-buffer-id "hub-buffer-id"
-                                                 :transport *transport*}))
+  (sessions/update!
+   sessions/sessions assoc "bob-id" (atom {:hub-client [nil nil (MockChannel. true)]
+                                           :hub-connection-buffer-id "hub-buffer-id"
+                                           :transport *transport*}))
   ((wrap-cider-spy-hub handler-fn) {:op "some-random-op"
                                     :session "bob-id"})
 
@@ -93,8 +96,9 @@
   (is (first (alts!! [(timeout 2000) *handler-chan*]))))
 
 (deftest connect-to-hub-handles-failure
-  (swap! sessions/sessions assoc "bob-id" (atom {:hub-connection-buffer-id "hub-buffer-id"
-                                                 :transport *transport*}))
+  (sessions/update!
+   sessions/sessions assoc "bob-id" (atom {:hub-connection-buffer-id "hub-buffer-id"
+                                           :transport *transport*}))
   (binding [client/connect (fn [& args] (throw (ConnectException.)))]
     ((wrap-cider-spy-hub handler-fn) {:op "some-random-op"
                                       :session "bob-id"}))
@@ -105,8 +109,9 @@
   (is (first (alts!! [(timeout 2000) *handler-chan*]))))
 
 (deftest connect-to-hub-handles-no-config
-  (swap! sessions/sessions assoc "bob-id" (atom {:hub-connection-buffer-id "hub-buffer-id"
-                                                 :transport *transport*}))
+  (sessions/update!
+   sessions/sessions assoc "bob-id" (atom {:hub-connection-buffer-id "hub-buffer-id"
+                                           :transport *transport*}))
   (binding [settings/hub-host-and-port (constantly nil)]
     ((wrap-cider-spy-hub handler-fn) {:op "some-random-op"
                                       :session "bob-id"}))
@@ -117,9 +122,10 @@
 
 (deftest register-alias-on-hub
   (testing "Vanilla case of an existing connection and session, user just wants to change their alias"
-    (swap! sessions/sessions assoc "bob-id" (atom {:hub-client [nil nil (MockChannel. true)]
-                                                   :hub-connection-buffer-id "hub-buffer-id"
-                                                   :transport *transport*}))
+    (sessions/update!
+     sessions/sessions assoc "bob-id" (atom {:hub-client [nil nil (MockChannel. true)]
+                                             :hub-connection-buffer-id "hub-buffer-id"
+                                             :transport *transport*}))
     (binding [settings/hub-host-and-port (constantly nil)]
       ((wrap-cider-spy-hub handler-fn) {:op "cider-spy-hub-alias"
                                         :alias "foobar"

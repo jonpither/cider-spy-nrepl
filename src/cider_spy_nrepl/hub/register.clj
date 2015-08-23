@@ -5,22 +5,22 @@
 
 (def sessions (atom {}))
 
-(defn register!
-  "Register the session.
-   This will also update the session with session-id and alias."
-  [session id alias]
-  (swap! session assoc :id id :alias alias)
-  (swap! sessions assoc id session))
-
-(defn unregister!
-  "Unregister the session."
-  [session]
-  (swap! sessions dissoc (:id @session)))
-
 (defn update!
   "Updates the session with the given function."
   [session f & args]
   (swap! session #(apply f % args)))
+
+(defn register!
+  "Register the session.
+   This will also update the session with session-id and alias."
+  [session id alias]
+  (update! session assoc :id id :alias alias)
+  (update! sessions assoc id session))
+
+(defn unregister!
+  "Unregister the session."
+  [session]
+  (update! sessions dissoc (:id @session)))
 
 (defn aliases
   "Return aliases of registered sessions."

@@ -11,15 +11,13 @@
                                                          {:dt (LocalDateTime. 2010 1 1 0 0 5)
                                                           :ns "user"}
                                                          {:dt (LocalDateTime. 2010 1 1 0 0 1)
-                                                          :ns "user"})}})
-                    :session))))
+                                                          :ns "user"})}})))))
 
 (deftest test-return-empty-list-for-no-namespace-activity
   (testing "Had a problem with (nil) being returned."
     (is (= '()
            (:ns-trail (summary {:session-started (LocalDateTime.)
-                                :tracking {}})
-                      :session)))))
+                                :tracking {}}))))))
 
 
 (deftest test-show-function-summary

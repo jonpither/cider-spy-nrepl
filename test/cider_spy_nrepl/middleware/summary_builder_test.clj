@@ -4,7 +4,7 @@
   (:import (org.joda.time LocalDateTime)))
 
 (deftest test-show-namespace-summary
-  (is (= (list {:ns "bob"} {:ns "user" :seconds 29})
+  (is (= (list {:ns "bob" :seconds nil} {:ns "user" :seconds 29})
          (:ns-trail (summary {:session-started (LocalDateTime.)
                               :tracking {:ns-trail (list {:dt (LocalDateTime. 2010 1 1 0 0 30)
                                                           :ns "bob"}
@@ -29,5 +29,5 @@
 (deftest test-enrich-with-duration
   (is (= '(nil 29)
          (map :seconds (enrich-with-duration
-                        (reverse (list {:dt (LocalDateTime. 2010 1 1 0 0 30)}
-                                       {:dt (LocalDateTime. 2010 1 1 0 0 1)})))))))
+                        (list {:dt (LocalDateTime. 2010 1 1 0 0 30)}
+                              {:dt (LocalDateTime. 2010 1 1 0 0 1)}))))))

@@ -14,9 +14,8 @@
 (defn- register-new-session [{:keys [session] :as msg}]
   (locking sessions
     (or (get @sessions session)
-        (do
-;;          (println "New session" msg)
-          (get (swap! sessions assoc session (new-session msg)) session)))))
+        (get (swap! sessions assoc session (new-session msg))
+             session))))
 
 (defn session!
   "Return the session for the given msg.

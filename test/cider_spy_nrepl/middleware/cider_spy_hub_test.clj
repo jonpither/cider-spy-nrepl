@@ -77,7 +77,6 @@
   ((wrap-cider-spy-hub handler-fn) {:op "some-random-op"
                                     :session "bob-id"})
 
-  (Thread/sleep 500)
   (test-utils/assert-async-msgs *transport-chan* ["SPY HUB connection closed, reconnecting"
                                                   "Connecting to SPY HUB"
                                                   "You are connected to the CIDER SPY HUB"])

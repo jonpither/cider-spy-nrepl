@@ -1,15 +1,16 @@
 (ns cider-spy-nrepl.hub.client
-  (:require [cider-spy-nrepl.hub.edn-codec :as edn-codec]
-            [cider-spy-nrepl.hub.client-events :as client-events]
+  (:require [cider-spy-nrepl.hub.client-events :as client-events]
+            [cider-spy-nrepl.hub.edn-codec :as edn-codec]
             [clojure.tools.logging :as log])
-  (:import [io.netty.channel ChannelHandlerAdapter SimpleChannelInboundHandler ChannelInitializer]
-           [io.netty.channel.nio NioEventLoopGroup]
-           [io.netty.channel.socket.nio NioSocketChannel]
-           [io.netty.bootstrap Bootstrap]
-           [java.net InetSocketAddress ConnectException]
-           [io.netty.handler.codec.string StringDecoder]
-           [io.netty.handler.codec.string StringEncoder]
-           [io.netty.handler.codec DelimiterBasedFrameDecoder Delimiters]))
+  (:import (io.netty.bootstrap Bootstrap)
+           (io.netty.channel ChannelInitializer
+                             SimpleChannelInboundHandler)
+           (io.netty.channel.nio NioEventLoopGroup)
+           (io.netty.channel.socket.nio NioSocketChannel)
+           (io.netty.handler.codec DelimiterBasedFrameDecoder
+                                   Delimiters)
+           (io.netty.handler.codec.string StringDecoder StringEncoder)
+           (java.net InetSocketAddress)))
 
 (defn simple-handler
   "Handle messages coming back from the CIDER-SPY hub."
@@ -48,17 +49,22 @@
    Returns a vector containing a client bootstrap, a group and a channel."
   [host port session]
   (let [[b group] (client-bootstrap session)]
-    [b group (.channel (.sync (.connect b (InetSocketAddress. host port))))]))
+    [b group (-> b
+                 (.connect (InetSocketAddress. host port))
+                 .sync
+                 .channel)]))
 
 (defn shutdown!
   "Shut down the netty Client Bootstrap
    Expects a vector containing a client bootstrap, group and channel.
    This operation can be run safely against a Client Bootstrap that is already shutdown."
-  [[b g c]]
-  (when [(.isOpen c)]
-    (-> c (.close) (.sync)))
-  (when-not [(.isShutdown g)]
-    (.sync (.shutdownGracefully g))))
+  [[_ g c]]
+  (when (.isOpen c)
+    (-> c .close .sync))
+  (when-not (.isShutdown g)
+    (-> g .shutdownGracefully .sync)))
 
 (defn send! [[_ _ c] msg]
-  (.sync (.writeAndFlush c (prn-str msg))))
+  (-> c
+      (.writeAndFlush (prn-str msg))
+      .sync))

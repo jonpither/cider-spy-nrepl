@@ -1,9 +1,9 @@
 (ns cider-spy-nrepl.middleware.cider
-  (:require [clojure.tools.nrepl.transport :as transport]
-            [clojure.tools.nrepl.misc :refer [response-for]]
-            [cider-spy-nrepl.middleware.summary-builder :as summary-builder]
+  (:require [cheshire.core :as json]
             [cider-spy-nrepl.middleware.sessions :as sessions]
-            [cheshire.core :as json]))
+            [cider-spy-nrepl.middleware.summary-builder :as summary-builder]
+            [clojure.tools.nrepl.misc :refer [response-for]]
+            [clojure.tools.nrepl.transport :as transport]))
 
 (defn update-session-for-summary-msg!
   "Update the session with SUMMARY-MESSAGE-ID."
@@ -14,7 +14,9 @@
 (defn- send-back-to-cider! [transport session-id message-id & opts]
   (when message-id
     (transport/send transport
-                    (apply response-for {:session session-id :id message-id} opts))))
+                    (apply response-for
+                           {:session session-id :id message-id}
+                           opts))))
 
 (defn update-spy-buffer-summary!
   "Send this string back to the users CIDER SPY buffer.
@@ -23,12 +25,14 @@
   [session]
   (let [summary (summary-builder/summary @session)
         {:keys [id summary-message-id transport]} @session]
-    (send-back-to-cider! transport id summary-message-id :value (json/encode summary))))
+    (send-back-to-cider! transport id summary-message-id
+                         :value (json/encode summary))))
 
 (defn send-connected-on-hub-msg!
   [session alias]
   (let [{:keys [id hub-connection-buffer-id transport]} @session]
-    (send-back-to-cider! transport id hub-connection-buffer-id :hub-registered-alias alias)))
+    (send-back-to-cider! transport id hub-connection-buffer-id
+                         :hub-registered-alias alias)))
 
 (defn send-connected-msg!
   "Send a message back to CIDER-SPY pertaining to CIDER-SPY-HUB connectivity.
@@ -36,11 +40,13 @@
    CIDER-SPY buffer."
   [session s]
   (let [{:keys [id hub-connection-buffer-id transport]} @session]
-    (send-back-to-cider! transport id hub-connection-buffer-id :value (str "CIDER-SPY-NREPL: " s))))
+    (send-back-to-cider! transport id hub-connection-buffer-id
+                         :value (str "CIDER-SPY-NREPL: " s))))
 
 (defn send-received-msg!
   "Send a message back to CIDER-SPY informing that a msg has been received
    from another developer on the HUB."
   [session from recipient s]
   (let [{:keys [id hub-connection-buffer-id transport]} @session]
-    (send-back-to-cider! transport id hub-connection-buffer-id :from from :recipient recipient :msg s)))
+    (send-back-to-cider! transport id hub-connection-buffer-id
+                         :from from :recipient recipient :msg s)))

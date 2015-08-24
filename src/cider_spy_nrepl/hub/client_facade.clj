@@ -1,6 +1,5 @@
 (ns cider-spy-nrepl.hub.client-facade
-  (:require [cider-spy-nrepl.hub.client :as hubc]
-            [cider-spy-nrepl.hub.client-events :as client-events]))
+  (:require [cider-spy-nrepl.hub.client :as hubc]))
 
 (defn- send!
   [bootstrap op msg]
@@ -28,4 +27,6 @@
   (send! (:hub-client @session) :location {:ns ns :dt (.toDate ts)}))
 
 (defn send-msg [session from recipient message]
-  (send! (:hub-client @session) :message {:message message :from from :recipient recipient}))
+  (send! (:hub-client @session) :message {:message message
+                                          :from from
+                                          :recipient recipient}))

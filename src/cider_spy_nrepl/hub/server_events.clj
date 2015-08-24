@@ -1,8 +1,6 @@
 (ns cider-spy-nrepl.hub.server-events
-  (:require [clojure.tools.logging :as log]
-            [cider-spy-nrepl.hub.register :as register])
-  (:import [java.util UUID]
-           [org.joda.time LocalDateTime]))
+  (:require [cider-spy-nrepl.hub.register :as register]
+            [clojure.tools.logging :as log]))
 
 (defn- send-to-nrepl [c msg]
   (when c
@@ -18,25 +16,37 @@
 (defmethod process :default [_ _ request]
   (log/warn "Did not understand message" request))
 
-(defmethod process :register [_ session {:keys [session-id alias] :as request}]
+(defmethod process :register [_ session {:keys [session-id alias]}]
   (register/register! session session-id alias)
-  (send-to-nrepl (:channel @session) {:op :connected :alias (:alias @session)})
-  (broadcast-msg! :registered :alias alias :registered (register/users)))
+  (send-to-nrepl (:channel @session) {:op :connected
+                                      :alias (:alias @session)})
+  (broadcast-msg! :registered
+                  :alias alias
+                  :registered (register/users)))
 
-(defmethod process :unregister [_ session request]
+(defmethod process :unregister [_ session _]
   (register/unregister! session)
-  (broadcast-msg! :unregistered :alias (:alias @session) :registered (register/users)))
+  (broadcast-msg! :unregistered
+                  :alias (:alias @session)
+                  :registered (register/users)))
 
-(defmethod process :location [_ session {:keys [ns dt] :as request}]
-  (register/update! session update-in [:tracking :ns-trail] conj {:dt dt :ns ns})
-  (broadcast-msg! :location :alias (:alias @session) :registered (register/users)))
+(defmethod process :location [_ session {:keys [ns dt]}]
+  (register/update! session
+                    update-in [:tracking :ns-trail]
+                    conj {:dt dt :ns ns})
+  (broadcast-msg! :location
+                  :alias (:alias @session)
+                  :registered (register/users)))
 
 (defmethod process :message [_ _ {:keys [message from recipient]}]
   (if-let [recipient-session (register/session-from-alias recipient)]
     (do
       (log/info "Delivering message from" from "to" (:alias @recipient-session))
       (send-to-nrepl (:channel @recipient-session)
-                     {:op :message :message message :from from :recipient recipient}))
+                     {:op :message
+                      :message message
+                      :from from
+                      :recipient recipient}))
     (log/warn "Message from" from "to unregistered user" recipient)))
 
 (defn unregister! [session]

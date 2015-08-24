@@ -1,6 +1,6 @@
 (ns cider-spy-nrepl.middleware.cider-spy
-  (:require [cider-spy-nrepl.middleware.sessions :as sessions]
-            [cider-spy-nrepl.middleware.cider :as cider]
+  (:require [cider-spy-nrepl.middleware.cider :as cider]
+            [cider-spy-nrepl.middleware.sessions :as sessions]
             [cider-spy-nrepl.middleware.tracker :as tracker]
             [clojure.tools.nrepl.middleware :refer [set-descriptor!]]))
 
@@ -20,7 +20,7 @@
 
 (defn- wrap-tracking
   "Wrap the handler to apply tracking and to update the CIDER SPY summary buffer."
-  [handler {:keys [transport session] :as msg}]
+  [handler msg]
   (let [result (handler msg)]
     (when-let [session (sessions/session! msg)]
       (tracker/track-msg! msg session)

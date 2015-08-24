@@ -1,15 +1,15 @@
 (ns cider-spy-nrepl.hub.server
-  (:require [clojure.tools.logging :as log]
-            [cider-spy-nrepl.hub.edn-codec :as edn-codec]
-            [cider-spy-nrepl.hub.server-events :as server-events])
-  (:import [io.netty.channel ChannelHandlerAdapter ChannelInitializer ChannelOption ChannelHandler SimpleChannelInboundHandler]
-           [io.netty.channel.nio NioEventLoopGroup]
-           [io.netty.bootstrap ServerBootstrap]
-           [io.netty.channel.socket.nio NioServerSocketChannel]
-           [io.netty.handler.codec.string StringDecoder]
-           [io.netty.handler.codec.string StringEncoder]
-           [io.netty.handler.codec DelimiterBasedFrameDecoder Delimiters]
-           [io.netty.channel ChannelHandlerContext]))
+  (:require [cider-spy-nrepl.hub.edn-codec :as edn-codec]
+            [cider-spy-nrepl.hub.server-events :as server-events]
+            [clojure.tools.logging :as log])
+  (:import (io.netty.bootstrap ServerBootstrap)
+           (io.netty.channel ChannelHandlerContext ChannelInitializer
+                             ChannelOption SimpleChannelInboundHandler)
+           (io.netty.channel.nio NioEventLoopGroup)
+           (io.netty.channel.socket.nio NioServerSocketChannel)
+           (io.netty.handler.codec DelimiterBasedFrameDecoder
+                                   Delimiters)
+           (io.netty.handler.codec.string StringDecoder StringEncoder)))
 
 (defn- server-request [ctx session request]
   (log/info "Server got request" (prn-str request))
@@ -46,8 +46,7 @@
                   (.addLast "string-decoder" (StringDecoder.))
                   (.addLast "end" (edn-codec/make-decoder))
                   (.addLast "string-encoder" (StringEncoder.))
-                  (.addLast "handler" (simple-handler ch))
-                  )))))
+                  (.addLast "handler" (simple-handler ch)))))))
          (.option ChannelOption/SO_BACKLOG (int 128))
          (.childOption ChannelOption/SO_KEEPALIVE true)
          (.bind port))
@@ -57,10 +56,10 @@
   "Shut down the netty Server Bootstrap
    Expects a vector containing a server bootstrap, boss group and worker group."
   [[b bg wg]]
-  (.sync (.awaitUninterruptibly b))
-  (-> b (.channel) (.close) (.sync))
-  (.sync (.shutdownGracefully wg))
-  (.sync (.shutdownGracefully bg)))
+  (-> b .awaitUninterruptibly .sync)
+  (-> b .channel .close .sync)
+  (-> wg .shutdownGracefully .sync)
+  (-> bg .shutdownGracefully .sync))
 
 (defn -main [& args]
   (let [port (or (first args) "7771")]

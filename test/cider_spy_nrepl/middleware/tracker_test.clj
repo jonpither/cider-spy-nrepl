@@ -13,13 +13,15 @@
          msg2 {:ns "foo2-ns"}]
      (track-msg! msg1 session)
      (track-msg! msg2 session)
-     (is (= (list msg2 msg1)  (-> @session :tracking :messages))))))
+     (is (= (list msg2 msg1)
+            (-> @session :tracking :messages))))))
 
 (deftest test-track-namespace
   (tracker-harness
    (track-msg! {:ns "foo-ns"} session)
    (track-msg! {:ns "foo-ns2"} session)
-   (is (= (list "foo-ns2" "foo-ns") (map :ns (-> @session :tracking :ns-trail))))))
+   (is (= (list "foo-ns2" "foo-ns")
+          (map :ns (-> @session :tracking :ns-trail))))))
 
 (deftest test-track-command
   (tracker-harness
@@ -48,4 +50,5 @@
   (tracker-harness
    (track-msg! {:ns "foo-ns"} session)
    (track-msg! {:op "load-file" :file "(ns foo-ns) (println \"hi\")"} session)
-   (is (= (list "foo-ns" "foo-ns") (map :ns (-> @session :tracking :ns-trail))))))
+   (is (= (list "foo-ns" "foo-ns")
+          (map :ns (-> @session :tracking :ns-trail))))))

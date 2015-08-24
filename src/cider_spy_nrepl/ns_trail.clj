@@ -1,5 +1,5 @@
 (ns cider-spy-nrepl.ns-trail
-  (import [org.joda.time LocalDateTime Seconds]))
+  (:import (org.joda.time LocalDateTime Seconds)))
 
 (defn- time-weight [seconds]
   (let [minutes (/ seconds 60)]
@@ -10,7 +10,8 @@
           :else 10)))
 
 (defn- score [now most-recent-visit]
-  (let [seconds (.getSeconds (Seconds/secondsBetween (LocalDateTime. most-recent-visit) now))]
+  (let [seconds (.getSeconds (Seconds/secondsBetween
+                              (LocalDateTime. most-recent-visit) now))]
     (double (/ (time-weight seconds) 100))))
 
 (defn nses-with-score [now ns-trail]

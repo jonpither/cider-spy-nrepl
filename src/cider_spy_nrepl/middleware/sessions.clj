@@ -1,9 +1,12 @@
 (ns cider-spy-nrepl.middleware.sessions
-  (:require [cider-spy-nrepl.middleware.alias :as alias]
+  (:require [cider-spy-nrepl.common :as common]
+            [cider-spy-nrepl.middleware.alias :as alias]
             [cider-spy-nrepl.middleware.tooling-session :as tooling])
-  (:import [org.joda.time LocalDateTime]))
+  (:import (org.joda.time LocalDateTime)))
 
 (def sessions (atom {}))
+
+(def update! common/update-atom!)
 
 (defn- new-session [{:keys [session transport]}]
   (atom {:id session
@@ -14,9 +17,8 @@
 (defn- register-new-session [{:keys [session] :as msg}]
   (locking sessions
     (or (get @sessions session)
-        (do
-;;          (println "New session" msg)
-          (get (swap! sessions assoc session (new-session msg)) session)))))
+        (get (update! sessions assoc session (new-session msg))
+             session))))
 
 (defn session!
   "Return the session for the given msg.
@@ -36,8 +38,3 @@
     (or (get @sessions session)
         (and (not (tooling/tooling-session? msg))
              (register-new-session msg)))))
-
-(defn update!
-  "Updates the session with the given function."
-  [session f & args]
-  (swap! session #(apply f % args)))

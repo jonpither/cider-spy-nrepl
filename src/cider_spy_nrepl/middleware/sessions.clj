@@ -1,14 +1,12 @@
 (ns cider-spy-nrepl.middleware.sessions
-  (:require [cider-spy-nrepl.middleware.alias :as alias]
+  (:require [cider-spy-nrepl.common :as common]
+            [cider-spy-nrepl.middleware.alias :as alias]
             [cider-spy-nrepl.middleware.tooling-session :as tooling])
   (:import (org.joda.time LocalDateTime)))
 
 (def sessions (atom {}))
 
-(defn update!
-  "Updates the session with the given function."
-  [session f & args]
-  (swap! session #(apply f % args)))
+(def update! common/update-atom!)
 
 (defn- new-session [{:keys [session transport]}]
   (atom {:id session

@@ -7,9 +7,14 @@
 (defn- handle-summary
   "Handle the CIDER-SPY request for summary information."
   [msg]
-  (when-let [session (sessions/session! msg)]
-    (cider/update-session-for-summary-msg! session msg)
-    (cider/update-spy-buffer-summary! session)))
+  (try
+    (when-let [session (sessions/session! msg)]
+      (println session)
+      (cider/update-session-for-summary-msg! session msg)
+      (cider/update-spy-buffer-summary! session))
+    (catch Throwable t
+      (println "Error occured servicing cider-spy-summary request")
+      (.printStackTrace t))))
 
 (defn- handle-reset
   "Reset CIDER-SPY tracking."
@@ -27,20 +32,20 @@
       (cider/update-spy-buffer-summary! session))
     result))
 
+(def cider-spy--nrepl-ops {"cider-spy-summary" #'handle-summary
+                           "cider-spy-reset" #'handle-reset})
+
 (defn wrap-cider-spy
   "Cider Spy Middleware."
   [handler]
   (fn [{:keys [op] :as msg}]
-    (case op
-      "cider-spy-summary" (handle-summary msg)
-      "cider-spy-reset" (handle-reset msg)
+    (println "Servicing" op "with" (get cider-spy--nrepl-ops op))
+    (if-let [cider-spy-handler (get cider-spy--nrepl-ops op)]
+      (cider-spy-handler msg)
       (wrap-tracking handler msg))))
 
-;; TODO figure out what this actually done.
 (set-descriptor!
  #'wrap-cider-spy
- {:handles
-  {"cider-spy-summary"
-   {:doc "Return a summary of hacking information about the nrepl session."}
-   "cider-spy-reset"
-   {:doc "Reset all tracking information."}}})
+ {:handles (zipmap (keys cider-spy--nrepl-ops)
+                   (repeat {:doc "See the cider-spy README"
+                            :returns {} :requires {}}))})

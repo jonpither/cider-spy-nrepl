@@ -5,7 +5,7 @@
             [cider-spy-nrepl.hub.server-events :as server-events]
             [cider-spy-nrepl.middleware.cider-spy :as spy-middleware]
             [cider-spy-nrepl.middleware.cider-spy-hub :as hub-middleware]
-            [clojure.core.async :refer [alts!! chan go timeout]]
+            [clojure.core.async :refer [alts!! chan go timeout >!]]
             [clojure.test :refer :all]
             [clojure.tools.nrepl.transport :as transport])
   (:import (io.netty.channel ChannelHandlerContext))

@@ -4,7 +4,7 @@
             [cider-spy-nrepl.middleware.hub-settings :as settings]
             [cider-spy-nrepl.middleware.sessions :as sessions]
             [cider-spy-nrepl.test-utils :as test-utils]
-            [clojure.core.async :refer [alts!! chan close! go timeout]]
+            [clojure.core.async :refer [alts!! chan close! go timeout >!]]
             [clojure.test :refer :all]
             [clojure.tools.nrepl.transport :as transport])
   (:import (java.net ConnectException))

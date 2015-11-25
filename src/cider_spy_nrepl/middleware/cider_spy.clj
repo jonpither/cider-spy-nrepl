@@ -9,7 +9,6 @@
   [msg]
   (try
     (when-let [session (sessions/session! msg)]
-      (println session)
       (cider/update-session-for-summary-msg! session msg)
       (cider/update-spy-buffer-summary! session))
     (catch Throwable t
@@ -20,7 +19,7 @@
   "Reset CIDER-SPY tracking."
   [msg]
   (when-let [session (sessions/session! msg)]
-    (sessions/update! session dissoc :tracking)
+    (swap! session dissoc :tracking)
     (cider/update-spy-buffer-summary! session)))
 
 (defn- wrap-tracking
@@ -39,7 +38,6 @@
   "Cider Spy Middleware."
   [handler]
   (fn [{:keys [op] :as msg}]
-    (println "Servicing" op "with" (get cider-spy--nrepl-ops op))
     (if-let [cider-spy-handler (get cider-spy--nrepl-ops op)]
       (cider-spy-handler msg)
       (wrap-tracking handler msg))))

@@ -12,8 +12,8 @@
   "Register the session.
    This will also update the session with session-id and alias."
   [session id alias]
-  (update! session assoc :id id :alias alias)
-  (update! sessions assoc id session))
+  (swap! session assoc :id id :alias alias)
+  (swap! sessions assoc id session))
 
 (defn unregister!
   "Unregister the session."

@@ -8,7 +8,7 @@
 (defn update-session-for-summary-msg!
   "Update the session with SUMMARY-MESSAGE-ID."
   [session {:keys [id]}]
-  (sessions/update! session assoc :summary-message-id id))
+  (swap! session assoc :summary-message-id id))
 
 ;; Todo maybe make a macro to save unnecessary work if cider-spy is not place
 (defn- send-back-to-cider! [transport session-id message-id & opts]

@@ -1,24 +1,15 @@
 (ns cider-spy-nrepl.middleware.sessions
-  (:require [cider-spy-nrepl.common :as common]
-            [cider-spy-nrepl.middleware.alias :as alias]
-            [cider-spy-nrepl.middleware.tooling-session :as tooling])
+  (:require [cider-spy-nrepl.middleware.alias :as alias])
   (:import (org.joda.time LocalDateTime)))
 
-(def sessions (atom {}))
-
-(def update! common/update-atom!)
-
-(defn- new-session [{:keys [session transport]}]
-  (atom {:id session
+(defn- new-session [{:keys [transport session]}]
+  (atom {:id (:id (meta @session))
          :transport transport
          :session-started (LocalDateTime.)
          :hub-alias (alias/alias-from-env)}))
 
-(defn- register-new-session [{:keys [session] :as msg}]
-  (locking sessions
-    (or (get @sessions session)
-        (get (update! sessions assoc session (new-session msg))
-             session))))
+(defn cider-spy-session [nrepl-session]
+  (::session @nrepl-session))
 
 (defn session!
   "Return the session for the given msg.
@@ -34,7 +25,6 @@
 
    Calling code should therefore deal with a nil return value."
   [{:keys [session] :as msg}]
-  (when (string? session)
-    (or (get @sessions session)
-        (and (not (tooling/tooling-session? msg))
-             (register-new-session msg)))))
+  (when session
+    (or (cider-spy-session session)
+        (::session (swap! session assoc ::session (new-session msg))))))

@@ -3,5 +3,7 @@
             [clojure.test :refer :all]))
 
 (deftest foo-test
-  (session! {:session "1"})
-  (is (= "1" (:id @(get @sessions "1")))))
+  (let [nrepl-session (atom {})
+        cider-spy-session (session! {:session nrepl-session})]
+    (swap! cider-spy-session assoc :a :c)
+    (is (= :c (:a @(session! {:session nrepl-session}))))))

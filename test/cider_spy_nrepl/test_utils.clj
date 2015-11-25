@@ -19,11 +19,10 @@
     (doseq [m msgs]
       (is (some (partial re-find (re-pattern m))
                 (remove nil? received-msgs))
-          (str "Could not find msg: " m)))))
+          (str "Could not find msg: " m " got:\n" (clojure.string/join " " received-msgs))))))
 
 (defmacro spy-harness [& body]
   `(do
-     (reset! cider-spy-nrepl.middleware.sessions/sessions {})
      (reset! cider-spy-nrepl.hub.register/sessions {})
      ~@body))
 
@@ -62,7 +61,7 @@
   (when-let [msg (:value (raw-cider-msg cider-chan))]
     (json/parse-string msg true)))
 
-(defn foo [session-id alias]
+(defn foo [session alias]
   (let [cider-chan (chan)
         cider-transport (reify transport/Transport
                           (send [_ r]
@@ -73,7 +72,7 @@
     ((spy-middleware/wrap-cider-spy nil)
      {:id "summary-buffer-msg"
       :op "cider-spy-summary"
-      :session session-id
+      :session session
       :transport cider-transport})
 
     ;; drain the first summary message
@@ -84,12 +83,12 @@
      {:id "connection-buffer-msg"
       :op "cider-spy-hub-connect"
       :hub-alias alias
-      :session session-id
+      :session session
       :transport cider-transport})
 
     (binding [client/connect stub-connect-to-hub]
       ((hub-middleware/wrap-cider-spy-hub (constantly nil))
        {:op "random-op"
-        :session session-id}))
+        :session session}))
 
     cider-chan))

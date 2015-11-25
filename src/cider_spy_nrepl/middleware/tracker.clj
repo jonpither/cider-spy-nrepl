@@ -77,7 +77,7 @@
 
 (defn track-msg! [msg session]
   (let [old-session @session
-        session-tracked (sessions/update! session apply-trackers msg)
+        session-tracked (swap! session apply-trackers msg)
         [old-session-msgs new-session-msgs] (map #(get-in % [:tracking :ns-trail])
                                                  [old-session session-tracked])
         messages-searched (drop (count old-session-msgs)

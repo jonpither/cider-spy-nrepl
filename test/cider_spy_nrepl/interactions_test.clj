@@ -6,21 +6,24 @@
 
 (deftest alias-should-bubble-to-cider
   (test-utils/spy-harness
-   (let [cider-chan (test-utils/foo "1" "Jon")]
+   (let [nrepl-session (atom (with-meta {} {:id 1}))
+         cider-chan (test-utils/foo nrepl-session "Jon")]
      (is (= {:1 {:alias "Jon" :nses []}} (:devs (test-utils/cider-msg cider-chan))))
 
      ((hub-middleware/wrap-cider-spy-hub nil)
       {:op "cider-spy-hub-alias"
        :alias "Jon2"
-       :session "1"})
+       :session nrepl-session})
 
      (is (= {:1 {:alias "Jon2" :nses []}} (:devs (test-utils/cider-msg cider-chan)))))))
 
 (deftest user-registrations
   (test-utils/spy-harness
-   (let [cider-chan1 (test-utils/foo "1" "Jon")]
+   (let [nrepl-session (atom (with-meta {} {:id 1}))
+         nrepl-session-2 (atom (with-meta {} {:id 2}))
+         cider-chan1 (test-utils/foo nrepl-session "Jon")]
      (is (= {:1 {:alias "Jon" :nses []}} (:devs (test-utils/cider-msg cider-chan1))))
-     (let [cider-chan2 (test-utils/foo "2" "Dave")]
+     (let [cider-chan2 (test-utils/foo nrepl-session-2 "Dave")]
        (is (= {:1 {:alias "Jon" :nses []} :2 {:alias "Dave" :nses []}}
               (:devs (test-utils/cider-msg cider-chan1))))
        (is (= {:1 {:alias "Jon" :nses []} :2 {:alias "Dave" :nses []}}
@@ -28,19 +31,20 @@
 
      ((hub-middleware/wrap-cider-spy-hub nil)
       {:op "cider-spy-hub-disconnect"
-       :session "2"})
+       :session nrepl-session-2})
 
      (is (= {:1 {:alias "Jon" :nses []}} (:devs (test-utils/cider-msg cider-chan1)))))))
 
 (deftest dev-locations
   (test-utils/spy-harness
-   (let [cider-chan (test-utils/foo "1" "Jon")]
+   (let [nrepl-session (atom (with-meta {} {:id 1}))
+         cider-chan (test-utils/foo nrepl-session "Jon")]
      (is (= {:1 {:alias "Jon" :nses []}} (:devs (test-utils/cider-msg cider-chan))))
 
      ((spy-middleware/wrap-cider-spy (constantly nil))
       {:op "load-file"
        :file "(ns foo.bar) (println \"hi\")"
-       :session "1"})
+       :session nrepl-session})
 
      (is (= {:1 {:alias "Jon" :nses []}}
             (:devs (test-utils/cider-msg cider-chan))))
@@ -49,9 +53,11 @@
 
 (deftest send-messages
   (test-utils/spy-harness
-   (let [cider-chan1 (test-utils/foo "1" "Jon")]
+   (let [nrepl-session (atom (with-meta {} {:id 1}))
+         nrepl-session-2 (atom (with-meta {} {:id 2}))
+         cider-chan1 (test-utils/foo nrepl-session "Jon")]
      (is (= {:1 {:alias "Jon" :nses []}} (:devs (test-utils/cider-msg cider-chan1))))
-     (let [cider-chan2 (test-utils/foo "2" "Dave")]
+     (let [cider-chan2 (test-utils/foo nrepl-session-2 "Dave")]
        (is (= {:1 {:alias "Jon" :nses []} :2 {:alias "Dave" :nses []}}
               (:devs (test-utils/cider-msg cider-chan1))))
        (is (= {:1 {:alias "Jon" :nses []} :2 {:alias "Dave" :nses []}}
@@ -62,7 +68,7 @@
          :recipient "Dave"
          :from "Jon"
          :message "Hows it going?"
-         :session "1"})
+         :session nrepl-session})
 
        (is (= {:msg "Hows it going?" :from "Jon"}
               (select-keys (test-utils/raw-cider-msg cider-chan2) [:msg :from])))
@@ -72,7 +78,7 @@
          :recipient "Jon"
          :from "Dave"
          :message "Not bad dude."
-         :session "2"})
+         :session nrepl-session-2})
 
        (is (= {:msg "Not bad dude." :from "Dave"}
               (select-keys (test-utils/raw-cider-msg cider-chan1) [:msg :from])))))))

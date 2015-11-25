@@ -28,6 +28,11 @@
   ([tr payload]
    (nrepl-message 5000 tr payload)))
 
+(deftest test-std-eval
+  (let [transport (nrepl/connect :port 7777 :host "localhost")
+        response (nrepl-message transport {:ns "user" :op "eval" :code "( + 1 1)" :file "*cider-repl blog*" :line 12 :column 6 :id 14})]
+    (is (= ["done"] (:status (second response))))))
+
 (deftest test-display-a-summary
   (let [transport (nrepl/connect :port 7777 :host "localhost")
         response (nrepl-message transport {:op "cider-spy-summary"})]

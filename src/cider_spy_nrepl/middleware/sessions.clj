@@ -2,6 +2,8 @@
   (:require [cider-spy-nrepl.middleware.alias :as alias])
   (:import (org.joda.time LocalDateTime)))
 
+(def ^:dynamic session)
+
 (defn- new-session [{:keys [transport session]}]
   (atom {:id (:id (meta session))
          :transport transport
@@ -9,7 +11,7 @@
          :hub-alias (alias/alias-from-env)}))
 
 (defn cider-spy-session [nrepl-session]
-  (::session @nrepl-session))
+  (get @nrepl-session #'session))
 
 (defn session!
   "Return the session for the given msg.
@@ -27,4 +29,4 @@
   [{:keys [session] :as msg}]
   (when session
     (or (cider-spy-session session)
-        (::session (swap! session assoc ::session (new-session msg))))))
+        (get (swap! session assoc #'session (new-session msg)) #'session))))

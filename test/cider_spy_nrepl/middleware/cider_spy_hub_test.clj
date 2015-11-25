@@ -34,7 +34,7 @@
 (defn- handler-fixture [f]
   (let [cider-spy-session (atom {})]
     (binding [*cider-spy-session* cider-spy-session
-              *nrepl-middleware-session* (atom {:cider-spy-nrepl.middleware.sessions/session cider-spy-session})
+              *nrepl-middleware-session* (atom {#'cider-spy-nrepl.middleware.sessions/session cider-spy-session})
               *handler-chan* (chan)
               *transport-chan* (chan)
               *hub-channel-chan* (chan)

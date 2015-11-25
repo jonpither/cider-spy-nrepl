@@ -24,7 +24,7 @@
 
 (deftest test-client-should-register-and-unregister
   (test-utils/spy-harness
-   (let [nrepl-session (atom (with-meta {} {:id 1}))
+   (let [nrepl-session (atom {} :meta {:id 1})
          cider-chan (test-utils/foo nrepl-session "jonnyboy")]
      (assert-summary-msg-sent-to-cider-with-user-in cider-chan "jonnyboy")
      (is (= #{"jonnyboy"} (set (register/aliases))))
@@ -38,12 +38,12 @@
 
 (deftest test-two-registrations-and-unsubscribe
   (test-utils/spy-harness
-   (let [session1 (atom (with-meta {} {:id 1}))
+   (let [session1 (atom {} :meta {:id 1})
          cider-chan (test-utils/foo session1 "jonnyboy")]
 
      (assert-summary-msg-sent-to-cider-with-user-in cider-chan "jonnyboy")
 
-     (let [session2 (atom (with-meta {} {:id 2}))
+     (let [session2 (atom {} :meta {:id 2})
            cider-chan (test-utils/foo session2 "frank")]
 
        ;; Ensure frank registered    ;; Ensure jonnyboy registered
@@ -63,13 +63,13 @@
 
 (deftest test-two-registrations-on-different-servers
   (test-utils/spy-harness
-   (let [session1 (atom (with-meta {} {:id 1}))
+   (let [session1 (atom {} :meta {:id 1})
          cider-chan (test-utils/foo session1 "jonnyboy")]
 
      (assert-summary-msg-sent-to-cider-with-user-in cider-chan "jonnyboy")
 
      (reset! register/sessions {})
-     (let [session2 (atom (with-meta {} {:id 2}))
+     (let [session2 (atom {} :meta {:id 2})
            cider-chan (test-utils/foo session2 "frank")]
 
        (assert-summary-msg-sent-to-cider-with-user-in cider-chan "frank")

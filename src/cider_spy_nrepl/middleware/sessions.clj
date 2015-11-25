@@ -3,7 +3,7 @@
   (:import (org.joda.time LocalDateTime)))
 
 (defn- new-session [{:keys [transport session]}]
-  (atom {:id (:id (meta @session))
+  (atom {:id (:id (meta session))
          :transport transport
          :session-started (LocalDateTime.)
          :hub-alias (alias/alias-from-env)}))

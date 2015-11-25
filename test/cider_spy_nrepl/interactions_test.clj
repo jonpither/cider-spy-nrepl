@@ -6,7 +6,7 @@
 
 (deftest alias-should-bubble-to-cider
   (test-utils/spy-harness
-   (let [nrepl-session (atom (with-meta {} {:id 1}))
+   (let [nrepl-session (atom {} :meta {:id 1})
          cider-chan (test-utils/foo nrepl-session "Jon")]
      (is (= {:1 {:alias "Jon" :nses []}} (:devs (test-utils/cider-msg cider-chan))))
 
@@ -19,8 +19,8 @@
 
 (deftest user-registrations
   (test-utils/spy-harness
-   (let [nrepl-session (atom (with-meta {} {:id 1}))
-         nrepl-session-2 (atom (with-meta {} {:id 2}))
+   (let [nrepl-session (atom {} :meta {:id 1})
+         nrepl-session-2 (atom {} :meta {:id 2})
          cider-chan1 (test-utils/foo nrepl-session "Jon")]
      (is (= {:1 {:alias "Jon" :nses []}} (:devs (test-utils/cider-msg cider-chan1))))
      (let [cider-chan2 (test-utils/foo nrepl-session-2 "Dave")]
@@ -37,7 +37,7 @@
 
 (deftest dev-locations
   (test-utils/spy-harness
-   (let [nrepl-session (atom (with-meta {} {:id 1}))
+   (let [nrepl-session (atom {} :meta {:id 1})
          cider-chan (test-utils/foo nrepl-session "Jon")]
      (is (= {:1 {:alias "Jon" :nses []}} (:devs (test-utils/cider-msg cider-chan))))
 
@@ -53,8 +53,8 @@
 
 (deftest send-messages
   (test-utils/spy-harness
-   (let [nrepl-session (atom (with-meta {} {:id 1}))
-         nrepl-session-2 (atom (with-meta {} {:id 2}))
+   (let [nrepl-session (atom {} :meta {:id 1})
+         nrepl-session-2 (atom {} :meta {:id 2})
          cider-chan1 (test-utils/foo nrepl-session "Jon")]
      (is (= {:1 {:alias "Jon" :nses []}} (:devs (test-utils/cider-msg cider-chan1))))
      (let [cider-chan2 (test-utils/foo nrepl-session-2 "Dave")]

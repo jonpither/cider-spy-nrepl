@@ -4,7 +4,9 @@
 
 ## Middleware
 
-Required Middleware to support [cider-spy](https://github.com/jonpither/cider-spy). Also runs standalone to act as a hub for cider-spy-nrepls to communicate with each other.
+Required Middleware to support
+[cider-spy](https://github.com/jonpither/cider-spy). Also runs standalone to
+act as a hub for cider-spy-nrepls to communicate with each other.
 
 ### Basic configuration
 
@@ -17,7 +19,8 @@ Communicate and track fellow REPL hackers by running a hub:
 
 `lein run`
 
-Add a `.cider-spy-hub.clj` file to your project to tell the middleware where the hub is:
+Add a `.cider-spy-hub.clj` file to your project to tell the middleware
+where the hub is:
 
     {:cider-spy-hub-host "localhost"
      :cider-spy-hub-port 7771}

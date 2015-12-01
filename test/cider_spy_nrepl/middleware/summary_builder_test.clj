@@ -4,14 +4,16 @@
   (:import (org.joda.time LocalDateTime)))
 
 (deftest test-show-namespace-summary
-  (is (= (list {:ns "bob" :seconds nil} {:ns "user" :seconds 29})
-         (:ns-trail (summary {:session-started (LocalDateTime.)
-                              :tracking {:ns-trail (list {:dt (LocalDateTime. 2010 1 1 0 0 30)
-                                                          :ns "bob"}
-                                                         {:dt (LocalDateTime. 2010 1 1 0 0 5)
-                                                          :ns "user"}
-                                                         {:dt (LocalDateTime. 2010 1 1 0 0 1)
-                                                          :ns "user"})}})))))
+  (let [expected-list (list {:ns "bob" :seconds nil} {:ns "user" :seconds 29})
+        initial-list (list {:dt (LocalDateTime. 2010 1 1 0 0 30)
+                            :ns "bob"}
+                           {:dt (LocalDateTime. 2010 1 1 0 0 5)
+                            :ns "user"}
+                           {:dt (LocalDateTime. 2010 1 1 0 0 1)
+                            :ns "user"})]
+    (is (= expected-list
+           (:ns-trail (summary {:session-started (LocalDateTime.)
+                                :tracking {:ns-trail initial-list}}))))))
 
 (deftest test-return-empty-list-for-no-namespace-activity
   (testing "Had a problem with (nil) being returned."

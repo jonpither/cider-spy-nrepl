@@ -7,7 +7,10 @@
     (is
      (tooling-msg?
       {:op "eval"
-       :code "(clojure.core/apply clojure.core/require '[[clojure.repl :refer (source apropos dir pst doc find-doc)] [clojure.java.javadoc :refer (javadoc)] [clojure.pprint :refer (pp pprint)]])"})))
+       :code (str "(clojure.core/apply clojure.core/require '[[clojure.repl "
+                  ":refer (source apropos dir pst doc find-doc)] "
+                  "[clojure.java.javadoc :refer (javadoc)] "
+                  "[clojure.pprint :refer (pp pprint)]])")})))
 
   (testing "CIDER defun cider-completion-complete-core-fn"
     (is

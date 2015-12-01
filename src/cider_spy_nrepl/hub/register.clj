@@ -38,7 +38,8 @@
   "Return a map of users and the location of where they currently are."
   []
   (into {}
-        (for [[id s] @sessions :let [s @s]]
-          [id {:alias (:alias s)
-               :nses (take 3 (ns-trail/top-nses (LocalDateTime.)
-                                                (-> s :tracking :ns-trail)))}])))
+        (for [[id s] @sessions]
+          (let [alias (:alias @s)
+                ns-trail (get-in @s [:tracking :ns-trail])
+                nses (take 3 (ns-trail/top-nses (LocalDateTime.) ns-trail))]
+            [id {:alias alias :nses nses}]))))

@@ -30,14 +30,10 @@
     (println "SUCCCESS")
     {:status :done}))
 
-(defn- record! [result msg]
-  (when (= "eval" (:op msg))
-    (println "CIDER-SPY" result))
-  result)
-
 (defn- wrap-tracking
   "Wrap the handler to apply tracking and to update the CIDER SPY summary buffer."
   [msg handler]
+  (println "INVOKING SUB HANDLER")
   (let [result (handler msg)]
     (try
       (when-let [session (sessions/session! msg)]
@@ -58,9 +54,7 @@
     (println "CIDER-SPY:" op)
     (if-let [cider-spy-handler (get cider-spy--nrepl-ops op)]
       (cider-spy-handler msg)
-      (-> msg
-          (wrap-tracking handler)
-          (record! msg)))))
+      (wrap-tracking msg handler))))
 
 (set-descriptor!
  #'wrap-cider-spy

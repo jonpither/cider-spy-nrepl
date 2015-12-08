@@ -11,8 +11,7 @@
          :port 7777
          :handler (nrserver/default-handler
                     #'cider-spy-nrepl.middleware.cider-spy-multi-repl/wrap-multi-repl
-;;                    #'cider-spy-nrepl.middleware.cider-spy/wrap-cider-spy
-                    ))]
+                    #'cider-spy-nrepl.middleware.cider-spy/wrap-cider-spy))]
     server))
 
 (defn- stop-repl-server [server]
@@ -31,7 +30,7 @@
   ([tr payload]
    (nrepl-message 5000 tr payload)))
 
-(deftest test-std-eval
+(deftest test-stc-eval
   (let [transport (nrepl/connect :port 7777 :host "localhost")
         response (nrepl-message transport {:ns "user" :op "eval" :code "( + 1 1)" :file "*cider-repl blog*" :line 12 :column 6 :id 14})]
     (is (= ["done"] (:status (second response))))))

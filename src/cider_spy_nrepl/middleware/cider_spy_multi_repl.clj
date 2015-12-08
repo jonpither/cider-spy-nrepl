@@ -1,6 +1,7 @@
 (ns cider-spy-nrepl.middleware.cider-spy-multi-repl
   (:require [clojure.tools.nrepl.transport :as nrepl-transport]
-            [clojure.tools.nrepl.middleware :refer [set-descriptor!]]))
+            [clojure.tools.nrepl.middleware :refer [set-descriptor!]]
+            [clojure.tools.nrepl.middleware.interruptible-eval :refer [interruptible-eval]]))
 
 (deftype TrackingTransport [transport]
   nrepl-transport/Transport
@@ -22,5 +23,6 @@
 
 (set-descriptor!
  #'wrap-multi-repl
- {:handles {"cider-spy-multi-repl" {:doc "See the cider-spy README"
+ {;:requires #{#'interruptible-eval}
+  :handles {"cider-spy-multi-repl" {:doc "See the cider-spy README"
                                     :returns {} :requires {}}}})

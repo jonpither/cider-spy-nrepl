@@ -1,5 +1,5 @@
 *#
-/target
+core/target
 /classes
 /checkouts
 pom.xml

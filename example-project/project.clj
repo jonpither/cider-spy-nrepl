@@ -9,4 +9,4 @@
                                   [org.clojure/tools.nrepl "0.2.11"]]
                    :repl-options {:nrepl-middleware [cider-spy-nrepl.middleware.cider-spy/wrap-cider-spy
                                                      cider-spy-nrepl.middleware.cider-spy-hub/wrap-cider-spy-hub
-                                                     cider-spy-nrepl.middleware.cider-spy-multi-repl/wrap-multix-repl]}}})
+                                                     cider-spy-nrepl.middleware.cider-spy-multi-repl/wrap-multi-repl]}}})

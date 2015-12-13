@@ -23,6 +23,6 @@
 
 (set-descriptor!
  #'wrap-multi-repl
- {;:requires #{#'interruptible-eval}
+ {:requires #{#'interruptible-eval}
   :handles {"cider-spy-multi-repl" {:doc "See the cider-spy README"
                                     :returns {} :requires {}}}})

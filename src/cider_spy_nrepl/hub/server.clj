@@ -52,6 +52,10 @@
          (.bind port))
      boss-group worker-group]))
 
+(defn start [port]
+  (println (format "Starting CIDER-SPY HUB Server on %s." port))
+  (start-netty-server :port port))
+
 (defn shutdown
   "Shut down the netty Server Bootstrap
    Expects a vector containing a server bootstrap, boss group and worker group."
@@ -62,7 +66,6 @@
   (-> bg .shutdownGracefully .sync))
 
 (defn -main [& args]
-  (let [port (or (first args) "7771")]
-    (println (format "Starting CIDER-SPY HUB Server on %s." port))
-    (let [[b] (start-netty-server :port (Integer/parseInt port))]
-      (.sync b))))
+  (let [[b] (start (Integer/parseInt (or (first args) "7771")))]
+    (.sync b))
+  (println "Exiting CIDER-SPY HUB"))

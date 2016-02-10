@@ -9,35 +9,30 @@
   "Handle the CIDER-SPY request for summary information."
   [msg]
   (try
-    (println "Summary")
-    (def m msg)
     (when-let [session (sessions/session! msg)]
       (cider/update-session-for-summary-msg! session msg)
       (cider/update-spy-buffer-summary! session)
-      (println "SUCCCESS")
       {:status :done})
     (catch Throwable t
       (println "Error occured servicing cider-spy-summary request")
       (.printStackTrace t)
-      {:status :done})))
+      {:status :error})))
 
 (defn- handle-reset
   "Reset CIDER-SPY tracking."
   [msg]
-  (println "Reset")
   (when-let [session (sessions/session! msg)]
     (swap! session dissoc :tracking)
     (cider/update-spy-buffer-summary! session)
-    (println "SUCCCESS")
     {:status :done}))
 
 (defn- wrap-tracking
   "Wrap the handler to apply tracking and to update the CIDER SPY summary buffer."
   [msg handler]
-  (println "INVOKING SUB HANDLER")
   (let [result (handler msg)]
     (try
       (when-let [session (sessions/session! msg)]
+        (println "CIDER-SPY TRACKING:"  (:op msg))
         (tracker/track-msg! msg session)
         (cider/update-spy-buffer-summary! session))
       (catch Throwable t
@@ -52,7 +47,6 @@
   "Cider Spy Middleware."
   [handler]
   (fn [{:keys [op] :as msg}]
-    (println "CIDER-SPY:" op)
     (if-let [cider-spy-handler (get cider-spy--nrepl-ops op)]
       (cider-spy-handler msg)
       (wrap-tracking msg handler))))
@@ -60,6 +54,7 @@
 (set-descriptor!
  #'wrap-cider-spy
  {:requires #{#'clojure.tools.nrepl.middleware.session/session}
+  :expects  #{"eval"}
   :handles (zipmap (keys cider-spy--nrepl-ops)
                    (repeat {:doc "See the cider-spy README"
                             :returns {} :requires {}}))})

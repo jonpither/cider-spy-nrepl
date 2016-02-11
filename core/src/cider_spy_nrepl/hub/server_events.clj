@@ -49,5 +49,15 @@
                       :recipient recipient}))
     (log/warn "Message from" from "to unregistered user" recipient)))
 
+(defmethod process :watch-repl [_ session {:keys [target]}]
+  (if-let [target-session (register/session-from-alias target)]
+    (do
+      (log/info "Sending REPL watch request to" (:alias @target-session))
+      (send-to-nrepl (:channel @target-session)
+                     ;; need the return address..
+                     {:op :watch-repl
+                      :watcher (:id @session)}))
+    (log/warn "Attempt to watch unregistered user" target)))
+
 (defn unregister! [session]
   (process nil session {:op :unregister}))

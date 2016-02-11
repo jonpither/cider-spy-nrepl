@@ -30,3 +30,6 @@
   (send! (:hub-client @session) :message {:message message
                                           :from from
                                           :recipient recipient}))
+
+(defn watch-repl [session target]
+  (send! (:hub-client @session) :watch-repl {:target target}))

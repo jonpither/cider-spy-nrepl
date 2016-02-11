@@ -82,7 +82,8 @@
   (fn [{:keys [op] :as msg}]
     (if-let [session (sessions/session! msg)]
       (if-let [cider-spy-handler (get cider-spy-hub--nrepl-ops op)]
-        (cider-spy-handler msg session)
+        (do (println "aspidjioasjd")
+            (cider-spy-handler msg session))
         (do
           (connect-to-hub! session)
           (handler msg)))

@@ -1,6 +1,9 @@
 (ns cider-spy-nrepl.middleware.cider-spy-multi-repl
   (:require [clojure.tools.nrepl.transport :as nrepl-transport]
             [clojure.tools.nrepl.middleware :refer [set-descriptor!]]
+            [cider-spy-nrepl.middleware.sessions :as sessions]
+            [cider-spy-nrepl.hub.client-facade :as hub-client]
+            [cider-spy-nrepl.middleware.cider :as cider]
             [clojure.tools.nrepl.middleware.interruptible-eval :refer [interruptible-eval]]))
 
 (deftype TrackingTransport [transport]
@@ -10,16 +13,30 @@
   (recv [this])
   (recv [this timeout]))
 
+(defn handle-watch
+  "This operation is to start watching someone elses REPL"
+  [{:keys [target] :as msg}]
+  (let [session (sessions/session! msg)]
+    (hub-client/watch-repl session target)
+    (cider/send-connected-msg! session (str "Sent watching REPL request to target " target))))
+
+(defn- track-repl-evals [{:keys [transport] :as msg} handler]
+  (println "MULTI-REPL" (:code msg))
+  (handler (assoc msg :transport (TrackingTransport. transport))))
+
+(def cider-spy--nrepl-ops {"cider-spy-hub-watch-repl" #'handle-watch})
+
 (defn wrap-multi-repl
   "Multi REPL Middleware - CURRENTLY NEVER GETS CALLED"
   [handler]
-  (println "SETTING")
-  (fn [{:keys [transport] :as msg}]
-    (println "MULTI-REPL" (:code msg))
-    (handler (assoc msg :transport (TrackingTransport. transport)))))
+  (fn [{:keys [op] :as msg}]
+    (if-let [cider-spy-handler (get cider-spy--nrepl-ops op)]
+      (cider-spy-handler msg)
+      (track-repl-evals msg handler))))
 
 (set-descriptor!
  #'wrap-multi-repl
  {:expects #{#'interruptible-eval}
-  :handles {"cider-spy-multi-repl" {:doc "See the cider-spy README"
-                                    :returns {} :requires {}}}})
+  :handles (zipmap (keys cider-spy--nrepl-ops)
+                   (repeat {:doc "See the cider-spy README"
+                            :returns {} :requires {}}))})

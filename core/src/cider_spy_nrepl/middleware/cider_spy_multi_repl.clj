@@ -20,6 +20,15 @@
     (hub-client/watch-repl session target)
     (cider/send-connected-msg! session (str "Sent watching REPL request to target " target))))
 
+;; basically we spy on code and what comes out.
+;; We need to send these down to the hub...
+;; I think:
+(comment
+  cider-spy-nrepl.hub.client-facade/send-repl-cmd
+  cider-spy-nrepl.hub.client-facade/send-repl-response)
+
+;; easy peasy
+
 (defn- track-repl-evals [{:keys [transport] :as msg} handler]
   (println "MULTI-REPL" (:code msg))
   (handler (assoc msg :transport (TrackingTransport. transport))))

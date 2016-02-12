@@ -29,3 +29,8 @@
 (defmethod process :message [s {:keys [message from recipient]}]
   (log/debug (format "Message received from %s to %s: %s" from recipient message))
   (cider/send-received-msg! s from recipient message))
+
+(defmethod process :watch-repl [s {:keys [message from recipient]}]
+  (log/debug (format "Someone is watching!: %s" from recipient message))
+  (swap! s assoc :watching? true)
+  (cider/send-connected-msg! s "Someone is watching your REPL!"))

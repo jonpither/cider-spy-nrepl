@@ -53,10 +53,8 @@
   (if-let [target-session (register/session-from-alias target)]
     (do
       (log/info "Sending REPL watch request to" (:alias @target-session))
-      (send-to-nrepl (:channel @target-session)
-                     ;; need the return address..
-                     {:op :watch-repl
-                      :watcher (:id @session)}))
+      (register/update! target-session update :watching-sessions #(set (cons (:id @session) %)))
+      (send-to-nrepl (:channel @target-session) {:op :watch-repl}))
     (log/warn "Attempt to watch unregistered user" target)))
 
 (defn unregister! [session]

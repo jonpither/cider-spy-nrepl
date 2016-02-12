@@ -50,3 +50,11 @@
   (let [{:keys [id hub-connection-buffer-id transport]} @session]
     (send-back-to-cider! transport id hub-connection-buffer-id
                          :from from :recipient recipient :msg s)))
+
+(defn send-watch-repl-eval!
+  "Send a message back to CIDER-SPY informing that a eval has been performed
+   on a REPL that is being watched."
+  [session code target]
+  (let [{:keys [id hub-connection-buffer-id transport]} @session]
+    (send-back-to-cider! transport id hub-connection-buffer-id
+                         :target target :watch-repl-eval-code code)))

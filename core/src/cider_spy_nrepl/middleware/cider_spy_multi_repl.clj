@@ -6,9 +6,14 @@
             [cider-spy-nrepl.middleware.cider :as cider]
             [clojure.tools.nrepl.middleware.interruptible-eval :refer [interruptible-eval]]))
 
-(deftype TrackingTransport [transport]
+;; TODO possibly reuse the tracker transport
+;; TODO capture scenario the forwarding fails and log?
+
+(deftype TrackingTransport [transport session]
   nrepl-transport/Transport
   (send [this msg]
+    (when (:watching? @session)
+      (hub-client/forward-repl-output))
     (nrepl-transport/send transport msg))
   (recv [this])
   (recv [this timeout]))
@@ -20,18 +25,11 @@
     (hub-client/watch-repl session target)
     (cider/send-connected-msg! session (str "Sent watching REPL request to target " target))))
 
-;; basically we spy on code and what comes out.
-;; We need to send these down to the hub...
-;; I think:
-(comment
-  cider-spy-nrepl.hub.client-facade/send-repl-cmd
-  cider-spy-nrepl.hub.client-facade/send-repl-response)
-
-;; easy peasy
-
-(defn- track-repl-evals [{:keys [transport] :as msg} handler]
-  (println "MULTI-REPL" (:code msg))
-  (handler (assoc msg :transport (TrackingTransport. transport))))
+(defn- track-repl-evals [{:keys [transport op code] :as msg} handler]
+  (let [session (sessions/session! msg)]
+    (when (and (= "eval" op) (:watching? @session))
+      (hub-client/forward-repl-eval session code))
+    (handler (assoc msg :transport (TrackingTransport. transport session)))))
 
 (def cider-spy--nrepl-ops {"cider-spy-hub-watch-repl" #'handle-watch})
 

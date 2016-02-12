@@ -33,3 +33,10 @@
 
 (defn watch-repl [session target]
   (send! (:hub-client @session) :watch-repl {:target target}))
+
+(defn forward-repl-output []
+  ;; Not sure what to put here?
+  )
+
+(defn forward-repl-eval [session code]
+  (send! (:hub-client @session) :repl-eval {:code code}))

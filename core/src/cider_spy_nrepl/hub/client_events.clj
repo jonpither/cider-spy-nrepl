@@ -34,3 +34,7 @@
   (log/debug (format "Someone is watching!: %s" from recipient message))
   (swap! s assoc :watching? true)
   (cider/send-connected-msg! s "Someone is watching your REPL!"))
+
+(defmethod process :watch-repl-eval [s {:keys [code target]}]
+  (log/debug (format "REPL eval received from %s: %s" target code))
+  (cider/send-watch-repl-eval! s code target))

@@ -38,3 +38,7 @@
 (defmethod process :watch-repl-eval [s {:keys [code target]}]
   (log/debug (format "REPL eval received from %s: %s" target code))
   (cider/send-watch-repl-eval! s code target))
+
+(defmethod process :watch-repl-out [s {:keys [out target]}]
+  (log/debug (format "REPL out received from %s: %s" target out))
+  (cider/send-watch-repl-out! s out target))

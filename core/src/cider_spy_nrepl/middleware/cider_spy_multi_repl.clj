@@ -11,9 +11,9 @@
 
 (deftype TrackingTransport [transport session]
   nrepl-transport/Transport
-  (send [this msg]
-    (when (:watching? @session)
-      (hub-client/forward-repl-output))
+  (send [this {:keys [out] :as msg}]
+    (when (and (:watching? @session) out)
+      (hub-client/forward-repl-output session out))
     (nrepl-transport/send transport msg))
   (recv [this])
   (recv [this timeout]))

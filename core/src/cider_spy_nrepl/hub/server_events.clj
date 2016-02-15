@@ -68,5 +68,16 @@
                                                      :target (:alias @session)}))
       (log/warn "Session not present for" watching-session-id))))
 
+(defmethod process :repl-out [_ session {:keys [out]}]
+  (doseq [watching-session-id (:watching-sessions @session)
+          :let [watching-session (@register/sessions watching-session-id)]]
+    (if watching-session
+      (do
+        (log/info "Sending REPL watch out to" (:alias @watching-session))
+        (send-to-nrepl (:channel @watching-session) {:op :watch-repl-out
+                                                     :out out
+                                                     :target (:alias @session)}))
+      (log/warn "Session not present for" watching-session-id))))
+
 (defn unregister! [session]
   (process nil session {:op :unregister}))

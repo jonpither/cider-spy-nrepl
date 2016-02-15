@@ -82,8 +82,7 @@
   (fn [{:keys [op] :as msg}]
     (if-let [session (sessions/session! msg)]
       (if-let [cider-spy-handler (get cider-spy-hub--nrepl-ops op)]
-        (do (println "aspidjioasjd")
-            (cider-spy-handler msg session))
+        (cider-spy-handler msg session)
         (do
           (connect-to-hub! session)
           (handler msg)))
@@ -91,6 +90,7 @@
 
 (set-descriptor!
  #'wrap-cider-spy-hub
- {:handles (zipmap (keys cider-spy-hub--nrepl-ops)
+ {:requires #{"session"}
+  :handles (zipmap (keys cider-spy-hub--nrepl-ops)
                    (repeat {:doc "See the cider-spy-hub README"
                             :returns {} :requires {}}))})

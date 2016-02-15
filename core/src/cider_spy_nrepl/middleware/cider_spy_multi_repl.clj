@@ -26,10 +26,12 @@
     (cider/send-connected-msg! session (str "Sent watching REPL request to target " target))))
 
 (defn- track-repl-evals [{:keys [transport op code] :as msg} handler]
-  (let [session (sessions/session! msg)]
-    (when (and (= "eval" op) (:watching? @session))
-      (hub-client/forward-repl-eval session code))
-    (handler (assoc msg :transport (TrackingTransport. transport session)))))
+  (if-let [session (sessions/session! msg)]
+    (do
+      (when (and (= "eval" op) (:watching? @session))
+        (hub-client/forward-repl-eval session code))
+      (handler (assoc msg :transport (TrackingTransport. transport session))))
+    (handler msg)))
 
 (def cider-spy--nrepl-ops {"cider-spy-hub-watch-repl" #'handle-watch})
 
@@ -44,6 +46,7 @@
 (set-descriptor!
  #'wrap-multi-repl
  {:expects #{#'interruptible-eval}
+  :requires #{"session"}
   :handles (zipmap (keys cider-spy--nrepl-ops)
                    (repeat {:doc "See the cider-spy README"
                             :returns {} :requires {}}))})

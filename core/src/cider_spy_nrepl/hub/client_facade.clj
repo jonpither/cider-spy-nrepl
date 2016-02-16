@@ -26,9 +26,9 @@
   [session ns ts]
   (send! (:hub-client @session) :location {:ns ns :dt (.toDate ts)}))
 
-(defn send-msg [session from recipient message]
+(defn send-msg [session recipient message]
   (send! (:hub-client @session) :message {:message message
-                                          :from from
+                                          :from (:hub-alias @session)
                                           :recipient recipient}))
 
 (defn watch-repl [session target]

@@ -8,12 +8,22 @@
 
 (def update! common/update-atom!)
 
+(defn- determine-alias [sessions alias]
+  (let [current-aliases (set (map (comp :alias deref) (vals sessions)))]
+    (or (and (not (current-aliases alias)) alias)
+        (first (remove current-aliases (map #(str alias "~" %) (range 2 100))))
+        (throw (Exception. (str "Alias in use up to 100: " alias))))))
+
+(defn- update-sessions! [sessions session id alias]
+  (let [alias (determine-alias sessions alias)]
+    (swap! session assoc :id id :alias alias)
+    (assoc sessions id session)))
+
 (defn register!
   "Register the session.
    This will also update the session with session-id and alias."
   [session id alias]
-  (swap! session assoc :id id :alias alias)
-  (swap! sessions assoc id session))
+  (swap! sessions update-sessions! session id alias))
 
 (defn unregister!
   "Unregister the session."

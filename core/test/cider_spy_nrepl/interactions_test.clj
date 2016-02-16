@@ -82,3 +82,12 @@
 
        (is (= {:msg "Not bad dude." :from "Dave"}
               (select-keys (test-utils/raw-cider-msg cider-chan1) [:msg :from])))))))
+
+(deftest test-single-alias
+  (test-utils/spy-harness
+   (let [nrepl-session (atom {} :meta {:id 1})
+         nrepl-session-2 (atom {} :meta {:id 2})
+         cider-chan1 (test-utils/foo nrepl-session "Jon")
+         cider-chan2 (test-utils/foo nrepl-session-2 "Jon")]
+     (is (= {:1 {:alias "Jon" :nses []} :2 {:alias "Jon~2" :nses []}}
+            (:devs (test-utils/cider-msg cider-chan2)))))))

@@ -57,11 +57,11 @@
 
 (defn- handle-send-msg
   "Send a message to a developer registered on the CIDER-SPY-HUB."
-  [{:keys [from recipient message]} session]
+  [{:keys [recipient message]} session]
   (cider/send-connected-msg!
    session
-   (format "Sending message from %s to recipient %s on CIDER SPY HUB." from recipient))
-  (hub-client/send-msg session from recipient message))
+   (format "Sending message to recipient %s on CIDER SPY HUB." recipient))
+  (hub-client/send-msg session recipient message))
 
 (defn- handle-cider-spy-disconnect
   "Disconnect permantently the user from the CIDER-SPY-HUB."

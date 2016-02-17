@@ -21,8 +21,8 @@
   "Build a summary of the users REPL session."
   [{:keys [hub-connection-details session-started registrations tracking]}]
   (let [{:keys [ns-trail commands nses-loaded]} tracking]
-    {:hub-connection (let [{:keys [when-connected alias]} hub-connection-details]
-                       {:started (when when-connected (.toString when-connected "hh:mm:ss"))
+    {:hub-connection (when-let [{:keys [when-connected alias]} hub-connection-details]
+                       {:started (when when-connected (.toString (LocalDateTime. when-connected) "hh:mm:ss"))
                         :alias alias})
      :ns-trail (->> ns-trail
                     remove-duplicate-entries

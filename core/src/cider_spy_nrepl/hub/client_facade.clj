@@ -7,9 +7,9 @@
     (future
       (hubc/send! bootstrap (assoc msg :op op)))))
 
-(defn register [session]
-  (let [{:keys [hub-client hub-alias id]} @session]
-    (send! hub-client :register {:alias hub-alias :session-id id})))
+(defn register [session alias]
+  (let [{:keys [hub-client id]} @session]
+    (send! hub-client :register {:alias alias :session-id id})))
 
 (defn connect
   "Connect to the hub.

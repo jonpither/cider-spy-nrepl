@@ -1,14 +1,13 @@
 (ns cider-spy-nrepl.middleware.sessions
-  (:require [cider-spy-nrepl.middleware.alias :as alias])
   (:import (org.joda.time LocalDateTime)))
 
 (def ^:dynamic session)
 
 (defn- new-session [{:keys [transport session]}]
   (atom {:id (:id (meta session))
+         :desired-alias (:desired-alias @session) ;; for tests
          :transport transport
-         :session-started (LocalDateTime.)
-         :hub-alias (alias/alias-from-env)}))
+         :session-started (LocalDateTime.)}))
 
 (defn cider-spy-session [nrepl-session]
   (get @nrepl-session #'session))

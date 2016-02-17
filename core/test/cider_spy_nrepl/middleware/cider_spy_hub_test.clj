@@ -128,10 +128,9 @@
     (test-utils/assert-async-msgs *hub-channel-chan* [":op :register"])))
 
 (deftest prepare-alias-on-hub-through-connect-message
-  (reset! *nrepl-middleware-session* {})
+  (reset! *nrepl-middleware-session* {:desired-alias "foobar2"})
   (handle-msg {:op "cider-spy-hub-connect"
                :id "hub-buffer-id"
-               :hub-alias "foobar2"
                :transport *transport*})
   (handle-msg {:op "some-random-op"})
 

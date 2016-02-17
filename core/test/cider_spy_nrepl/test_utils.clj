@@ -61,7 +61,7 @@
   (when-let [msg (:value (raw-cider-msg cider-chan))]
     (json/parse-string msg true)))
 
-(defn foo [session alias]
+(defn foo [session]
   (let [cider-chan (chan)
         cider-transport (reify transport/Transport
                           (send [_ r]
@@ -82,7 +82,6 @@
     ((hub-middleware/wrap-cider-spy-hub nil)
      {:id "connection-buffer-msg"
       :op "cider-spy-hub-connect"
-      :hub-alias alias
       :session session
       :transport cider-transport})
 

@@ -24,8 +24,8 @@
 
 (deftest test-client-should-register-and-unregister
   (test-utils/spy-harness
-   (let [nrepl-session (atom {} :meta {:id 1})
-         cider-chan (test-utils/foo nrepl-session "jonnyboy")]
+   (let [nrepl-session (atom {:desired-alias "jonnyboy"} :meta {:id 1})
+         cider-chan (test-utils/foo nrepl-session)]
      (assert-summary-msg-sent-to-cider-with-user-in cider-chan "jonnyboy")
      (is (= #{"jonnyboy"} (set (register/aliases))))
      (is (= #{"jonnyboy"} (set (map (comp :alias val) (:registrations @(cider-spy-session nrepl-session))))))
@@ -38,13 +38,13 @@
 
 (deftest test-two-registrations-and-unsubscribe
   (test-utils/spy-harness
-   (let [session1 (atom {} :meta {:id 1})
-         cider-chan (test-utils/foo session1 "jonnyboy")]
+   (let [session1 (atom {:desired-alias "jonnyboy"} :meta {:id 1})
+         cider-chan (test-utils/foo session1)]
 
      (assert-summary-msg-sent-to-cider-with-user-in cider-chan "jonnyboy")
 
-     (let [session2 (atom {} :meta {:id 2})
-           cider-chan (test-utils/foo session2 "frank")]
+     (let [session2 (atom {:desired-alias "frank"} :meta {:id 2})
+           cider-chan (test-utils/foo session2)]
 
        ;; Ensure frank registered    ;; Ensure jonnyboy registered
        (assert-summary-msg-sent-to-cider-with-user-in cider-chan "jonnyboy" "frank")
@@ -63,14 +63,14 @@
 
 (deftest test-two-registrations-on-different-servers
   (test-utils/spy-harness
-   (let [session1 (atom {} :meta {:id 1})
-         cider-chan (test-utils/foo session1 "jonnyboy")]
+   (let [session1 (atom {:desired-alias "jonnyboy"} :meta {:id 1})
+         cider-chan (test-utils/foo session1)]
 
      (assert-summary-msg-sent-to-cider-with-user-in cider-chan "jonnyboy")
 
      (reset! register/sessions {})
-     (let [session2 (atom {} :meta {:id 2})
-           cider-chan (test-utils/foo session2 "frank")]
+     (let [session2 (atom {:desired-alias "frank"} :meta {:id 2})
+           cider-chan (test-utils/foo session2)]
 
        (assert-summary-msg-sent-to-cider-with-user-in cider-chan "frank")
 

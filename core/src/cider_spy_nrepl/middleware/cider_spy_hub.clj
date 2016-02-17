@@ -3,15 +3,16 @@
             [cider-spy-nrepl.middleware.cider :as cider]
             [cider-spy-nrepl.middleware.hub-settings :as settings]
             [cider-spy-nrepl.middleware.sessions :as sessions]
+            [cider-spy-nrepl.middleware.alias :as alias]
             [clojure.tools.nrepl.middleware.session]
             [clojure.tools.nrepl.middleware :refer [set-descriptor!]]))
 
 (defn- register
   "Register the alias for the users session on the CIDER-SPY-HUB."
   [session]
-  (cider/send-connected-msg! session (format "Setting alias on CIDER SPY HUB to %s."
-                                             (:hub-alias @session)))
-  (hub-client/register session))
+  (let [alias (or (:desired-alias @session) (alias/alias-from-env))]
+    (cider/send-connected-msg! session (format "Setting alias on CIDER SPY HUB to %s." alias))
+    (hub-client/register session alias)))
 
 (defn- on-connect [session hub-client]
   (if hub-client
@@ -45,15 +46,13 @@
 (defn- handle-register-hub-buffer-msg
   "We register the buffer in EMACS used for displaying connection information
    about the CIDER-SPY-HUB."
-  [{:keys [id hub-alias]} session]
-  (swap! session assoc :hub-connection-buffer-id id)
-  (when hub-alias
-    (swap! session assoc :hub-alias hub-alias)))
+  [{:keys [id]} session]
+  (swap! session assoc :hub-connection-buffer-id id))
 
 (defn- handle-change-hub-alias
   "Change alias in CIDER-SPY-HUB."
   [{:keys [alias]} session]
-  (swap! session assoc :hub-alias alias)
+  (swap! session assoc :desired-alias alias)
   (register session))
 
 (defn- handle-send-msg

@@ -5,6 +5,7 @@
             [cider-spy-nrepl.middleware.sessions :as sessions]
             [cider-spy-nrepl.middleware.alias :as alias]
             [clojure.tools.nrepl.middleware.session]
+            [clojure.tools.nrepl.middleware.interruptible-eval]
             [clojure.tools.nrepl.middleware :refer [set-descriptor!]]))
 
 (defn- register
@@ -91,6 +92,7 @@
 (set-descriptor!
  #'wrap-cider-spy-hub
  {:requires #{#'clojure.tools.nrepl.middleware.session/session}
+  :expects  #{#'clojure.tools.nrepl.middleware.interruptible-eval/interruptible-eval}
   :handles (zipmap (keys cider-spy-hub--nrepl-ops)
                    (repeat {:doc "See the cider-spy-hub README"
                             :returns {} :requires {}}))})

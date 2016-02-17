@@ -3,6 +3,7 @@
             [cider-spy-nrepl.middleware.sessions :as sessions]
             [cider-spy-nrepl.middleware.tracker :as tracker]
             [clojure.tools.nrepl.middleware :refer [set-descriptor!]]
+            [clojure.tools.nrepl.middleware.interruptible-eval]
             [clojure.tools.nrepl.middleware.session]))
 
 (defn- handle-summary
@@ -53,7 +54,7 @@
 (set-descriptor!
  #'wrap-cider-spy
  {:requires #{#'clojure.tools.nrepl.middleware.session/session}
-  :expects  #{"eval"}
+  :expects  #{#'clojure.tools.nrepl.middleware.interruptible-eval/interruptible-eval}
   :handles (zipmap (keys cider-spy--nrepl-ops)
                    (repeat {:doc "See the cider-spy README"
                             :returns {} :requires {}}))})

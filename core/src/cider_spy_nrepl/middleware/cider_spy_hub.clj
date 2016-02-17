@@ -3,6 +3,7 @@
             [cider-spy-nrepl.middleware.cider :as cider]
             [cider-spy-nrepl.middleware.hub-settings :as settings]
             [cider-spy-nrepl.middleware.sessions :as sessions]
+            [clojure.tools.nrepl.middleware.session]
             [clojure.tools.nrepl.middleware :refer [set-descriptor!]]))
 
 (defn- register
@@ -90,7 +91,7 @@
 
 (set-descriptor!
  #'wrap-cider-spy-hub
- {:requires #{"session"}
+ {:requires #{#'clojure.tools.nrepl.middleware.session/session}
   :handles (zipmap (keys cider-spy-hub--nrepl-ops)
                    (repeat {:doc "See the cider-spy-hub README"
                             :returns {} :requires {}}))})

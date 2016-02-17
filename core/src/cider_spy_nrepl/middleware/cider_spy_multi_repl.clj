@@ -4,10 +4,13 @@
             [cider-spy-nrepl.middleware.sessions :as sessions]
             [cider-spy-nrepl.hub.client-facade :as hub-client]
             [cider-spy-nrepl.middleware.cider :as cider]
-            [clojure.tools.nrepl.middleware.interruptible-eval :refer [interruptible-eval]]))
+            [clojure.tools.nrepl.middleware.session]
+            [clojure.tools.nrepl.middleware.interruptible-eval]))
 
 ;; TODO possibly reuse the tracker transport
 ;; TODO capture scenario the forwarding fails and log?
+
+;; Think it's value and ns that come back, or eval-error
 
 (deftype TrackingTransport [transport session]
   nrepl-transport/Transport
@@ -45,8 +48,8 @@
 
 (set-descriptor!
  #'wrap-multi-repl
- {:expects #{#'interruptible-eval}
-  :requires #{"session"}
+ {:requires #{#'clojure.tools.nrepl.middleware.session/session}
+  :expects #{#'clojure.tools.nrepl.middleware.interruptible-eval/interruptible-eval}
   :handles (zipmap (keys cider-spy--nrepl-ops)
                    (repeat {:doc "See the cider-spy README"
                             :returns {} :requires {}}))})

@@ -19,7 +19,8 @@
 (defmethod process :register [_ session {:keys [session-id alias]}]
   (register/register! session session-id alias)
   (send-to-nrepl (:channel @session) {:op :connected
-                                      :alias (:alias @session)})
+                                      :alias (:alias @session)
+                                      :when-connected (:when-connected @session)})
   (broadcast-msg! :registered
                   :alias alias
                   :registered (register/users)))

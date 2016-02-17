@@ -20,7 +20,7 @@
   (server-events/unregister! session))
 
 (defn- simple-handler [ch]
-  (let [session (atom {:channel ch})]
+  (let [session (atom {:channel ch :when-connected (java.util.Date.)})]
     (proxy [SimpleChannelInboundHandler] []
       (messageReceived [^ChannelHandlerContext ctx request]
         (server-request ctx session request))

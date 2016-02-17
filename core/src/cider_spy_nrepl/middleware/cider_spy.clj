@@ -32,7 +32,6 @@
   (let [result (handler msg)]
     (try
       (when-let [session (sessions/session! msg)]
-        (println "CIDER-SPY TRACKING:"  (:op msg))
         (tracker/track-msg! msg session)
         (cider/update-spy-buffer-summary! session))
       (catch Throwable t

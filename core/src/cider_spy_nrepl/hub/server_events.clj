@@ -38,16 +38,16 @@
                   :alias (:alias @session)
                   :registered (register/users)))
 
-(defmethod process :message [_ _ {:keys [message from recipient]}]
+(defmethod process :message [_ session {:keys [message recipient]}]
   (if-let [recipient-session (register/session-from-alias recipient)]
-    (do
+    (let [from (:alias @session)]
       (log/info "Delivering message from" from "to" (:alias @recipient-session))
       (send-to-nrepl (:channel @recipient-session)
                      {:op :message
                       :message message
                       :from from
                       :recipient recipient}))
-    (log/warn "Message from" from "to unregistered user" recipient)))
+    (log/warn "Message from to unregistered user" recipient)))
 
 (defmethod process :watch-repl [_ session {:keys [target]}]
   (if-let [target-session (register/session-from-alias target)]

@@ -28,7 +28,6 @@
 
 (defn send-msg [session recipient message]
   (send! (:hub-client @session) :message {:message message
-                                          :from (:hub-alias @session)
                                           :recipient recipient}))
 
 (defn watch-repl [session target]

@@ -15,7 +15,9 @@
     (cider/send-connected-msg! session (format "Setting alias on CIDER SPY HUB to %s." alias))
     (hub-client/register session alias)))
 
-(defn- on-connect [session hub-client]
+(defn- on-connect
+  "Hub client could be nil in the event of a failed connection."
+  [session hub-client]
   (if hub-client
     (do
       (swap! session assoc :hub-client hub-client)
@@ -48,7 +50,10 @@
   "We register the buffer in EMACS used for displaying connection information
    about the CIDER-SPY-HUB."
   [{:keys [id]} session]
-  (swap! session assoc :hub-connection-buffer-id id))
+  (swap! session assoc :hub-connection-buffer-id id)
+  ;; Resend out the alias
+  (when-let [{:keys [alias]} (:hub-connection-details @session)]
+    (cider/send-connected-on-hub-msg! session alias)))
 
 (defn- handle-change-hub-alias
   "Change alias in CIDER-SPY-HUB."

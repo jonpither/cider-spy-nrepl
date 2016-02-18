@@ -57,7 +57,7 @@
 
 (deftest register-hub-buffer-msg
   (testing "Registering the buffer ID for displaying connection messages in CIDER"
-    (handle-msg {:op "cider-spy-hub-connect"
+    (handle-msg {:op "cider-spy-hub-register-connection-buffer"
                  :id "hub-buffer-id"})
     (is (= "hub-buffer-id"
            (:hub-connection-buffer-id @*cider-spy-session*)))))
@@ -129,7 +129,7 @@
 
 (deftest prepare-alias-on-hub-through-connect-message
   (reset! *nrepl-middleware-session* {:desired-alias "foobar2"})
-  (handle-msg {:op "cider-spy-hub-connect"
+  (handle-msg {:op "cider-spy-hub-register-connection-buffer"
                :id "hub-buffer-id"
                :transport *transport*})
   (handle-msg {:op "some-random-op"})

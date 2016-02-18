@@ -44,7 +44,7 @@
               (connect session hub-host hub-port))
             (cider/send-connected-msg! session "No CIDER-SPY-HUB host and port specified.")))))))
 
-(defn- handle-register-hub-buffer-msg
+(defn- handle-register-hub-connection-buffer-msg
   "We register the buffer in EMACS used for displaying connection information
    about the CIDER-SPY-HUB."
   [{:keys [id]} session]
@@ -73,7 +73,7 @@
   (cider/send-connected-msg! session "Disconnected from the HUB")
   (cider/update-spy-buffer-summary! session))
 
-(def cider-spy-hub--nrepl-ops {"cider-spy-hub-connect" #'handle-register-hub-buffer-msg
+(def cider-spy-hub--nrepl-ops {"cider-spy-hub-register-connection-buffer" #'handle-register-hub-connection-buffer-msg
                                "cider-spy-hub-alias" #'handle-change-hub-alias
                                "cider-spy-hub-send-msg" #'handle-send-msg
                                "cider-spy-hub-disconnect" #'handle-cider-spy-disconnect})

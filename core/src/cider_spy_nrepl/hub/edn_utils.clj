@@ -1,4 +1,4 @@
-(ns cider-spy-nrepl.hub.edn-codec
+(ns cider-spy-nrepl.hub.edn-utils
   (:require [clojure.edn :as edn])
   (:import (io.netty.handler.codec MessageToMessageDecoder)))
 

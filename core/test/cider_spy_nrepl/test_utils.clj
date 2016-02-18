@@ -81,7 +81,7 @@
     ;; Handle a middleware request to connect to CIDER SPY HUB
     ((hub-middleware/wrap-cider-spy-hub nil)
      {:id "connection-buffer-msg"
-      :op "cider-spy-hub-connect"
+      :op "cider-spy-hub-register-connection-buffer"
       :session session
       :transport cider-transport})
 

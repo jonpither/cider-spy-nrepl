@@ -1,6 +1,6 @@
 (ns cider-spy-nrepl.hub.client
-  (:require [cider-spy-nrepl.hub.client-events :as client-events]
-            [cider-spy-nrepl.hub.edn-codec :as edn-codec]
+  (:require [cider-spy-nrepl.hub.edn-utils :as edn-utils]
+            [cider-spy-nrepl.hub.client-events :as client-events]
             [clojure.tools.logging :as log])
   (:import (io.netty.bootstrap Bootstrap)
            (io.netty.channel ChannelInitializer
@@ -38,7 +38,7 @@
               (doto pipeline
                 (.addLast "framer" (DelimiterBasedFrameDecoder. 8192 (Delimiters/lineDelimiter)))
                 (.addLast "string-decoder" (StringDecoder.))
-                (.addLast "end" (edn-codec/make-decoder))
+                (.addLast "end" (edn-utils/make-decoder))
                 (.addLast "string-encoder" (StringEncoder.))
                 (.addLast "main handler" (simple-handler session))))))))
      group]))

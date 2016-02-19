@@ -8,9 +8,10 @@
   (println "Did not understand message from hub" msg))
 
 (defmethod process :connected [session {:keys [alias when-connected]}]
-  (log/debug (format "Connected on hub as: %s" alias))
+  (log/debug (format "Registered on hub as: %s" alias))
   (swap! session assoc :hub-connection-details {:alias alias :when-connected when-connected})
   (cider/send-connected-on-hub-msg! session alias)
+  (cider/send-connected-msg! session (format "Registered on hub as: %s" alias))
 ;;  (cider/update-spy-buffer-summary! session)
   )
 

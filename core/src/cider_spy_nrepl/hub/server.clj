@@ -64,8 +64,3 @@
   (-> b .channel .close .sync)
   (-> wg .shutdownGracefully .sync)
   (-> bg .shutdownGracefully .sync))
-
-(defn -main [& args]
-  (let [[b] (start (Integer/parseInt (or (first args) "7771")))]
-    (.sync b))
-  (println "Exiting CIDER-SPY HUB"))

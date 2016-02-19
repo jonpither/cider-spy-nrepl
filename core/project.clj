@@ -17,4 +17,4 @@
                  :welcome (println "Type (dev) to start")}
   :profiles {:dev {:dependencies [[org.clojure/core.async "0.2.374"]]
                    :source-paths ["dev"]}}
-  :main cider-spy-nrepl.hub.server)
+  :main cider-spy-nrepl.hub.main)

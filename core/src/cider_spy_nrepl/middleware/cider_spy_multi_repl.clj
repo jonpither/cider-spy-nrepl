@@ -10,13 +10,10 @@
 ;; TODO possibly reuse the tracker transport
 ;; TODO capture scenario the forwarding fails and log?
 
-;; Think it's value and ns that come back, or eval-error
-
 (deftype TrackingTransport [transport session]
   nrepl-transport/Transport
-  (send [this {:keys [out] :as msg}]
-    (when (and (:watching? @session) out)
-      (hub-client/forward-repl-output session out))
+  (send [this {:keys [value] :as msg}]
+    (hub-client/forward-repl-output session value)
     (nrepl-transport/send transport msg))
   (recv [this])
   (recv [this timeout]))
@@ -29,12 +26,12 @@
     (cider/send-connected-msg! session (str "Sent watching REPL request to target " target))))
 
 (defn- track-repl-evals [{:keys [transport op code] :as msg} handler]
-  (if-let [session (sessions/session! msg)]
-    (do
-      (when (and (= "eval" op) (:watching? @session))
-        (hub-client/forward-repl-eval session code))
-      (handler (assoc msg :transport (TrackingTransport. transport session))))
-    (handler msg)))
+  (let [session (sessions/session! msg)]
+    (if (and (= "eval" op) session (:watching? @session))
+      (do
+        (hub-client/forward-repl-eval session code)
+        (handler (assoc msg :transport (TrackingTransport. transport session))))
+      (handler msg))))
 
 (def cider-spy--nrepl-ops {"cider-spy-hub-watch-repl" #'handle-watch})
 

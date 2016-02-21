@@ -63,7 +63,7 @@
           :let [watching-session (@register/sessions watching-session-id)]]
     (if watching-session
       (do
-        (log/info "Sending REPL watch eval to" (:alias @watching-session))
+        (log/info "Sending REPL eval to" (:alias @watching-session))
         (send-to-nrepl (:channel @watching-session) {:op :watch-repl-eval
                                                      :code code
                                                      :target (:alias @session)}))
@@ -74,7 +74,7 @@
           :let [watching-session (@register/sessions watching-session-id)]]
     (if watching-session
       (do
-        (log/info "Sending REPL watch out to" (:alias @watching-session))
+        (log/info "Sending REPL out to" (:alias @watching-session))
         (send-to-nrepl (:channel @watching-session) {:op :watch-repl-out
                                                      :out out
                                                      :target (:alias @session)}))

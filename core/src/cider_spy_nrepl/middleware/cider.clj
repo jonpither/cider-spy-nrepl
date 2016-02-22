@@ -26,7 +26,9 @@
   (let [summary (summary-builder/summary @session)
         {:keys [id summary-message-id transport]} @session]
     (send-back-to-cider! transport id summary-message-id
-                         :value (json/encode summary))))
+                         :value (json/encode summary)
+                         ;; Avoid manipulation from clojure.tools.nrepl.middleware.pr-values:
+                         :printed-value "true")))
 
 (defn send-connected-on-hub-msg!
   [session alias]

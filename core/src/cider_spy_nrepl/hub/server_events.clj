@@ -69,14 +69,14 @@
                                                      :target (:alias @session)}))
       (log/warn "Session not present for" watching-session-id))))
 
-(defmethod process :repl-out [_ session {:keys [out]}]
+(defmethod process :repl-out [_ session {:keys [msg]}]
   (doseq [watching-session-id (:watching-sessions @session)
           :let [watching-session (@register/sessions watching-session-id)]]
     (if watching-session
       (do
         (log/info "Sending REPL out to" (:alias @watching-session))
         (send-to-nrepl (:channel @watching-session) {:op :watch-repl-out
-                                                     :out out
+                                                     :msg msg
                                                      :target (:alias @session)}))
       (log/warn "Session not present for" watching-session-id))))
 

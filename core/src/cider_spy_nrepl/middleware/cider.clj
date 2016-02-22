@@ -64,7 +64,7 @@
 (defn send-watch-repl-out!
   "Send a message back to CIDER-SPY informing that a eval has been performed
    on a REPL that is being watched."
-  [session out target]
-  (let [{:keys [id hub-connection-buffer-id transport]} @session]
-    (send-back-to-cider! transport id hub-connection-buffer-id
-                         :target target :watch-repl-eval-out out)))
+  [session msg target]
+  (let [{:keys [id watch-session-request-id transport]} @session]
+    (apply send-back-to-cider! transport id watch-session-request-id
+           :target target (reduce into [] msg))))

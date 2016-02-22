@@ -13,15 +13,16 @@
 (deftype TrackingTransport [transport session]
   nrepl-transport/Transport
   (send [this {:keys [value] :as msg}]
-    (hub-client/forward-repl-output session value)
+    (hub-client/forward-repl-output session (dissoc msg :session :id))
     (nrepl-transport/send transport msg))
   (recv [this])
   (recv [this timeout]))
 
 (defn handle-watch
   "This operation is to start watching someone elses REPL"
-  [{:keys [target] :as msg}]
+  [{:keys [id target] :as msg}]
   (let [session (sessions/session! msg)]
+    (swap! session assoc :watch-session-request-id id)
     (hub-client/watch-repl session target)
     (cider/send-connected-msg! session (str "Sent watching REPL request to target " target))))
 

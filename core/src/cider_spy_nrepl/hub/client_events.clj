@@ -1,5 +1,6 @@
 (ns cider-spy-nrepl.hub.client-events
   (:require [cider-spy-nrepl.middleware.cider :as cider]
+            [clojure.tools.nrepl.middleware.interruptible-eval :refer [interruptible-eval]]
             [clojure.tools.logging :as log]))
 
 (defmulti process (fn [_ msg] (-> msg :op keyword)))
@@ -34,10 +35,25 @@
   (log/debug (format "Message received from %s to %s: %s" from recipient message))
   (cider/send-received-msg! s from recipient message))
 
-(defmethod process :watch-repl [s {:keys [message from recipient]}]
-  (log/debug (format "Someone is watching!: %s" from recipient message))
+(defmethod process :watch-repl [s _]
+  (log/debug (format "Someone is watching!"))
   (swap! s assoc :watching? true)
   (cider/send-connected-msg! s "Someone is watching your REPL!"))
+
+(defmethod process :multi-repl-eval [s {:keys [message]}]
+  (log/debug "Multi-REPL received eval request" message)
+
+  ;; What do we do here?
+  ;; Do we invoke middleware directly? (manufacturing msgs)
+  ;; Or do we something clever invoking a new request?
+  ;; Make a transport
+  ;; How does nrepl-middleware work?
+
+  ;; Need to get hold of the nrepl session here, and transport
+  (let [eval-handler (interruptible-eval nil)]
+    (eval-handler {:op "eval" :session s}))
+
+  (cider/send-connected-msg! s "Multi-REPL received eval request!"))
 
 (defmethod process :watch-repl-eval [s {:keys [code target]}]
   (log/debug (format "REPL eval received from %s: %s" target code))

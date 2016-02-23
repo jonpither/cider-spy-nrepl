@@ -33,6 +33,9 @@
 (defn watch-repl [session target]
   (send! (:hub-client @session) :watch-repl {:target target}))
 
+(defn multi-repl-eval [session target msg]
+  (send! (:hub-client @session) :multi-repl-eval {:target target :msg msg}))
+
 (defn forward-repl-output [session msg]
   (send! (:hub-client @session) :repl-out {:msg msg}))
 

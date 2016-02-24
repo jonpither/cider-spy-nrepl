@@ -1,6 +1,7 @@
 (ns cider-spy-nrepl.hub.client-events
   (:require [cider-spy-nrepl.middleware.cider :as cider]
             [clojure.tools.nrepl.middleware.interruptible-eval :refer [interruptible-eval]]
+            [cider-spy-nrepl.middleware.session-vars :refer [*hub-connection-details* *watching?* *registrations*]]
             [clojure.tools.logging :as log]))
 
 (defmulti process (fn [_ msg] (-> msg :op keyword)))
@@ -10,7 +11,7 @@
 
 (defmethod process :connected [session {:keys [alias when-connected]}]
   (log/debug (format "Registered on hub as: %s" alias))
-  (swap! session assoc :hub-connection-details {:alias alias :when-connected when-connected})
+  (swap! session assoc #'*hub-connection-details* {:alias alias :when-connected when-connected})
   (cider/send-connected-on-hub-msg! session alias)
   (cider/send-connected-msg! session (format "Registered on hub as: %s" alias))
 ;;  (cider/update-spy-buffer-summary! session)
@@ -18,17 +19,17 @@
 
 (defmethod process :registered [session {:keys [alias registered] :as s}]
   (log/debug (format "Registered: %s" alias))
-  (swap! session assoc :registrations registered)
+  (swap! session assoc #'*registrations* registered)
   (cider/update-spy-buffer-summary! session))
 
 (defmethod process :unregistered [session {:keys [alias registered]}]
   (log/debug (format "Unregistered: %s" alias))
-  (swap! session assoc :registrations registered)
+  (swap! session assoc #'*registrations* registered)
   (cider/update-spy-buffer-summary! session))
 
 (defmethod process :location [session {:keys [alias registered]}]
   (log/debug (format "Location change: %s" alias))
-  (swap! session assoc :registrations registered)
+  (swap! session assoc #'*registrations* registered)
   (cider/update-spy-buffer-summary! session))
 
 (defmethod process :message [s {:keys [message from recipient]}]
@@ -37,7 +38,7 @@
 
 (defmethod process :watch-repl [s _]
   (log/debug (format "Someone is watching!"))
-  (swap! s assoc :watching? true)
+  (swap! s assoc #'*watching?* true)
   (cider/send-connected-msg! s "Someone is watching your REPL!"))
 
 (defmethod process :multi-repl-eval [s {:keys [message]}]

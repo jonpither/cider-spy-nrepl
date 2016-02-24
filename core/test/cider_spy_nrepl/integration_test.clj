@@ -38,6 +38,6 @@
 (deftest test-display-a-summary
   (let [transport (nrepl/connect :port 7777 :host "localhost")
         response (nrepl-message transport {:op "cider-spy-summary"})]
-    (println "The response" response)))
+    (is response)))
 
 ;; TODO FIGURE OUT A TEST FOR MULTI_REPL

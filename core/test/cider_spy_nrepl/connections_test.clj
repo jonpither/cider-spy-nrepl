@@ -1,9 +1,8 @@
 (ns cider-spy-nrepl.connections-test
   (:require [cider-spy-nrepl.hub.register :as register]
-            [cider-spy-nrepl.middleware.sessions :as middleware-sessions]
             [cider-spy-nrepl.test-utils :as test-utils]
-            [cider-spy-nrepl.middleware.sessions :refer [cider-spy-session]]
             [clojure.core.async :refer [alts!! timeout]]
+            [cider-spy-nrepl.middleware.session-vars :refer [*hub-client* *registrations* *desired-alias*]]
             [clojure.test :refer :all]))
 
 ;; TODO worried about never shutting down individual connections to hub
@@ -24,13 +23,13 @@
 
 (deftest test-client-should-register-and-unregister
   (test-utils/spy-harness
-   (let [nrepl-session (atom {:desired-alias "jonnyboy"} :meta {:id 1})
+   (let [nrepl-session (atom {#'*desired-alias* "jonnyboy"} :meta {:id 1})
          cider-chan (test-utils/foo nrepl-session)]
      (assert-summary-msg-sent-to-cider-with-user-in cider-chan "jonnyboy")
      (is (= #{"jonnyboy"} (set (register/aliases))))
-     (is (= #{"jonnyboy"} (set (map (comp :alias val) (:registrations @(cider-spy-session nrepl-session))))))
+     (is (= #{"jonnyboy"} (set (map (comp :alias val) (@nrepl-session #'*registrations*)))))
 
-     (close-the-channel (:hub-client @(cider-spy-session nrepl-session)))
+     (close-the-channel (@nrepl-session #'*hub-client*))
 
      (Thread/sleep 500)
 
@@ -38,46 +37,46 @@
 
 (deftest test-two-registrations-and-unsubscribe
   (test-utils/spy-harness
-   (let [session1 (atom {:desired-alias "jonnyboy"} :meta {:id 1})
+   (let [session1 (atom {#'*desired-alias* "jonnyboy"} :meta {:id 1})
          cider-chan (test-utils/foo session1)]
 
      (assert-summary-msg-sent-to-cider-with-user-in cider-chan "jonnyboy")
 
-     (let [session2 (atom {:desired-alias "frank"} :meta {:id 2})
+     (let [session2 (atom {#'*desired-alias* "frank"} :meta {:id 2})
            cider-chan (test-utils/foo session2)]
 
        ;; Ensure frank registered    ;; Ensure jonnyboy registered
        (assert-summary-msg-sent-to-cider-with-user-in cider-chan "jonnyboy" "frank")
        (is (= #{"jonnyboy" "frank"}
-              (set (map (comp :alias val) (:registrations @(cider-spy-session session1))))))
+              (set (map (comp :alias val) (@session1 #'*registrations*)))))
        (is (= #{"jonnyboy" "frank"}
-              (set (map (comp :alias val) (:registrations @(cider-spy-session session2))))))
+              (set (map (comp :alias val) (@session2 #'*registrations*)))))
 
-       (close-the-channel (:hub-client @(cider-spy-session session2))))
+       (close-the-channel (@session2 #'*hub-client*)))
 
      (assert-summary-msg-sent-to-cider-with-user-in cider-chan "jonnyboy")
      (assert-summary-msg-sent-to-cider-with-user-in cider-chan "jonnyboy")
 
-     (is (= #{"jonnyboy"} (set (map (comp :alias val) (:registrations @(cider-spy-session session1))))))
+     (is (= #{"jonnyboy"} (set (map (comp :alias val) (@session1 #'*registrations*)))))
      (is (= #{"jonnyboy"} (set (register/aliases)))))))
 
 (deftest test-two-registrations-on-different-servers
   (test-utils/spy-harness
-   (let [session1 (atom {:desired-alias "jonnyboy"} :meta {:id 1})
+   (let [session1 (atom {#'*desired-alias* "jonnyboy"} :meta {:id 1})
          cider-chan (test-utils/foo session1)]
 
      (assert-summary-msg-sent-to-cider-with-user-in cider-chan "jonnyboy")
 
      (reset! register/sessions {})
-     (let [session2 (atom {:desired-alias "frank"} :meta {:id 2})
+     (let [session2 (atom {#'*desired-alias* "frank"} :meta {:id 2})
            cider-chan (test-utils/foo session2)]
 
        (assert-summary-msg-sent-to-cider-with-user-in cider-chan "frank")
 
-       (is (= #{"jonnyboy"} (set (map (comp :alias val) (:registrations @(cider-spy-session session1))))))
-       (is (= #{"frank"} (set (map (comp :alias val) (:registrations @(cider-spy-session session2))))))
-       (close-the-channel (:hub-client @(cider-spy-session session2))))
+       (is (= #{"jonnyboy"} (set (map (comp :alias val) (@session1 #'*registrations*)))))
+       (is (= #{"frank"} (set (map (comp :alias val) (@session2 #'*registrations*)))))
+       (close-the-channel (@session2 #'*hub-client*)))
 
      (Thread/sleep 500)
 
-     (is (= #{"jonnyboy"} (set (map (comp :alias val) (:registrations @(cider-spy-session session1)))))))))
+     (is (= #{"jonnyboy"} (set (map (comp :alias val) (@session1 #'*registrations*))))))))

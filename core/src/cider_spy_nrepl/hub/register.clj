@@ -1,7 +1,8 @@
 (ns cider-spy-nrepl.hub.register
   "Manage HUB registrations."
   (:require [cider-spy-nrepl.common :as common]
-            [cider-spy-nrepl.ns-trail :as ns-trail])
+            [cider-spy-nrepl.ns-trail :as ns-trail]
+            [cider-spy-nrepl.middleware.session-vars :refer [*tracking*]])
   (:import (org.joda.time LocalDateTime)))
 
 (def sessions (atom {}))
@@ -50,6 +51,6 @@
   (into {}
         (for [[id s] @sessions]
           (let [alias (:alias @s)
-                ns-trail (get-in @s [:tracking :ns-trail])
+                ns-trail (get-in @s [#'*tracking* :ns-trail])
                 nses (take 3 (ns-trail/top-nses (LocalDateTime.) ns-trail))]
             [id {:alias alias :nses nses}]))))

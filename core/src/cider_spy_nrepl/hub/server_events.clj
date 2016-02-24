@@ -1,5 +1,6 @@
 (ns cider-spy-nrepl.hub.server-events
   (:require [cider-spy-nrepl.hub.register :as register]
+            [cider-spy-nrepl.middleware.session-vars :refer [*tracking*]]
             [clojure.tools.logging :as log]))
 
 (defn- send-to-nrepl [c msg]
@@ -33,7 +34,7 @@
 
 (defmethod process :location [_ session {:keys [ns dt]}]
   (register/update! session
-                    update-in [:tracking :ns-trail]
+                    update-in [#'*tracking* :ns-trail]
                     conj {:dt dt :ns ns})
   (broadcast-msg! :location
                   :alias (:alias @session)

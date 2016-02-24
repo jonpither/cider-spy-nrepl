@@ -1,5 +1,6 @@
 (ns cider-spy-nrepl.hub.client-facade
-  (:require [cider-spy-nrepl.hub.client :as hubc]))
+  (:require [cider-spy-nrepl.hub.client :as hubc]
+            [cider-spy-nrepl.middleware.session-vars :refer [*hub-client*]]))
 
 (defn- send!
   [bootstrap op msg]
@@ -8,8 +9,8 @@
       (hubc/send! bootstrap (assoc msg :op op)))))
 
 (defn register [session alias]
-  (let [{:keys [hub-client id]} @session]
-    (send! hub-client :register {:alias alias :session-id id})))
+  (let [{:keys [id]} (meta session)]
+    (send! (@session #'*hub-client*) :register {:alias alias :session-id id})))
 
 (defn connect
   "Connect to the hub.
@@ -24,20 +25,20 @@
   "Update the location of where this developer is on the hub.
    A location is a namespace and a timestamp."
   [session ns ts]
-  (send! (:hub-client @session) :location {:ns ns :dt (.toDate ts)}))
+  (send! (@session #'*hub-client*) :location {:ns ns :dt (.toDate ts)}))
 
 (defn send-msg [session recipient message]
-  (send! (:hub-client @session) :message {:message message
-                                          :recipient recipient}))
+  (send! (@session #'*hub-client*) :message {:message message
+                                             :recipient recipient}))
 
 (defn watch-repl [session target]
-  (send! (:hub-client @session) :watch-repl {:target target}))
+  (send! (@session #'*hub-client*) :watch-repl {:target target}))
 
 (defn multi-repl-eval [session target msg]
-  (send! (:hub-client @session) :multi-repl-eval {:target target :msg msg}))
+  (send! (@session #'*hub-client*) :multi-repl-eval {:target target :msg msg}))
 
 (defn forward-repl-output [session msg]
-  (send! (:hub-client @session) :repl-out {:msg msg}))
+  (send! (@session #'*hub-client*) :repl-out {:msg msg}))
 
 (defn forward-repl-eval [session code]
-  (send! (:hub-client @session) :repl-eval {:code code}))
+  (send! (@session #'*hub-client*) :repl-eval {:code code}))

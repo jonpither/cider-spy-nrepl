@@ -1,7 +1,7 @@
 (ns cider-spy-nrepl.middleware.cider
   (:require [cheshire.core :as json]
             [cider-spy-nrepl.middleware.summary-builder :as summary-builder]
-            [cider-spy-nrepl.middleware.session-vars :refer [*summary-message-id* *hub-connection-buffer-id* *cider-spy-transport*]]
+            [cider-spy-nrepl.middleware.session-vars :refer [*summary-message-id* *hub-connection-buffer-id* *cider-spy-transport* *watch-session-request-id*]]
             [clojure.tools.nrepl.misc :refer [response-for]]
             [clojure.tools.nrepl.transport :as transport]))
 
@@ -57,4 +57,4 @@
   "Send a message back to CIDER-SPY informing that a eval has been performed
    on a REPL that is being watched."
   [session msg target]
-  (apply send-back-to-cider! session (:watch-session-request-id @session) :target target (reduce into [] msg)))
+  (apply send-back-to-cider! session (@session #'*watch-session-request-id*) :target target (reduce into [] msg)))

@@ -4,7 +4,7 @@
             [cider-spy-nrepl.hub.client-facade :as hub-client]
             [cider-spy-nrepl.middleware.cider :as cider]
             [clojure.tools.nrepl.middleware.session]
-            [cider-spy-nrepl.middleware.session-vars :refer [*summary-message-id* *watching?*]]
+            [cider-spy-nrepl.middleware.session-vars :refer [*summary-message-id* *watching?* *watch-session-request-id*]]
             [clojure.tools.nrepl.middleware.interruptible-eval]))
 
 (deftype TrackingTransport [transport session]
@@ -18,7 +18,7 @@
 (defn handle-watch
   "This operation is to start watching someone elses REPL"
   [{:keys [id target session] :as msg}]
-  (swap! session assoc :watch-session-request-id id)
+  (swap! session assoc #'*watch-session-request-id* id)
   (hub-client/watch-repl session target)
   (cider/send-connected-msg! session (str "Sent watching REPL request to target " target)))
 

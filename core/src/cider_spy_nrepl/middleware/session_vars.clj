@@ -21,3 +21,5 @@
 (def ^{:dynamic true :doc "Has the user requested disconect"} *user-disconnect*)
 
 (def ^{:dynamic true :doc "Desired alias on the Hub"} *desired-alias*)
+
+(def ^{:dynamic true :doc "The message ID used for sending asynchronous multi REPL updates back to the client"} *watch-session-request-id*)

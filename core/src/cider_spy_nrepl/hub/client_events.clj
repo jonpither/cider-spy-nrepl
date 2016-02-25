@@ -1,7 +1,8 @@
 (ns cider-spy-nrepl.hub.client-events
   (:require [cider-spy-nrepl.middleware.cider :as cider]
             [clojure.tools.nrepl.middleware.interruptible-eval :refer [interruptible-eval]]
-            [cider-spy-nrepl.middleware.session-vars :refer [*hub-connection-details* *watching?* *registrations*]]
+            [cider-spy-nrepl.middleware.session-vars :refer [*hub-connection-details* *watching?* *registrations* *hub-connection-buffer-id*
+                                                             *cider-spy-transport*]]
             [clojure.tools.logging :as log]))
 
 (defmulti process (fn [_ msg] (-> msg :op keyword)))
@@ -41,7 +42,7 @@
   (swap! s assoc #'*watching?* true)
   (cider/send-connected-msg! s "Someone is watching your REPL!"))
 
-(defmethod process :multi-repl-eval [s {:keys [message]}]
+(defmethod process :multi-repl-eval [session {:keys [message]}]
   (log/debug "Multi-REPL received eval request" message)
 
   ;; What do we do here?
@@ -50,11 +51,18 @@
   ;; Make a transport
   ;; How does nrepl-middleware work?
 
-  ;; Need to get hold of the nrepl session here, and transport
-  (let [eval-handler (interruptible-eval nil)]
-    (eval-handler {:op "eval" :session s}))
+  ;; What msg id do we use? This eval will send a msg through the transport
+  ;; These are starting to become hard problems. There is no applicable msg id...
+  ;; Perhaps this starts the multi-repl...
+  ;; OR..... CS can interfere with an existing REPL..? i.e. we fire up another message id (or simply go through the hub)
 
-  (cider/send-connected-msg! s "Multi-REPL received eval request!"))
+  ;; Need to get hold of the nrepl session here, and transport
+  (let [hub-connection-buffer-id (#'*hub-connection-buffer-id* session)
+        transport (#'*cider-spy-transport* session)]
+    (let [eval-handler (interruptible-eval nil)]
+      (eval-handler {:op "eval" :session session :interrupt-id nil :id hub-connection-buffer-id :transport transport})))
+
+  (cider/send-connected-msg! session "Multi-REPL received eval request!"))
 
 (defmethod process :watch-repl-eval [s {:keys [code target]}]
   (log/debug (format "REPL eval received from %s: %s" target code))

@@ -25,7 +25,7 @@
 (defn handle-eval
   "This operation is to eval some code in another persons REPL"
   [{:keys [id target session] :as msg}]
-  (hub-client/multi-repl-eval session target (dissoc msg :session :id))
+  (hub-client/multi-repl-eval session target (dissoc msg :session :id :transport :pprint-fn))
   (cider/send-connected-msg! session (str "Sent REPL eval to target " target)))
 
 (defn- track-repl-evals [{:keys [transport op code session] :as msg} handler]

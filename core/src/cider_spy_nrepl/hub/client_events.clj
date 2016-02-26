@@ -54,7 +54,7 @@
 (defmethod process :multi-repl-eval [session {:keys [msg originator]}]
   (log/debug "Multi-REPL received eval request" msg)
 
-  (let [hub-connection-buffer-id (#'*hub-connection-buffer-id* session)
+  (let [hub-connection-buffer-id (@session #'*hub-connection-buffer-id*)
         transport (MultiReplTransport. session originator)
         eval-handler (interruptible-eval nil)]
     (eval-handler {:op "eval"

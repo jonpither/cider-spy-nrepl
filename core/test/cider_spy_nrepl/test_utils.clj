@@ -32,12 +32,12 @@
   (sync [this])
   (close [this]))
 
-(defn- stub-connect-to-hub [_ _ nrepl-session]
+(defn- stub-connect-to-hub [_ _ handler]
   (let [hub-session
         (atom {:channel
                (reify ChannelHandlerContext
                  (writeAndFlush [this msg]
-                   (client-events/process nrepl-session (clojure.edn/read-string msg))
+                   (handler (clojure.edn/read-string msg))
                    nil))})]
     [nil nil (reify CanBeOpen
                (isOpen [this] true)

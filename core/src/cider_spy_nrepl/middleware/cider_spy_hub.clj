@@ -14,7 +14,7 @@
   [session]
   (let [alias (or (@session #'*desired-alias*) (alias/alias-from-env))]
     (cider/send-connected-msg! session (format "Setting alias on CIDER SPY HUB to %s." alias))
-    (hub-client/send! session :register {:alias alias :session-id (-> session meta :id)})))
+    (hub-client/send-async! session :register {:alias alias :session-id (-> session meta :id)})))
 
 (defn- on-connect
   "Hub client could be nil in the event of a failed connection."
@@ -31,7 +31,7 @@
    Once connected, we attempt to register the user with an alias."
   [session hub-host hub-port]
   (cider/send-connected-msg! session (format "Connecting to SPY HUB %s:%s." hub-host hub-port))
-  (let [handler (partial client-events/process)]
+  (let [handler (partial client-events/process session)]
     (on-connect session (hub-client/safe-connect hub-host hub-port handler))))
 
 (defn- connect-to-hub! [session]

@@ -4,14 +4,14 @@
             [clojure.tools.nrepl.middleware :refer [set-descriptor!]]
             [clojure.tools.nrepl.middleware.interruptible-eval]
             [clojure.tools.nrepl.middleware.session]
-            [cider-spy-nrepl.middleware.session-vars :refer [*cider-spy-transport* *session-started* *tracking*]])
+            [cider-spy-nrepl.middleware.session-vars :refer [*cider-spy-transport* *session-started* *tracking* *summary-message-id*]])
   (:import (org.joda.time LocalDateTime)))
 
 (defn- handle-summary
   "Handle the CIDER-SPY request for summary information."
-  [{:keys [session] :as msg}]
+  [{:keys [id session] :as msg}]
   (try
-    (cider/update-session-for-summary-msg! session msg)
+    (swap! session assoc #'*summary-message-id* id)
     (cider/update-spy-buffer-summary! session)
     {:status :done}
     (catch Throwable t

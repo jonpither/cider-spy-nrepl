@@ -2,7 +2,7 @@
   (:require [cider-spy-nrepl.middleware.cider :as cider]
             [clojure.tools.nrepl.middleware.interruptible-eval :refer [interruptible-eval]]
             [cider-spy-nrepl.middleware.session-vars :refer [*hub-connection-details* *watching?* *registrations* *hub-connection-buffer-id*
-                                                             *cider-spy-transport*]]
+                                                             *cider-spy-transport* *watch-session-request-id*]]
             [clojure.tools.nrepl.transport :as nrepl-transport]
             [cider-spy-nrepl.hub.client :refer [send-async!]]
             [clojure.tools.logging :as log]))
@@ -35,9 +35,11 @@
   (swap! session assoc #'*registrations* registered)
   (cider/update-spy-buffer-summary! session))
 
-(defmethod process :message [s {:keys [message from recipient]}]
+(defmethod process :message [session {:keys [message from recipient]}]
+  "Send a message back to CIDER-SPY informing that a msg has been received
+   from another developer on the HUB."
   (log/debug (format "Message received from %s to %s: %s" from recipient message))
-  (cider/send-received-msg! s from recipient message))
+  (cider/send! session (@session #'*hub-connection-buffer-id*) :from from :recipient recipient :msg message))
 
 (defmethod process :watch-repl [s _]
   (log/debug (format "Someone is watching!"))
@@ -68,12 +70,16 @@
 
 (defmethod process :multi-repl-eval-out [session {:keys [msg]}]
   (log/debug "Multi-REPL received eval response" msg)
-  (cider/send-back-to-cider! session (:id msg) msg))
+  (cider/send! session (:id msg) msg))
 
-(defmethod process :watch-repl-eval [s {:keys [code target]}]
+(defmethod process :watch-repl-eval [session {:keys [code target]}]
+  "Send a message back to CIDER-SPY informing that a eval has been requested
+   on a REPL that is being watched."
   (log/debug (format "REPL eval received from %s: %s" target code))
-  (cider/send-watch-repl-eval! s code target))
+  (cider/send! session (@session #'*hub-connection-buffer-id*) :target target :watch-repl-eval-code code))
 
-(defmethod process :watch-repl-out [s {:keys [msg target]}]
+(defmethod process :watch-repl-out [session {:keys [msg target]}]
+  "Send a message back to CIDER-SPY informing that a eval has been performed
+   on a REPL that is being watched."
   (log/debug (format "REPL out received from %s" target))
-  (cider/send-watch-repl-out! s msg target))
+  (cider/send! session (@session #'*watch-session-request-id*) (assoc msg :target target)))

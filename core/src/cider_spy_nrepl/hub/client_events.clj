@@ -4,7 +4,7 @@
             [cider-spy-nrepl.middleware.session-vars :refer [*hub-connection-details* *watching?* *registrations* *hub-connection-buffer-id*
                                                              *cider-spy-transport*]]
             [clojure.tools.nrepl.transport :as nrepl-transport]
-            [cider-spy-nrepl.hub.client-facade :as hub-client]
+            [cider-spy-nrepl.hub.client :refer [send-async!]]
             [clojure.tools.logging :as log]))
 
 (defmulti process (fn [_ msg] (-> msg :op keyword)))
@@ -47,7 +47,7 @@
 (deftype MultiReplTransport [session originator]
   nrepl-transport/Transport
   (send [this {:keys [value] :as msg}]
-    (hub-client/multi-repl-eval-output session originator (dissoc msg :session)))
+    (send-async! session :multi-repl-eval-out {:originator originator :msg (dissoc msg :session)}))
   (recv [this])
   (recv [this timeout]))
 

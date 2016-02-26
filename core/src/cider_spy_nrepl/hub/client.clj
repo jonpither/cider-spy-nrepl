@@ -1,6 +1,6 @@
 (ns cider-spy-nrepl.hub.client
   (:require [cider-spy-nrepl.hub.edn-utils :as edn-utils]
-            [cider-spy-nrepl.hub.client-events :as client-events]
+            [cider-spy-nrepl.middleware.session-vars :refer [*hub-client*]]
             [clojure.tools.logging :as log])
   (:import (io.netty.bootstrap Bootstrap)
            (io.netty.channel ChannelInitializer
@@ -13,12 +13,12 @@
            (java.net InetSocketAddress)))
 
 (defn simple-handler
-  "Handle messages coming back from the CIDER-SPY hub."
-  [session]
+  "Wraps handle messages coming back from the CIDER-SPY hub."
+  [handler]
   (proxy [SimpleChannelInboundHandler] []
     (messageReceived [ctx request]
       (try
-        (client-events/process session request)
+        (handler request)
         (catch Throwable t
           (println "Error occuring processing CIDER-SPY-HUB message. Check for compatibility.")
           (log/error t)))
@@ -26,7 +26,7 @@
 
 (defn- client-bootstrap
   "Create a NETTY client bootstrap."
-  [session]
+  [handler]
   (let [group (NioEventLoopGroup.)]
     [(doto (Bootstrap.)
        (.group group)
@@ -40,19 +40,28 @@
                 (.addLast "string-decoder" (StringDecoder.))
                 (.addLast "end" (edn-utils/make-decoder))
                 (.addLast "string-encoder" (StringEncoder.))
-                (.addLast "main handler" (simple-handler session))))))))
+                (.addLast "main handler" (simple-handler handler))))))))
      group]))
 
 ;; TODO, some (.shutdownGracefully group) action
 (defn ^:dynamic connect
   "Connect to CIDER-SPY-HUB.
    Returns a vector containing a client bootstrap, a group and a channel."
-  [host port session]
-  (let [[b group] (client-bootstrap session)]
+  [host port handler]
+  (let [[b group] (client-bootstrap handler)]
     [b group (-> b
                  (.connect (InetSocketAddress. host port))
                  .sync
                  .channel)]))
+
+(defn safe-connect
+  "Connect to the hub.
+   If a connection cannot be returned, then nil will return"
+  [host port handler]
+  (try
+    (connect host port handler)
+    (catch java.net.SocketException e
+      nil)))
 
 (defn shutdown!
   "Shut down the netty Client Bootstrap
@@ -68,3 +77,9 @@
   (-> c
       (.writeAndFlush (prn-str msg))
       .sync))
+
+(defn send-async!
+  [session op msg]
+  (when-let [bootstrap (@session #'*hub-client*)]
+    (future
+      (send! bootstrap (assoc msg :op op)))))

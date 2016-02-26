@@ -1,5 +1,5 @@
 (ns cider-spy-nrepl.middleware.tracker
-  (:require [cider-spy-nrepl.hub.client-facade :as hub-client]
+  (:require [cider-spy-nrepl.hub.client :refer [send-async!]]
             [clojure.tools.analyzer :as ana]
             [cider-spy-nrepl.middleware.session-vars :refer [*tracking*]]
             [clojure.tools.analyzer.jvm :as ana-jvm]
@@ -83,4 +83,4 @@
         messages-searched (drop (count old-session-msgs)
                                 (reverse new-session-msgs))]
     (doseq [{:keys [ns dt]} messages-searched :when ns]
-      (hub-client/update-location session ns dt))))
+      (send-async! session :location {:ns ns :dt (.toDate dt)}))))

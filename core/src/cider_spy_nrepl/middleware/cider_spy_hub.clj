@@ -1,5 +1,6 @@
 (ns cider-spy-nrepl.middleware.cider-spy-hub
-  (:require [cider-spy-nrepl.hub.client-facade :as hub-client]
+  (:require [cider-spy-nrepl.hub.client :as hub-client]
+            [cider-spy-nrepl.hub.client-events :as client-events]
             [cider-spy-nrepl.middleware.cider :as cider]
             [cider-spy-nrepl.middleware.hub-settings :as settings]
             [cider-spy-nrepl.middleware.alias :as alias]
@@ -13,7 +14,7 @@
   [session]
   (let [alias (or (@session #'*desired-alias*) (alias/alias-from-env))]
     (cider/send-connected-msg! session (format "Setting alias on CIDER SPY HUB to %s." alias))
-    (hub-client/register session alias)))
+    (hub-client/send! session :register {:alias alias :session-id (-> session meta :id)})))
 
 (defn- on-connect
   "Hub client could be nil in the event of a failed connection."
@@ -30,7 +31,8 @@
    Once connected, we attempt to register the user with an alias."
   [session hub-host hub-port]
   (cider/send-connected-msg! session (format "Connecting to SPY HUB %s:%s." hub-host hub-port))
-  (on-connect session (hub-client/connect session hub-host hub-port)))
+  (let [handler (partial client-events/process)]
+    (on-connect session (hub-client/safe-connect hub-host hub-port handler))))
 
 (defn- connect-to-hub! [session]
   (future
@@ -68,7 +70,8 @@
   (cider/send-connected-msg!
    session
    (format "Sending message to recipient %s on CIDER SPY HUB." recipient))
-  (hub-client/send-msg session recipient message))
+  (hub-client/send-async! session :message {:message message
+                                            :recipient recipient}))
 
 (defn- handle-cider-spy-disconnect
   "Disconnect permantently the user from the CIDER-SPY-HUB."

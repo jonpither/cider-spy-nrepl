@@ -37,6 +37,9 @@
 (defn multi-repl-eval [session target msg]
   (send! (@session #'*hub-client*) :multi-repl-eval {:target target :msg msg}))
 
+(defn multi-repl-eval-output [session originator msg]
+  (send! (@session #'*hub-client*) :multi-repl-eval-out {:originator originator :msg msg}))
+
 (defn forward-repl-output [session msg]
   (send! (@session #'*hub-client*) :repl-out {:msg msg}))
 

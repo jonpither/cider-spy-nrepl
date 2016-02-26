@@ -3,6 +3,8 @@
             [clojure.tools.nrepl.middleware.interruptible-eval :refer [interruptible-eval]]
             [cider-spy-nrepl.middleware.session-vars :refer [*hub-connection-details* *watching?* *registrations* *hub-connection-buffer-id*
                                                              *cider-spy-transport*]]
+            [clojure.tools.nrepl.transport :as nrepl-transport]
+            [cider-spy-nrepl.hub.client-facade :as hub-client]
             [clojure.tools.logging :as log]))
 
 (defmulti process (fn [_ msg] (-> msg :op keyword)))
@@ -42,27 +44,31 @@
   (swap! s assoc #'*watching?* true)
   (cider/send-connected-msg! s "Someone is watching your REPL!"))
 
-(defmethod process :multi-repl-eval [session {:keys [message]}]
-  (log/debug "Multi-REPL received eval request" message)
+(deftype MultiReplTransport [session originator]
+  nrepl-transport/Transport
+  (send [this {:keys [value] :as msg}]
+    (hub-client/multi-repl-eval-output session originator (dissoc msg :session)))
+  (recv [this])
+  (recv [this timeout]))
 
-  ;; What do we do here?
-  ;; Do we invoke middleware directly? (manufacturing msgs)
-  ;; Or do we something clever invoking a new request?
-  ;; Make a transport
-  ;; How does nrepl-middleware work?
+(defmethod process :multi-repl-eval [session {:keys [msg originator]}]
+  (log/debug "Multi-REPL received eval request" msg)
 
-  ;; What msg id do we use? This eval will send a msg through the transport
-  ;; These are starting to become hard problems. There is no applicable msg id...
-  ;; Perhaps this starts the multi-repl...
-  ;; OR..... CS can interfere with an existing REPL..? i.e. we fire up another message id (or simply go through the hub)
-
-  ;; Need to get hold of the nrepl session here, and transport
   (let [hub-connection-buffer-id (#'*hub-connection-buffer-id* session)
-        transport (#'*cider-spy-transport* session)]
-    (let [eval-handler (interruptible-eval nil)]
-      (eval-handler {:op "eval" :session session :interrupt-id nil :id hub-connection-buffer-id :transport transport})))
+        transport (MultiReplTransport. session originator)
+        eval-handler (interruptible-eval nil)]
+    (eval-handler {:op "eval"
+                   :id (:id msg)
+                   :code (:code msg)
+                   :session session
+                   :interrupt-id nil
+                   :transport transport}))
 
   (cider/send-connected-msg! session "Multi-REPL received eval request!"))
+
+(defmethod process :multi-repl-eval-out [session {:keys [msg]}]
+  (log/debug "Multi-REPL received eval response" msg)
+  (cider/send-back-to-cider! session (:id msg) msg))
 
 (defmethod process :watch-repl-eval [s {:keys [code target]}]
   (log/debug (format "REPL eval received from %s: %s" target code))

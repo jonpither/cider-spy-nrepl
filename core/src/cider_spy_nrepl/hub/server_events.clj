@@ -62,10 +62,19 @@
 (defmethod process :multi-repl-eval [_ session {:keys [target msg]}]
   (if-let [target-session (register/session-from-alias target)]
     (do
-      (log/info "Sending REPL eval request too" (:alias @target-session))
+      (log/info "Sending REPL eval request to" (:alias @target-session))
       (send-to-nrepl (:channel @target-session) {:op :multi-repl-eval
-                                                 :msg msg}))
+                                                 :msg msg
+                                                 :originator (:alias @session)}))
     (log/warn "Attempt to watch unregistered user" target)))
+
+(defmethod process :multi-repl-eval-out [_ session {:keys [msg originator]}]
+  (if-let [target-session (register/session-from-alias originator)]
+    (do
+      (log/info "Sending REPL eval request output to" (:alias @target-session))
+      (send-to-nrepl (:channel @target-session) {:op :multi-repl-eval-out
+                                                 :msg msg}))
+    (log/warn "Attempt to send multi-repl output back to unregistered user" originator)))
 
 (defmethod process :repl-eval [_ session {:keys [code]}]
   (doseq [watching-session-id (:watching-sessions @session)

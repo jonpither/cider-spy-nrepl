@@ -11,7 +11,7 @@
   (swap! session assoc #'*summary-message-id* id))
 
 ;; Todo maybe make a macro to save unnecessary work if cider-spy is not place
-(defn- send-back-to-cider! [session message-id & opts]
+(defn send-back-to-cider! [session message-id & opts]
   (let [cider-spy-transport (@session #'*cider-spy-transport*)]
     (when (and cider-spy-transport message-id)
       (transport/send cider-spy-transport

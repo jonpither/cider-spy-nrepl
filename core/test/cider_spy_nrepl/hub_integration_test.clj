@@ -67,17 +67,59 @@
 
       (is (= "foodude" (->> interesting-messages (filter :hub-registered-alias) first :hub-registered-alias))))))
 
-(deftest test-multi-repl-watch
+(defn- register-user-on-hub [expected-alias]
   (let [transport (nrepl/connect :port 7777 :host "localhost")
         session-id (:new-session (first (nrepl/response-seq (transport/send transport {:op "clone" :id "session-create-id"}))))]
 
+    (assert session-id)
     (assert (->> {:session session-id :id "22" :op "cider-spy-hub-register-connection-buffer"}
                  (send-and-seq transport)
                  first))
 
     (assert (->> (some-eval session-id)
                  (send-and-seq transport)
-                 (filter #(= (:value %) "CIDER-SPY-NREPL: Registered on hub as: foodude"))
-                 first))))
+                 (filter #(= (:value %) (str "CIDER-SPY-NREPL: Registered on hub as: " expected-alias)))
+                 first))
+    [transport session-id]))
 
-;; TODO FIGURE OUT A TEST FOR MULTI_REPL
+(deftest test-multi-repl-watch
+  (let [[transport-for-1 session-id-1] (register-user-on-hub "foodude")
+        [transport-for-2 session-id-2] (register-user-on-hub "foodude~2")]
+
+    (let [msgs-for-1 (nrepl/response-seq transport-for-1 10000)]
+
+      (is (= "CIDER-SPY-NREPL: Sent watching REPL request to target foodude"
+             (->> {:session session-id-2 :op "cider-spy-hub-watch-repl" :target "foodude"}
+                  (send-and-seq transport-for-2)
+                  first :value)))
+
+      (is (= "CIDER-SPY-NREPL: Someone is watching your REPL!" (:value (first msgs-for-1)))))
+
+    (testing "User 2 can watch user 1 evals"
+      (let [msgs-for-2 (nrepl/response-seq transport-for-2 10000)]
+
+        ;; Regular eval with 2 responses
+        (assert (= 2 (count (->> (some-eval session-id-1)
+                                 (send-and-seq transport-for-2)
+                                 (take 2)))))
+
+        (is (= {:target "foodude",
+                :watch-repl-eval-code "( + 1 1)"}
+               (-> msgs-for-2 first (select-keys [:target :watch-repl-eval-code]))))))
+
+    (testing "User 2 can do an eval on user 1s repl"
+      (let [msgs-for-2 (nrepl/response-seq transport-for-2 10000)]
+
+        (is (= [{:id "22",
+                 :session session-id-2
+                 :value "CIDER-SPY-NREPL: Sent REPL eval to target foodude"}
+                {:id "eval-msg",
+                 :ns "user",
+                 :session session-id-2
+                 :value "2"}
+                {:id "eval-msg",
+                 :session session-id-2
+                 :status ["done"]}]
+               (->> (assoc (some-eval session-id-2) :op "cider-spy-hub-multi-repl-eval" :target "foodude")
+                    (send-and-seq transport-for-2)
+                    (take 3))))))))

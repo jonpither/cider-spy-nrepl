@@ -22,8 +22,6 @@
   (hub-client/send-async! session :watch-repl {:target target})
   (cider/send-connected-msg! session (str "Sent watching REPL request to target " target)))
 
-;; TODO this will DEFINITELY need a test ASAP:
-
 (defn handle-eval
   "This operation is to eval some code in another persons REPL"
   [{:keys [id target session] :as msg}]

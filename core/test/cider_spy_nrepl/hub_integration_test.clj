@@ -36,7 +36,7 @@
 
 (defn- send-and-seq [transport msg]
   (-> (transport/send transport msg)
-      (nrepl/response-seq 5000)))
+      (nrepl/response-seq 10000)))
 
 (deftest test-connect-to-hub
   (let [transport (nrepl/connect :port 7777 :host "localhost")
@@ -48,14 +48,20 @@
                        :status
                        first)))
 
-    (is (= #{"CIDER-SPY-NREPL: Connecting to SPY HUB localhost:7778."
-             "CIDER-SPY-NREPL: You are connected to the CIDER SPY HUB."
-             "CIDER-SPY-NREPL: Setting alias on CIDER SPY HUB to foodude."}
-           (->> {:session session-id :ns "clojure.string" :op "eval" :code "( + 1 1)" :file "*cider-repl blog*" :line 12 :column 6 :id "eval-msg"}
-                (send-and-seq transport)
-                (take 4)
-                (remove #(= (:id %) "eval-msg"))
-                (map :value)
-                set)))))
+    (let [interesting-messages (->> {:session session-id :ns "clojure.string" :op "eval" :code "( + 1 1)" :file "*cider-repl blog*" :line 12 :column 6 :id "eval-msg"}
+                                    (send-and-seq transport)
+                                    (take 7)
+                                    (remove #(= (:id %) "eval-msg")))]
+
+      (is (= #{"CIDER-SPY-NREPL: Connecting to SPY HUB localhost:7778."
+               "CIDER-SPY-NREPL: You are connected to the CIDER SPY HUB."
+               "CIDER-SPY-NREPL: Setting alias on CIDER SPY HUB to foodude."
+               "CIDER-SPY-NREPL: Registered on hub as: foodude"}
+             (->> interesting-messages
+                  (filter :value)
+                  (map :value)
+                  set)))
+
+      (is (= "foodude" (->> interesting-messages (filter :hub-registered-alias) first :hub-registered-alias))))))
 
 ;; TODO FIGURE OUT A TEST FOR MULTI_REPL

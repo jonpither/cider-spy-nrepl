@@ -1,4 +1,5 @@
 language: clojure
 lein: lein2
+before_install: cd core
 jdk:
   - oraclejdk7

@@ -32,11 +32,14 @@
       (stop-repl-server server)
       (hub-server/shutdown hub-server))))
 
-(use-fixtures :once wrap-setup-once)
+(use-fixtures :each wrap-setup-once)
 
 (defn- send-and-seq [transport msg]
   (-> (transport/send transport msg)
       (nrepl/response-seq 10000)))
+
+(defn some-eval [session-id]
+  {:session session-id :ns "clojure.string" :op "eval" :code "( + 1 1)" :file "*cider-repl blog*" :line 12 :column 6 :id "eval-msg"})
 
 (deftest test-connect-to-hub
   (let [transport (nrepl/connect :port 7777 :host "localhost")
@@ -48,7 +51,7 @@
                        :status
                        first)))
 
-    (let [interesting-messages (->> {:session session-id :ns "clojure.string" :op "eval" :code "( + 1 1)" :file "*cider-repl blog*" :line 12 :column 6 :id "eval-msg"}
+    (let [interesting-messages (->> (some-eval session-id)
                                     (send-and-seq transport)
                                     (take 7)
                                     (remove #(= (:id %) "eval-msg")))]
@@ -63,5 +66,18 @@
                   set)))
 
       (is (= "foodude" (->> interesting-messages (filter :hub-registered-alias) first :hub-registered-alias))))))
+
+(deftest test-multi-repl-watch
+  (let [transport (nrepl/connect :port 7777 :host "localhost")
+        session-id (:new-session (first (nrepl/response-seq (transport/send transport {:op "clone" :id "session-create-id"}))))]
+
+    (assert (->> {:session session-id :id "22" :op "cider-spy-hub-register-connection-buffer"}
+                 (send-and-seq transport)
+                 first))
+
+    (assert (->> (some-eval session-id)
+                 (send-and-seq transport)
+                 (filter #(= (:value %) "CIDER-SPY-NREPL: Registered on hub as: foodude"))
+                 first))))
 
 ;; TODO FIGURE OUT A TEST FOR MULTI_REPL

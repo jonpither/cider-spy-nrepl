@@ -1,8 +1,7 @@
 (ns cider-spy-nrepl.hub.client-events
   (:require [cider-spy-nrepl.middleware.cider :as cider]
             [clojure.tools.nrepl.middleware.interruptible-eval :refer [interruptible-eval]]
-            [cider-spy-nrepl.middleware.session-vars :refer [*hub-connection-details* *watching?* *registrations* *hub-connection-buffer-id*
-                                                             *cider-spy-transport* *watch-session-request-id*]]
+            [cider-spy-nrepl.middleware.session-vars :refer :all]
             [clojure.tools.nrepl.transport :as nrepl-transport]
             [cider-spy-nrepl.hub.client :refer [send-async!]]
             [clojure.tools.logging :as log]))
@@ -78,8 +77,19 @@
   (log/debug (format "REPL eval received from %s: %s" target code))
   (cider/send! session (@session #'*hub-connection-buffer-id*) :target target :watch-repl-eval-code code))
 
+(defn send-out-unsent-messages-if-in-order! [session id target f]
+  (let [stored-messages (get-in @session [*watched-messages* target id])
+        large-sequence-no (apply max (map :cs-sequence (vals stored-messages)))]
+    (if (= large-sequence-no (count (vals stored-messages)))
+      ;; send all the ones that are pending, in order:
+      (doseq [{:keys [cs-sequence sent?] :as msg} (sort-by :cs-sequence (vals stored-messages)) :when (not sent?)]
+        (f (assoc msg :target target))
+        (swap! session assoc-in [*watched-messages* target id cs-sequence :sent?] true))
+      (log/warn "Holding on to message" id large-sequence-no))))
+
 (defmethod process :watch-repl-out [session {:keys [msg target]}]
   "Send a message back to CIDER-SPY informing that a eval has been performed
    on a REPL that is being watched."
   (log/debug (format "REPL out received from %s" target))
-  (cider/send! session (@session #'*watch-session-request-id*) (assoc msg :target target)))
+  (swap! session assoc-in [*watched-messages* target (:id msg) (:cs-sequence msg)] msg)
+  (send-out-unsent-messages-if-in-order! session (:id msg) target (partial cider/send! session (@session #'*watch-session-request-id*))))

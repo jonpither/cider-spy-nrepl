@@ -7,10 +7,13 @@
             [cider-spy-nrepl.middleware.session-vars :refer [*summary-message-id* *watching?* *watch-session-request-id*]]
             [clojure.tools.nrepl.middleware.interruptible-eval]))
 
-(deftype TrackingTransport [transport session]
+(deftype TrackingTransport [transport session sequence-no]
   nrepl-transport/Transport
   (send [this {:keys [value] :as msg}]
-    (hub-client/send-async! session :repl-out {:msg (dissoc msg :session :id)})
+    (hub-client/send-async! session :repl-out {:msg (-> msg
+                                                        (dissoc msg :session :id)
+                                                        ;; Attach a sequence number
+                                                        (assoc :cs-sequence @(swap! sequence-no inc)))})
     (nrepl-transport/send transport msg))
   (recv [this])
   (recv [this timeout]))
@@ -32,7 +35,7 @@
   (if (and session (= "eval" op) (@session #'*watching?*))
     (do
       (hub-client/send-async! session :repl-eval {:code code})
-      (handler (assoc msg :transport (TrackingTransport. transport session))))
+      (handler (assoc msg :transport (TrackingTransport. transport session (atom 0)))))
     (handler msg)))
 
 (def cider-spy--nrepl-ops {"cider-spy-hub-watch-repl" #'handle-watch

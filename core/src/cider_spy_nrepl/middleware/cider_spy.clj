@@ -31,6 +31,7 @@
   [{:keys [session] :as msg} handler]
   (let [result (handler msg)]
     (try
+      (println "here")
       (tracker/track-msg! msg session)
       (cider/update-spy-buffer-summary! session)
       (catch Throwable t

@@ -92,4 +92,7 @@
    on a REPL that is being watched."
   (log/debug (format "REPL out received from %s" target))
   (swap! session assoc-in [*watched-messages* target (:id msg) (:cs-sequence msg)] msg)
-  (send-out-unsent-messages-if-in-order! session (:id msg) target (partial cider/send! session (@session #'*watch-session-request-id*))))
+  (send-out-unsent-messages-if-in-order! session (:id msg) target (partial cider/send! session (@session #'*watch-session-request-id*)))
+  ;; Evict any pending messages do not match this ID (brutal!)
+  ;; If we don't do this we get a leak. Could in future aim for a less strict regime
+  (swap! session update-in [*watched-messages* target] select-keys (:id msg)))

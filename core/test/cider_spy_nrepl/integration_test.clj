@@ -57,10 +57,10 @@
                            (json/parse-string keyword)
                            (find :devs))))
 
-    (let [responses (->> {:session session-id :ns "user" :op "eval" :code "( + 1 1)" :file "*cider-repl blog*" :line 12 :column 6 :id 14}
+    (let [responses (->> {:session session-id :ns "clojure.string" :op "eval" :code "( + 1 1)" :file "*cider-repl blog*" :line 12 :column 6 :id 14}
                          (send-and-seq transport))]
       (is (= [{:id 14,
-               :ns "user",
+               :ns "clojure.string",
                :session session-id
                :value "2"}
               {:id 14,
@@ -68,8 +68,10 @@
                :status ["done"]}]
              (take 2 responses)))
 
-      (is (= [:devs nil] (-> responses
-                             (nth 2)
-                             :value
-                             (json/parse-string keyword)
-                             (find :devs)))))))
+      (is (= "clojure.string" (-> responses
+                                  (nth 2)
+                                  :value
+                                  (json/parse-string keyword)
+                                  :ns-trail
+                                  first
+                                  :ns))))))

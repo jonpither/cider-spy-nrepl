@@ -41,7 +41,9 @@
         response (nrepl-message transport {:ns "user" :op "eval" :code "( + 1 1)" :file "*cider-repl blog*" :line 12 :column 6 :id 14})]
     (is (= ["done"] (:status (second response))))))
 
-(def eval-msg {:ns "user" :op "eval" :code "( + 1 1)" :file "*cider-repl blog*" :line 12 :column 6 :id 14})
+(defn- send-and-seq [transport msg]
+  (-> (transport/send transport msg)
+      (nrepl/response-seq 5000)))
 
 (deftest test-display-a-summary
   (let [transport (nrepl/connect :port 7777 :host "localhost")
@@ -55,5 +57,19 @@
                            (json/parse-string keyword)
                            (find :devs))))
 
-    ;;(transport/send transport {:session "bob" :ns "user" :op "eval" :code "( + 1 1)" :file "*cider-repl blog*" :line 12 :column 6 :id 14})
-    ))
+    (let [responses (->> {:session session-id :ns "user" :op "eval" :code "( + 1 1)" :file "*cider-repl blog*" :line 12 :column 6 :id 14}
+                         (send-and-seq transport))]
+      (is (= [{:id 14,
+               :ns "user",
+               :session session-id
+               :value "2"}
+              {:id 14,
+               :session session-id,
+               :status ["done"]}]
+             (take 2 responses)))
+
+      (is (= [:devs nil] (-> responses
+                             (nth 2)
+                             :value
+                             (json/parse-string keyword)
+                             (find :devs)))))))

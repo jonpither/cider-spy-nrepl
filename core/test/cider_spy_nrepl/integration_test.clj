@@ -1,7 +1,10 @@
 (ns cider-spy-nrepl.integration-test
   (:require [clojure.tools.nrepl.server :as nrserver]
             [cider-spy-nrepl.middleware.cider-spy]
+            [cider-spy-nrepl.hub.server :as hub-server]
             [cider-spy-nrepl.middleware.cider-spy-multi-repl]
+            [cider-spy-nrepl.middleware.cider-spy-hub]
+            [cider-spy-nrepl.middleware.hub-settings :as hub-settings]
             [clojure.test :refer :all]
             [clojure.tools.nrepl :as nrepl]))
 
@@ -10,8 +13,9 @@
         (nrserver/start-server
          :port 7777
          :handler (nrserver/default-handler
-                    #'cider-spy-nrepl.middleware.cider-spy-multi-repl/wrap-multi-repl
-                    #'cider-spy-nrepl.middleware.cider-spy/wrap-cider-spy))]
+                   #'cider-spy-nrepl.middleware.cider-spy-multi-repl/wrap-multi-repl
+                   #'cider-spy-nrepl.middleware.cider-spy-hub/wrap-cider-spy-hub
+                   #'cider-spy-nrepl.middleware.cider-spy/wrap-cider-spy))]
     server))
 
 (defn- stop-repl-server [server]
@@ -39,5 +43,3 @@
   (let [transport (nrepl/connect :port 7777 :host "localhost")
         response (nrepl-message transport {:op "cider-spy-summary"})]
     (is response)))
-
-;; TODO FIGURE OUT A TEST FOR MULTI_REPL

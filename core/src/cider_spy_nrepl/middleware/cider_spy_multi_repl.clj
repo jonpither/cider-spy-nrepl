@@ -11,9 +11,9 @@
   nrepl-transport/Transport
   (send [this {:keys [value] :as msg}]
     (hub-client/send-async! session :repl-out {:msg (-> msg
-                                                        (dissoc msg :session :id)
+                                                        (dissoc msg :session)
                                                         ;; Attach a sequence number
-                                                        (assoc :cs-sequence @(swap! sequence-no inc)))})
+                                                        (assoc :cs-sequence (swap! sequence-no inc)))})
     (nrepl-transport/send transport msg))
   (recv [this])
   (recv [this timeout]))

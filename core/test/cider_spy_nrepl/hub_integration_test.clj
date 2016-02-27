@@ -112,11 +112,12 @@
 
         (is (= [{:id "22",
                  :session session-id-2
-                 :value "CIDER-SPY-NREPL: Sent REPL eval to target foodude"}
+                 :value "CIDER-SPY-NREPL: Sent REPL eval to target foodude"
+                 :printed-value "true"}
                 {:id "eval-msg",
                  :ns "user",
                  :session session-id-2
-                 :value "2"}
+                 :value 2}
                 {:id "eval-msg",
                  :session session-id-2
                  :status ["done"]}]

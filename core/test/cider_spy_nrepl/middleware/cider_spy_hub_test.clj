@@ -55,7 +55,8 @@
 (deftest register-hub-buffer-msg
   (testing "Registering the buffer ID for displaying connection messages in CIDER"
     (handle-msg {:op "cider-spy-hub-register-connection-buffer"
-                 :id "hub-buffer-id"})
+                 :id "hub-buffer-id"
+                 :transport *transport*})
     (is (= "hub-buffer-id"
            (@*nrepl-session* #'*hub-connection-buffer-id*)))))
 
@@ -129,7 +130,7 @@
                            #'*cider-spy-transport* *transport*})
   (handle-msg {:op "cider-spy-hub-register-connection-buffer"
                :id "hub-buffer-id"
-               #'*cider-spy-transport* *transport*})
+               :transport *transport*})
   (handle-msg {:op "some-random-op"})
 
   (test-utils/assert-async-msgs *transport-chan* ["Connecting to SPY HUB"

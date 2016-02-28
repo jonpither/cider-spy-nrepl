@@ -10,9 +10,10 @@ act as a hub for cider-spy-nrepls to communicate with each other.
 
 ### Basic configuration
 
-    :profiles {:dev {:dependencies [[cider-spy/cider-spy-nrepl "0.1.0-SNAPSHOT"]]
+    :profiles {:dev {:dependencies [[cider-spy/cider-spy-nrepl "0.2.0-SNAPSHOT"]]
                      :repl-options {:nrepl-middleware [cider-spy-nrepl.middleware.cider-spy/wrap-cider-spy
-                                                       cider-spy-nrepl.middleware.cider-spy-hub/wrap-cider-spy-hub]}}}
+                                                       cider-spy-nrepl.middleware.cider-spy-hub/wrap-cider-spy-hub
+                                                       cider-spy-nrepl.middleware.cider-spy-multi-repl/wrap-multi-repl]}}}
 ## Hub
 
 Communicate and track fellow REPL hackers by running a hub:
@@ -27,6 +28,6 @@ where the hub is:
 
 # License
 
-Copyright © 2014 Jon Pither
+Copyright © 2016 Jon Pither
 
 Distributed under the GNU General Public License, version 3

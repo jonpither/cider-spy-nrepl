@@ -123,4 +123,7 @@
                  :status ["done"]}]
                (->> (assoc (some-eval session-id-2) :op "cider-spy-hub-multi-repl-eval" :target "foodude")
                     (send-and-seq transport-for-2)
-                    (take 3))))))))
+                    (take 3))))
+
+        ;; msg should appear for the other person REPL
+        ))))

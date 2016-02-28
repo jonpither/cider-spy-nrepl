@@ -48,6 +48,9 @@
 (deftype MultiReplTransport [session originator]
   nrepl-transport/Transport
   (send [this {:keys [value] :as msg}]
+    (cider/send! session (@session #'*hub-connection-buffer-id*) (assoc msg
+                                                                        :outside-multi-repl-eval "true"
+                                                                        :originator originator))
     (send-async! session :multi-repl-eval-out {:originator originator :msg (dissoc msg :session)}))
   (recv [this])
   (recv [this timeout]))

@@ -38,7 +38,10 @@
   "Send a message back to CIDER-SPY informing that a msg has been received
    from another developer on the HUB."
   (log/debug (format "Message received from %s to %s: %s" from recipient message))
-  (cider/send! session (@session #'*hub-connection-buffer-id*) :from from :recipient recipient :msg message))
+  (cider/send! session {:id (@session #'*hub-connection-buffer-id*)
+                        :from from
+                        :recipient recipient
+                        :msg message}))
 
 (defmethod process :watch-repl [s _]
   (log/debug (format "Someone is watching!"))
@@ -48,9 +51,10 @@
 (deftype MultiReplTransport [session originator]
   nrepl-transport/Transport
   (send [this {:keys [value] :as msg}]
-    (cider/send! session (@session #'*hub-connection-buffer-id*) (assoc msg
-                                                                        :outside-multi-repl-eval "true"
-                                                                        :originator originator))
+    (cider/send! session (assoc msg
+                                :id (@session #'*hub-connection-buffer-id*)
+                                :outside-multi-repl-eval "true"
+                                :originator originator))
     (send-async! session :multi-repl-eval-out {:originator originator :msg (dissoc msg :session)}))
   (recv [this])
   (recv [this timeout]))
@@ -72,13 +76,13 @@
 
 (defmethod process :multi-repl-eval-out [session {:keys [msg]}]
   (log/debug "Multi-REPL received eval response" msg)
-  (cider/send! session (:id msg) msg))
+  (cider/send! session msg))
 
 (defmethod process :watch-repl-eval [session {:keys [code target]}]
   "Send a message back to CIDER-SPY informing that a eval has been requested
    on a REPL that is being watched."
   (log/debug (format "REPL eval received from %s: %s" target code))
-  (cider/send! session (@session #'*hub-connection-buffer-id*) :target target :watch-repl-eval-code code))
+  (cider/send! session {:id (@session #'*hub-connection-buffer-id*) :target target :watch-repl-eval-code code}))
 
 (defn send-out-unsent-messages-if-in-order! [session id target f]
   (let [stored-messages (get-in @session [#'*watched-messages* target id])
@@ -94,8 +98,8 @@
   "Send a message back to CIDER-SPY informing that a eval has been performed
    on a REPL that is being watched."
   (log/debug (format "REPL out received from %s" target))
-  (swap! session assoc-in [#'*watched-messages* target (:id msg) (:cs-sequence msg)] msg)
-  (send-out-unsent-messages-if-in-order! session (:id msg) target (partial cider/send! session (@session #'*watch-session-request-id*)))
+  (swap! session assoc-in [#'*watched-messages* target (:id msg) (:cs-sequence msg)] (assoc msg :id (@session #'*watch-session-request-id*)))
+  (send-out-unsent-messages-if-in-order! session (:id msg) target (partial cider/send! session))
   ;; Evict any pending messages do not match this ID (brutal!)
   ;; If we don't do this we get a leak. Could in future aim for a less strict regime
   (swap! session update-in [#'*watched-messages* target] select-keys [(:id msg)]))

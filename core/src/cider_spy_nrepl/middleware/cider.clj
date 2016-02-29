@@ -16,10 +16,11 @@
    EMACS CIDER SPY has a listener waiting for a message with an ID
    the same as SUMMARY-MESSAGE-ID in the session."
   [session]
-  (send! session {:id (@session #'*summary-message-id*)
-                  :value (json/encode (summary-builder/summary @session))
-                  ;; Avoid manipulation from clojure.tools.nrepl.middleware.pr-values:
-                  :printed-value "true"}))
+  (when-let [summary-msg-id (@session #'*summary-message-id*)]
+    (send! session {:id summary-msg-id
+                    :value (json/encode (summary-builder/summary @session))
+                    ;; Avoid manipulation from clojure.tools.nrepl.middleware.pr-values:
+                    :printed-value "true"})))
 
 (defn send-connected-on-hub-msg!
   [session alias]

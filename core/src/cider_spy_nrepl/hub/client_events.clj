@@ -1,8 +1,10 @@
 (ns cider-spy-nrepl.hub.client-events
   (:require [cider-spy-nrepl.middleware.cider :as cider]
             [clojure.tools.nrepl.middleware.interruptible-eval :refer [interruptible-eval]]
+            [cider-spy-nrepl.middleware.cider-spy-multi-repl :refer [wrap-multi-repl]]
             [cider-spy-nrepl.middleware.session-vars :refer :all]
             [clojure.tools.nrepl.transport :as nrepl-transport]
+            [clojure.tools.nrepl.server :refer [default-handler]]
             [cider-spy-nrepl.hub.client :refer [send-async!]]
             [clojure.tools.logging :as log]))
 
@@ -48,35 +50,20 @@
   (swap! s assoc #'*watching?* true)
   (cider/send-connected-msg! s "Someone is watching your REPL!"))
 
-(deftype MultiReplTransport [session originator]
-  nrepl-transport/Transport
-  (send [this {:keys [value] :as msg}]
-    (cider/send! session (assoc msg
-                                :id (@session #'*hub-connection-buffer-id*)
-                                :outside-multi-repl-eval "true"
-                                :originator originator))
-    (send-async! session :multi-repl-eval-out {:originator originator :msg (dissoc msg :session)}))
-  (recv [this])
-  (recv [this timeout]))
-
-(defmethod process :multi-repl-eval [session {:keys [msg originator]}]
+(defmethod process :multi-repl-eval [session {:keys [originator origin-session-id] :as msg}]
+  "A request has been received to invoke a eval operation from another REPL."
   (log/debug "Multi-REPL received eval request" msg)
-
-  (let [hub-connection-buffer-id (@session #'*hub-connection-buffer-id*)
-        transport (MultiReplTransport. session originator)
-        eval-handler (interruptible-eval nil)]
-    (eval-handler {:op "eval"
-                   :id (:id msg)
-                   :code (:code msg)
-                   :session session
-                   :interrupt-id nil
-                   :transport transport}))
-
+  ;; TODO may be expensive to create this handler each time:
+  (let [handler (default-handler #'wrap-multi-repl)]
+    (handler {:op "eval"
+              :id (:id msg)
+              :code (:code msg)
+              :session (-> session meta :id)
+              :interrupt-id nil
+              :transport (@session #'*cider-spy-transport*)
+              :originator originator
+              :origin-session-id origin-session-id}))
   (cider/send-connected-msg! session "Multi-REPL received eval request!"))
-
-(defmethod process :multi-repl-eval-out [session {:keys [msg]}]
-  (log/debug "Multi-REPL received eval response" msg)
-  (cider/send! session msg))
 
 (defmethod process :watch-repl-eval [session {:keys [code target]}]
   "Send a message back to CIDER-SPY informing that a eval has been requested
@@ -94,12 +81,15 @@
         (swap! session assoc-in [#'*watched-messages* target id cs-sequence :sent?] true))
       (log/warn "Holding on to message" id large-sequence-no stored-messages))))
 
-(defmethod process :watch-repl-out [session {:keys [msg target]}]
+(defmethod process :multi-repl-out [session {:keys [origin-session-id id target originator] :as msg}]
   "Send a message back to CIDER-SPY informing that a eval has been performed
    on a REPL that is being watched."
-  (log/debug (format "REPL out received from %s" target))
-  (swap! session assoc-in [#'*watched-messages* target (:id msg) (:cs-sequence msg)] (assoc msg :id (@session #'*watch-session-request-id*)))
-  (send-out-unsent-messages-if-in-order! session (:id msg) target (partial cider/send! session))
+  (log/error "REPL out received from" target msg (@session #'*watch-session-request-id*))
+
+  (let [id-to-use (if (= origin-session-id (-> session meta :id)) id (@session #'*watch-session-request-id*))]
+    (swap! session assoc-in [#'*watched-messages* target id (:cs-sequence msg)] (assoc msg :id id-to-use)))
+
+  (send-out-unsent-messages-if-in-order! session id target (partial cider/send! session))
   ;; Evict any pending messages do not match this ID (brutal!)
   ;; If we don't do this we get a leak. Could in future aim for a less strict regime
-  (swap! session update-in [#'*watched-messages* target] select-keys [(:id msg)]))
+  (swap! session update-in [#'*watched-messages* target] select-keys [id]))

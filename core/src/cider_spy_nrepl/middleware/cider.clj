@@ -6,7 +6,7 @@
             [clojure.tools.nrepl.transport :as transport]))
 
 (defn send! [session msg]
-  {:pre [(:id msg)]}
+  (assert (:id msg) msg)
   (when-let [cider-spy-transport (@session #'*cider-spy-transport*)]
     (transport/send cider-spy-transport
                     (response-for {:session (-> session meta :id) :id (:id msg)} msg))))

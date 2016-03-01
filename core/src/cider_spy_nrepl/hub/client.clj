@@ -79,7 +79,8 @@
       .sync))
 
 (defn send-async!
-  [session op msg]
+  [session msg]
+  (assert (:op msg))
   (when-let [bootstrap (@session #'*hub-client*)]
     (future
-      (send! bootstrap (assoc msg :op op)))))
+      (send! bootstrap msg))))

@@ -83,4 +83,4 @@
         messages-searched (drop (count old-session-msgs)
                                 (reverse new-session-msgs))]
     (doseq [{:keys [ns dt]} messages-searched :when ns]
-      (send-async! session :location {:ns ns :dt (.toDate dt)}))))
+      (send-async! session {:op :location :ns ns :dt (.toDate dt)}))))

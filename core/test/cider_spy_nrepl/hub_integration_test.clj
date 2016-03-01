@@ -35,8 +35,9 @@
 (use-fixtures :each wrap-setup-once)
 
 (defn- send-and-seq [transport msg]
-  (-> (transport/send transport msg)
-      (nrepl/response-seq 10000)))
+  (let [s (nrepl/response-seq transport 10000)]
+    (transport/send transport msg)
+    s))
 
 (defn some-eval [session-id]
   {:session session-id :ns "clojure.string" :op "eval" :code "( + 1 1)" :file "*cider-repl blog*" :line 12 :column 6 :id "eval-msg"})
@@ -72,7 +73,7 @@
         session-id (:new-session (first (nrepl/response-seq (transport/send transport {:op "clone" :id "session-create-id"}))))]
 
     (assert session-id)
-    (assert (->> {:session session-id :id "22" :op "cider-spy-hub-register-connection-buffer"}
+    (assert (->> {:session session-id :id "hub-connection-buffer-id" :op "cider-spy-hub-register-connection-buffer"}
                  (send-and-seq transport)
                  first))
 
@@ -89,41 +90,62 @@
     (let [msgs-for-1 (nrepl/response-seq transport-for-1 10000)]
 
       (is (= "CIDER-SPY-NREPL: Sent watching REPL request to target foodude"
-             (->> {:session session-id-2 :op "cider-spy-hub-watch-repl" :target "foodude"}
+             (->> {:session session-id-2 :op "cider-spy-hub-watch-repl" :target "foodude" :id "watching-msg-id"}
                   (send-and-seq transport-for-2)
                   first :value)))
 
       (is (= "CIDER-SPY-NREPL: Someone is watching your REPL!" (:value (first msgs-for-1)))))
 
-    (testing "User 2 can watch user 1 evals"
-      (let [msgs-for-2 (nrepl/response-seq transport-for-2 10000)]
+    (println "1" session-id-1 "2" session-id-2)
 
+    (let [msgs-for-2 (nrepl/response-seq transport-for-2 10000)]
+      (testing "User 2 can watch user 1 evals"
         ;; Regular eval with 2 responses
         (assert (= 2 (count (->> (some-eval session-id-1)
-                                 (send-and-seq transport-for-2)
+                                 (send-and-seq transport-for-1)
                                  (take 2)))))
 
-        (is (= {:target "foodude",
-                :watch-repl-eval-code "( + 1 1)"}
-               (-> msgs-for-2 first (select-keys [:target :watch-repl-eval-code]))))))
+        (is (= [{:id "hub-connection-buffer-id",
+                 :session session-id-2
+                 :target "foodude",
+                 :watch-repl-eval-code "( + 1 1)"}
+                {:cs-sequence 1,
+                 :id "watching-msg-id",
+                 :ns "clojure.string",
+                 :session session-id-2
+                 :target "foodude",
+                 :value "2"
+                 :op "multi-repl-out"}
+                {:cs-sequence 2,
+                 :id "watching-msg-id",
+                 :session session-id-2
+                 :status ["done"],
+                 :target "foodude"
+                 :op "multi-repl-out"}]
+               (->> msgs-for-2 (take 3))))))
 
     (testing "User 2 can do an eval on user 1s repl"
-      (let [msgs-for-2 (nrepl/response-seq transport-for-2 10000)]
+      (is (= [{:id "hub-connection-buffer-id",
+               :session session-id-2
+               :value "CIDER-SPY-NREPL: Sent REPL eval to target foodude"}
+              {:id "eval-msg",
+               :ns "user",
+               :op "multi-repl-out"
+               :session session-id-2
+               :target "foodude"
+               :value "2"
+               :cs-sequence 1
+               :origin-session-id session-id-2}
+              {:id "eval-msg",
+               :session session-id-2
+               :op "multi-repl-out"
+               :status ["done"]
+               :target "foodude"
+               :cs-sequence 2
+               :origin-session-id session-id-2}]
+             (->> (assoc (some-eval session-id-2) :op "cider-spy-hub-multi-repl-eval" :target "foodude")
+                  (send-and-seq transport-for-2)
+                  (take 3))))
 
-        (is (= [{:id "22",
-                 :session session-id-2
-                 :value "CIDER-SPY-NREPL: Sent REPL eval to target foodude"
-                 :printed-value "true"}
-                {:id "eval-msg",
-                 :ns "user",
-                 :session session-id-2
-                 :value 2}
-                {:id "eval-msg",
-                 :session session-id-2
-                 :status ["done"]}]
-               (->> (assoc (some-eval session-id-2) :op "cider-spy-hub-multi-repl-eval" :target "foodude")
-                    (send-and-seq transport-for-2)
-                    (take 3))))
-
-        ;; msg should appear for the other person REPL
-        ))))
+      ;; msg should appear for the other person REPL
+      )))

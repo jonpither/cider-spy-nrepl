@@ -4,17 +4,25 @@
             [cider-spy-nrepl.hub.client :as hub-client]
             [cider-spy-nrepl.middleware.cider :as cider]
             [clojure.tools.nrepl.middleware.session]
-            [cider-spy-nrepl.middleware.session-vars :refer [*summary-message-id* *watching?* *watch-session-request-id*]]
+            [cider-spy-nrepl.middleware.session-vars :refer :all]
             [clojure.tools.nrepl.middleware.interruptible-eval]))
 
-(deftype TrackingTransport [transport session sequence-no]
+(deftype TrackingTransport [session parent-msg sequence-no]
   nrepl-transport/Transport
   (send [this {:keys [value] :as msg}]
-    (hub-client/send-async! session :repl-out {:msg (-> msg
-                                                        (dissoc msg :session)
-                                                        ;; Attach a sequence number
-                                                        (assoc :cs-sequence (swap! sequence-no inc)))})
-    (nrepl-transport/send transport msg))
+    (hub-client/send-async! session (-> msg
+                                        (dissoc msg :session)
+                                        ;; Attach a sequence number
+                                        (assoc :op :multi-repl-out
+                                               :cs-sequence (swap! sequence-no inc))
+                                        (merge (select-keys parent-msg [:origin-session-id]))))
+    (nrepl-transport/send (:transport parent-msg)
+                          (if (:originator parent-msg)
+                            (assoc msg
+                                   :id (@session #'*hub-connection-buffer-id*)
+                                   :outside-multi-repl-eval "true"
+                                   :originator (:originator parent-msg))
+                            msg)))
   (recv [this])
   (recv [this timeout]))
 
@@ -22,20 +30,23 @@
   "This operation is to start watching someone elses REPL"
   [{:keys [id target session] :as msg}]
   (swap! session assoc #'*watch-session-request-id* id)
-  (hub-client/send-async! session :watch-repl {:target target})
+  (hub-client/send-async! session {:op :watch-repl :target target})
   (cider/send-connected-msg! session (str "Sent watching REPL request to target " target)))
 
 (defn handle-eval
   "This operation is to eval some code in another persons REPL"
   [{:keys [id target session] :as msg}]
-  (hub-client/send-async! session :multi-repl-eval {:target target :msg (dissoc msg :session :transport :pprint-fn)})
+  (hub-client/send-async! session (-> msg
+                                      (dissoc :session :transport :pprint-fn)
+                                      (assoc :op :multi-repl-eval
+                                             :target target)))
   (cider/send-connected-msg! session (str "Sent REPL eval to target " target)))
 
-(defn- track-repl-evals [{:keys [transport op code session] :as msg} handler]
+(defn- track-repl-evals [{:keys [op session] :as msg} handler]
   (if (and session (= "eval" op) (@session #'*watching?*))
     (do
-      (hub-client/send-async! session :repl-eval {:code code})
-      (handler (assoc msg :transport (TrackingTransport. transport session (atom 0)))))
+      (hub-client/send-async! session (-> msg (assoc :op :repl-eval) (dissoc :session :transport :pprint-fn)))
+      (handler (assoc msg :transport (TrackingTransport. session msg (atom 0)))))
     (handler msg)))
 
 (def cider-spy--nrepl-ops {"cider-spy-hub-watch-repl" #'handle-watch

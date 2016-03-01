@@ -59,43 +59,33 @@
       (send-to-nrepl (:channel @target-session) {:op :watch-repl}))
     (log/warn "Attempt to watch unregistered user" target)))
 
-(defmethod process :multi-repl-eval [_ session {:keys [target msg]}]
+(defmethod process :multi-repl-eval [_ session {:keys [target] :as msg}]
   (if-let [target-session (register/session-from-alias target)]
     (do
       (log/info "Sending REPL eval request to" (:alias @target-session))
-      (send-to-nrepl (:channel @target-session) {:op :multi-repl-eval
-                                                 :msg msg
-                                                 :originator (:alias @session)}))
+      (send-to-nrepl (:channel @target-session) (assoc msg
+                                                       :originator (:alias @session)
+                                                       :origin-session-id (:id @session))))
     (log/warn "Attempt to watch unregistered user" target)))
 
-(defmethod process :multi-repl-eval-out [_ session {:keys [msg originator]}]
-  (if-let [target-session (register/session-from-alias originator)]
-    (do
-      (log/info "Sending REPL eval request output to" (:alias @target-session))
-      (send-to-nrepl (:channel @target-session) {:op :multi-repl-eval-out
-                                                 :msg msg}))
-    (log/warn "Attempt to send multi-repl output back to unregistered user" originator)))
-
-(defmethod process :repl-eval [_ session {:keys [code]}]
+(defmethod process :repl-eval [_ session {:keys [code origin-session-id]}]
   (doseq [watching-session-id (:watching-sessions @session)
           :let [watching-session (@register/sessions watching-session-id)]]
     (if watching-session
-      (do
+      (when-not (= origin-session-id (:id @watching-session))
         (log/info "Sending REPL eval to" (:alias @watching-session))
         (send-to-nrepl (:channel @watching-session) {:op :watch-repl-eval
                                                      :code code
                                                      :target (:alias @session)}))
       (log/warn "Session not present for" watching-session-id))))
 
-(defmethod process :repl-out [_ session {:keys [msg]}]
+(defmethod process :multi-repl-out [_ session msg]
   (doseq [watching-session-id (:watching-sessions @session)
           :let [watching-session (@register/sessions watching-session-id)]]
     (if watching-session
       (do
         (log/info "Sending REPL out to" (:alias @watching-session))
-        (send-to-nrepl (:channel @watching-session) {:op :watch-repl-out
-                                                     :msg msg
-                                                     :target (:alias @session)}))
+        (send-to-nrepl (:channel @watching-session) (assoc msg :target (:alias @session))))
       (log/warn "Session not present for" watching-session-id))))
 
 (defn unregister! [session]

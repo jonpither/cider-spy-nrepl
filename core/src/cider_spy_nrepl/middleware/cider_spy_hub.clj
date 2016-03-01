@@ -73,7 +73,7 @@
   (cider/send-connected-msg!
    session
    (format "Sending message to recipient %s on CIDER SPY HUB." recipient))
-  (hub-client/send-async! session {:op message
+  (hub-client/send-async! session {:op :message
                                    :message message
                                    :recipient recipient}))
 

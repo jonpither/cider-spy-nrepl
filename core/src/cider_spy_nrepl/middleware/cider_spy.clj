@@ -3,6 +3,7 @@
             [cider-spy-nrepl.middleware.tracker :as tracker]
             [clojure.tools.nrepl.middleware :refer [set-descriptor!]]
             [clojure.tools.nrepl.middleware.interruptible-eval]
+            [clojure.tools.nrepl.middleware.pr-values]
             [clojure.tools.nrepl.middleware.session]
             [cider-spy-nrepl.middleware.session-vars :refer [*cider-spy-transport* *session-started* *tracking* *summary-message-id*]])
   (:import (org.joda.time LocalDateTime)))
@@ -64,7 +65,8 @@
 
 (set-descriptor!
  #'wrap-cider-spy
- {:requires #{#'clojure.tools.nrepl.middleware.session/session}
+ {:requires #{#'clojure.tools.nrepl.middleware.session/session
+              #'clojure.tools.nrepl.middleware.pr-values/pr-values}
   :expects  #{#'clojure.tools.nrepl.middleware.interruptible-eval/interruptible-eval}
   :handles (zipmap (keys cider-spy--nrepl-ops)
                    (repeat {:doc "See the cider-spy README"

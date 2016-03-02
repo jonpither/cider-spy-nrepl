@@ -97,12 +97,20 @@
       (is (= "CIDER-SPY-NREPL: Someone is watching your REPL!" (:value (first msgs-for-1)))))
 
     (let [msgs-for-2 (nrepl/response-seq transport-for-2 10000)]
-      (testing "User 2 can watch user 1 evals"
-        ;; Regular eval with 2 responses
-        (assert (= 2 (count (->> (some-eval session-id-1)
-                                 (send-and-seq transport-for-1)
-                                 (take 2)))))
 
+      ;; Regular eval with 2 responses, shown in full here for reference purposes
+      (is (= [{:id "eval-msg",
+               :ns "clojure.string",
+               :session session-id-1
+               :value "2"}
+              {:id "eval-msg",
+               :session session-id-1
+               :status ["done"]}]
+             (->> (some-eval session-id-1)
+                  (send-and-seq transport-for-1)
+                  (take 2))))
+
+      (testing "User 2 can watch user 1 evals"
         (is (= [{:id "hub-connection-buffer-id",
                  :session session-id-2
                  :target "foodude",
@@ -125,41 +133,44 @@
     (testing "User 2 can do an eval on user 1s repl"
       (let [msgs-for-1 (nrepl/response-seq transport-for-1 10000)]
 
-        (is (= [{:id "hub-connection-buffer-id",
-                 :session session-id-2
-                 :value "CIDER-SPY-NREPL: Sent REPL eval to target foodude"}
-                {:id "eval-msg",
-                 :ns "user",
-                 :op "multi-repl-out"
-                 :session session-id-2
-                 :target "foodude"
-                 :value "2"
-                 :cs-sequence 1
-                 :origin-session-id session-id-2}
-                {:id "eval-msg",
-                 :session session-id-2
-                 :op "multi-repl-out"
-                 :status ["done"]
-                 :target "foodude"
-                 :cs-sequence 2
-                 :origin-session-id session-id-2}]
-               (->> (assoc (some-eval session-id-2) :op "cider-spy-hub-multi-repl-eval" :target "foodude")
-                    (send-and-seq transport-for-2)
-                    (take 3))))
+        (testing "User 2 can see the eval triggered by User 2"
+          (is (= [{:id "hub-connection-buffer-id",
+                   :session session-id-2
+                   :value "CIDER-SPY-NREPL: Sent REPL eval to target foodude"}
+                  {:id "eval-msg",
+                   :ns "user",
+                   :op "multi-repl-out"
+                   :session session-id-2
+                   :target "foodude"
+                   :value "2"
+                   :printed-value "true",
+                   :cs-sequence 1
+                   :origin-session-id session-id-2}
+                  {:id "eval-msg",
+                   :session session-id-2
+                   :op "multi-repl-out"
+                   :status ["done"]
+                   :target "foodude"
+                   :cs-sequence 2
+                   :origin-session-id session-id-2}]
+                 (->> (assoc (some-eval session-id-2) :op "cider-spy-hub-multi-repl-eval" :target "foodude")
+                      (send-and-seq transport-for-2)
+                      (take 3)))))
 
-        (is (= [{:id "hub-connection-buffer-id",
-                 :session session-id-1
-                 :value "CIDER-SPY-NREPL: Multi-REPL received eval request!"}
-                {:id "hub-connection-buffer-id",
-                 :ns "user",
-                 :originator "foodude~2",
-                 :outside-multi-repl-eval "true",
-                 :session session-id-1
-                 :value "\"2\""}
-                {:id "hub-connection-buffer-id",
-                 :originator "foodude~2",
-                 :outside-multi-repl-eval "true",
-                 :session session-id-1
-                 :status ["done"]}]
-               (->> msgs-for-1
-                    (take 5))))))))
+        (testing "User 1 can see the eval triggered by User 2"
+          (is (= [{:id "hub-connection-buffer-id",
+                   :session session-id-1
+                   :value "CIDER-SPY-NREPL: Multi-REPL received eval request!"}
+                  {:id "hub-connection-buffer-id",
+                   :ns "user",
+                   :originator "foodude~2",
+                   :outside-multi-repl-eval "true",
+                   :session session-id-1
+                   :value "2"}
+                  {:id "hub-connection-buffer-id",
+                   :originator "foodude~2",
+                   :outside-multi-repl-eval "true",
+                   :session session-id-1
+                   :status ["done"]}]
+                 (->> msgs-for-1
+                      (take 3)))))))))

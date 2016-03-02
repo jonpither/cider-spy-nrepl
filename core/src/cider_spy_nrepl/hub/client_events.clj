@@ -4,7 +4,7 @@
             [cider-spy-nrepl.middleware.cider-spy-multi-repl :refer [wrap-multi-repl]]
             [cider-spy-nrepl.middleware.session-vars :refer :all]
             [clojure.tools.nrepl.transport :as nrepl-transport]
-            [clojure.tools.nrepl.server :refer [default-handler]]
+            [clojure.tools.nrepl.server :refer [default-handler unknown-op]]
             [cider-spy-nrepl.hub.client :refer [send-async!]]
             [clojure.tools.logging :as log]))
 
@@ -53,8 +53,7 @@
 (defmethod process :multi-repl-eval [session {:keys [originator origin-session-id] :as msg}]
   "A request has been received to invoke a eval operation from another REPL."
   (log/debug "Multi-REPL received eval request" msg)
-  ;; TODO may be expensive to create this handler each time:
-  (let [handler (default-handler #'wrap-multi-repl)]
+  (let [handler ((comp #'clojure.tools.nrepl.middleware.session/session #'wrap-multi-repl #'interruptible-eval) unknown-op)]
     (handler {:op "eval"
               :id (:id msg)
               :code (:code msg)
@@ -77,6 +76,7 @@
     (if (= large-sequence-no (count (vals stored-messages)))
       ;; send all the ones that are pending, in order:
       (doseq [{:keys [cs-sequence sent?] :as msg} (sort-by :cs-sequence (vals stored-messages)) :when (not sent?)]
+        (log/error "Sending back" msg)
         (f (-> msg (assoc :target target)))
         (swap! session assoc-in [#'*watched-messages* target id cs-sequence :sent?] true))
       (log/warn "Holding on to message" id large-sequence-no stored-messages))))
@@ -87,7 +87,10 @@
   (log/error "REPL out received from" target msg (@session #'*watch-session-request-id*))
 
   (let [id-to-use (if (= origin-session-id (-> session meta :id)) id (@session #'*watch-session-request-id*))]
-    (swap! session assoc-in [#'*watched-messages* target id (:cs-sequence msg)] (assoc msg :id id-to-use)))
+    (swap! session assoc-in [#'*watched-messages* target id (:cs-sequence msg)] (merge msg
+                                                                                       {:id id-to-use}
+                                                                                       (when (:value msg)
+                                                                                         {:printed-value "true"}))))
 
   (send-out-unsent-messages-if-in-order! session id target (partial cider/send! session))
   ;; Evict any pending messages do not match this ID (brutal!)

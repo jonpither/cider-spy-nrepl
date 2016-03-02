@@ -121,6 +121,7 @@
                  :session session-id-2
                  :target "foodude",
                  :value "2"
+                 :printed-value "true",
                  :op "multi-repl-out"}
                 {:cs-sequence 2,
                  :id "watching-msg-id",

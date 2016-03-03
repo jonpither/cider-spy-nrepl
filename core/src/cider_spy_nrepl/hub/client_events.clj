@@ -53,16 +53,18 @@
 (defmethod process :multi-repl->repl-eval [session {:keys [originator origin-session-id] :as msg}]
   "An eval has been initiated in the multi-REPL, we must propagate this to the foundation REPL."
   (log/debug "Multi-REPL received eval request" msg)
-  (let [handler ((comp #'clojure.tools.nrepl.middleware.session/session #'wrap-multi-repl #'interruptible-eval) unknown-op)]
-    (handler {:op "eval"
-              :id (:id msg)
-              :code (:code msg)
-              :session (-> session meta :id)
-              :interrupt-id nil
-              :transport (@session #'*cider-spy-transport*)
-              :originator originator
-              :origin-session-id origin-session-id}))
-  (cider/send-connected-msg! session "Multi-REPL received eval request!"))
+  (when-let [connection-buffer-id (@session #'*hub-connection-buffer-id*)]
+    (let [handler ((comp #'clojure.tools.nrepl.middleware.session/session #'wrap-multi-repl #'interruptible-eval) unknown-op)]
+      (cider/send! session (merge msg {:id connection-buffer-id :outside-multi-repl-eval "true" :out (:code msg)}))
+      (handler {:op "eval"
+                :id (:id msg)
+                :code (:code msg)
+                :session (-> session meta :id)
+                :interrupt-id nil
+                :transport (@session #'*cider-spy-transport*)
+                :originator originator
+                :origin-session-id origin-session-id}))
+    (cider/send-connected-msg! session "Multi-REPL received eval request!")))
 
 (defmethod process :repl->mult-repl-eval [session {:keys [code target]}]
   "An eval has been initiated in the foundation REPL, we must propagate this to the multi-REPL."

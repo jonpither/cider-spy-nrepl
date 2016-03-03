@@ -159,7 +159,20 @@
                       (take 3)))))
 
         (testing "User 1 can see the eval triggered by User 2"
-          (is (= [{:id "hub-connection-buffer-id",
+          (is (= [{:ns "clojure.string",
+                   :file "*cider-repl blog*",
+                   :op "multi-repl->repl-eval",
+                   :column 6,
+                   :origin-session-id session-id-2
+                   :line 12,
+                   :out "( + 1 1)",
+                   :id "hub-connection-buffer-id",
+                   :code "( + 1 1)",
+                   :target "foodude",
+                   :outside-multi-repl-eval "true",
+                   :originator "foodude~2",
+                   :session session-id-1}
+                  {:id "hub-connection-buffer-id",
                    :session session-id-1
                    :value "CIDER-SPY-NREPL: Multi-REPL received eval request!"}
                   {:id "hub-connection-buffer-id",
@@ -174,4 +187,4 @@
                    :session session-id-1
                    :status ["done"]}]
                  (->> msgs-for-1
-                      (take 3)))))))))
+                      (take 4)))))))))

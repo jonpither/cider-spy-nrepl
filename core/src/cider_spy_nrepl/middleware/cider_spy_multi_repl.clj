@@ -38,7 +38,7 @@
   [{:keys [id target session] :as msg}]
   (hub-client/send-async! session (-> msg
                                       (dissoc :session :transport :pprint-fn)
-                                      (assoc :op :multi-repl-eval
+                                      (assoc :op :multi-repl->repl-eval
                                              :target target)))
   (cider/send-connected-msg! session (str "Sent REPL eval to target " target)))
 

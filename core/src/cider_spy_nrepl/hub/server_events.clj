@@ -59,7 +59,7 @@
       (send-to-nrepl (:channel @target-session) {:op :watch-repl}))
     (log/warn "Attempt to watch unregistered user" target)))
 
-(defmethod process :multi-repl-eval [_ session {:keys [target] :as msg}]
+(defmethod process :multi-repl->repl-eval [_ session {:keys [target] :as msg}]
   (if-let [target-session (register/session-from-alias target)]
     (do
       (log/info "Sending REPL eval request to" (:alias @target-session))
@@ -74,7 +74,7 @@
     (if watching-session
       (when-not (= origin-session-id (:id @watching-session))
         (log/info "Sending REPL eval to" (:alias @watching-session))
-        (send-to-nrepl (:channel @watching-session) {:op :watch-repl-eval
+        (send-to-nrepl (:channel @watching-session) {:op :repl->mult-repl-eval
                                                      :code code
                                                      :target (:alias @session)}))
       (log/warn "Session not present for" watching-session-id))))

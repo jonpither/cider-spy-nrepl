@@ -50,8 +50,8 @@
   (swap! s assoc #'*watching?* true)
   (cider/send-connected-msg! s "Someone is watching your REPL!"))
 
-(defmethod process :multi-repl-eval [session {:keys [originator origin-session-id] :as msg}]
-  "A request has been received to invoke a eval operation from another REPL."
+(defmethod process :multi-repl->repl-eval [session {:keys [originator origin-session-id] :as msg}]
+  "An eval has been initiated in the multi-REPL, we must propagate this to the foundation REPL."
   (log/debug "Multi-REPL received eval request" msg)
   (let [handler ((comp #'clojure.tools.nrepl.middleware.session/session #'wrap-multi-repl #'interruptible-eval) unknown-op)]
     (handler {:op "eval"
@@ -64,9 +64,8 @@
               :origin-session-id origin-session-id}))
   (cider/send-connected-msg! session "Multi-REPL received eval request!"))
 
-(defmethod process :watch-repl-eval [session {:keys [code target]}]
-  "Send a message back to CIDER-SPY informing that a eval has been requested
-   on a REPL that is being watched."
+(defmethod process :repl->mult-repl-eval [session {:keys [code target]}]
+  "An eval has been initiated in the foundation REPL, we must propagate this to the multi-REPL."
   (log/debug (format "REPL eval received from %s: %s" target code))
   (cider/send! session {:id (@session #'*hub-connection-buffer-id*) :target target :watch-repl-eval-code code}))
 

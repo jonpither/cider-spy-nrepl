@@ -26,6 +26,10 @@ where the hub is:
     {:cider-spy-hub-host "localhost"
      :cider-spy-hub-port 7771}
 
+## Config
+
+Add the config `CIDER_SPY_ALIAS` so that [`environ`](https://github.com/weavejester/environ) can see it.
+
 # License
 
 Copyright © 2016 Jon Pither

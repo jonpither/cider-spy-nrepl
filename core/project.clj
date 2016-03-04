@@ -1,5 +1,5 @@
 (defproject cider-spy/cider-spy-nrepl "0.2.0-SNAPSHOT"
-  :description "Spy on CIDER to get useful REPL summary information."
+  :description "Multi-person Repl, Code sharing and more."
   :url "https://github.com/jonpither/cider-spy-nrepl"
   :license {:name "Eclipse Public License"
             :url "http://www.eclipse.org/legal/epl-v10.html"}
@@ -12,7 +12,8 @@
                  [org.clojure/tools.analyzer.jvm "0.6.9"]
                  [org.clojure/tools.logging "0.3.1"]
                  [org.clojure/tools.namespace "0.2.11"]
-                 [org.clojure/tools.reader "1.0.0-alpha1"]]
+                 [org.clojure/tools.reader "1.0.0-alpha1"]
+                 [environ "1.0.2"]]
   :repl-options {:init-ns user
                  :welcome (println "Type (dev) to start")}
   :profiles {:dev {:dependencies [[org.clojure/core.async "0.2.374"]]

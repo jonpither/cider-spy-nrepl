@@ -30,7 +30,7 @@
   "This operation is to start watching someone elses REPL"
   [{:keys [id target session] :as msg}]
   (swap! session assoc #'*watch-session-request-id* id)
-  (hub-client/send-async! session {:op :watch-repl :target target})
+  (hub-client/send-async! session {:op :start-multi-repl :target target})
   (cider/send-connected-msg! session (str "Sent watching REPL request to target " target)))
 
 (defn handle-eval

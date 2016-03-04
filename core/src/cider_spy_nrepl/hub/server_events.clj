@@ -51,12 +51,12 @@
                       :recipient recipient}))
     (log/warn "Message from to unregistered user" recipient)))
 
-(defmethod process :watch-repl [_ session {:keys [target]}]
+(defmethod process :start-multi-repl [_ session {:keys [target]}]
   (if-let [target-session (register/session-from-alias target)]
     (do
       (log/info "Sending REPL watch request to" (:alias @target-session))
       (register/update! target-session update :watching-sessions #(set (cons (:id @session) %)))
-      (send-to-nrepl (:channel @target-session) {:op :watch-repl}))
+      (send-to-nrepl (:channel @target-session) {:op :start-multi-repl}))
     (log/warn "Attempt to watch unregistered user" target)))
 
 (defmethod process :multi-repl->repl-eval [_ session {:keys [target] :as msg}]

@@ -45,7 +45,7 @@
                         :recipient recipient
                         :msg message}))
 
-(defmethod process :watch-repl [s _]
+(defmethod process :start-multi-repl [s _]
   (log/debug (format "Someone is watching!"))
   (swap! s assoc #'*watching?* true)
   (cider/send-connected-msg! s "Someone is watching your REPL!"))

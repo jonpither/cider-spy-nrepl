@@ -45,7 +45,7 @@
 (defn- track-repl-evals [{:keys [op session] :as msg} handler]
   (if (and session (= "eval" op) (@session #'*watching?*))
     (do
-      (hub-client/send-async! session (-> msg (assoc :op :repl-eval) (dissoc :session :transport :pprint-fn)))
+      (hub-client/send-async! session (-> msg (assoc :op :repl->mult-repl-eval) (dissoc :session :transport :pprint-fn)))
       (handler (assoc msg :transport (TrackingTransport. session msg (atom 0)))))
     (handler msg)))
 

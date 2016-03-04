@@ -68,7 +68,7 @@
                                                        :origin-session-id (:id @session))))
     (log/warn "Attempt to watch unregistered user" target)))
 
-(defmethod process :repl-eval [_ session {:keys [code origin-session-id]}]
+(defmethod process :repl->mult-repl-eval [_ session {:keys [code origin-session-id]}]
   (doseq [watching-session-id (:watching-sessions @session)
           :let [watching-session (@register/sessions watching-session-id)]]
     (if watching-session

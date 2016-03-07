@@ -121,7 +121,6 @@
                  :session session-id-2
                  :target "foodude",
                  :value "2"
-                 :printed-value "true",
                  :op "multi-repl-out"}
                 {:cs-sequence 2,
                  :id "watching-msg-id",
@@ -188,3 +187,58 @@
                    :status ["done"]}]
                  (->> msgs-for-1
                       (take 4)))))))))
+
+(deftest test-print-ln-bug
+  (let [[transport-for-1 session-id-1] (register-user-on-hub "foodude")
+        [transport-for-2 session-id-2] (register-user-on-hub "foodude~2")]
+
+    (let [msgs-for-1 (nrepl/response-seq transport-for-1 10000)]
+
+      (assert (->> {:session session-id-2 :op "cider-spy-hub-watch-repl" :target "foodude" :id "watching-msg-id"}
+                   (send-and-seq transport-for-2)
+                   first))
+
+      (assert (= "CIDER-SPY-NREPL: Someone is watching your REPL!" (:value (first msgs-for-1)))))
+
+    (let [msgs-for-2 (nrepl/response-seq transport-for-2 10000)]
+
+      ;; Regular eval with 2 responses, shown in full here for reference purposes
+      (is (= [{:id "eval-msg",
+               :session session-id-1
+               :out "sd\n"}
+              {:id "eval-msg",
+               :ns "clojure.string",
+               :session session-id-1
+               :value "nil"}
+              {:id "eval-msg",
+               :session session-id-1
+               :status ["done"]}]
+             (->> (assoc (some-eval session-id-1) :code "(println \"sd\")")
+                  (send-and-seq transport-for-1)
+                  (take 3))))
+
+      (testing "User 2 can watch user 1 evals"
+        (is (= [{:id "hub-connection-buffer-id",
+                 :session session-id-2
+                 :target "foodude",
+                 :watch-repl-eval-code "(println \"sd\")"}
+                {:cs-sequence 1,
+                 :id "watching-msg-id",
+                 :session session-id-2
+                 :target "foodude",
+                 :out "sd\n"
+                 :op "multi-repl-out"}
+                {:cs-sequence 2,
+                 :id "watching-msg-id",
+                 :ns "clojure.string",
+                 :session session-id-2
+                 :target "foodude",
+                 :value "nil"
+                 :op "multi-repl-out"}
+                {:cs-sequence 3,
+                 :id "watching-msg-id",
+                 :session session-id-2
+                 :status ["done"],
+                 :target "foodude"
+                 :op "multi-repl-out"}]
+               (->> msgs-for-2 (take 4))))))))

@@ -43,9 +43,9 @@
               (let [pipeline (.pipeline ch)]
                 (doto pipeline
                   (.addLast "framer" (DelimiterBasedFrameDecoder. 8192 (Delimiters/lineDelimiter)))
-                  (.addLast "string-decoder" (StringDecoder.))
-                  (.addLast "end" (edn-utils/make-decoder))
+                  (.addLast "transit-decoder" (edn-utils/transit-decoder))
                   (.addLast "string-encoder" (StringEncoder.))
+                  (.addLast "transit-encoder" (edn-utils/transit-encoder))
                   (.addLast "handler" (simple-handler ch)))))))
          (.option ChannelOption/SO_BACKLOG (int 128))
          (.childOption ChannelOption/SO_KEEPALIVE true)

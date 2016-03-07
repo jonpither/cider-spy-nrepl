@@ -1,4 +1,4 @@
-(defproject cider-spy/cider-spy-nrepl "0.2.0-SNAPSHOT"
+(defproject cider-spy/cider-spy-nrepl "0.2.1-SNAPSHOT"
   :description "Multi-person Repl, Code sharing and more."
   :url "https://github.com/jonpither/cider-spy-nrepl"
   :license {:name "Eclipse Public License"
@@ -13,6 +13,7 @@
                  [org.clojure/tools.logging "0.3.1"]
                  [org.clojure/tools.namespace "0.2.11"]
                  [org.clojure/tools.reader "1.0.0-alpha1"]
+                 [com.cognitect/transit-clj "0.8.285"]
                  [environ "1.0.2"]]
   :repl-options {:init-ns user
                  :welcome (println "Type (dev) to start")}

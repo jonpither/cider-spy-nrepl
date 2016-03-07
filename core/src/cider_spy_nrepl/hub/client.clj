@@ -37,9 +37,9 @@
             (let [pipeline (.pipeline ch)]
               (doto pipeline
                 (.addLast "framer" (DelimiterBasedFrameDecoder. 8192 (Delimiters/lineDelimiter)))
-                (.addLast "string-decoder" (StringDecoder.))
-                (.addLast "end" (edn-utils/make-decoder))
+                (.addLast "transit-decoder" (edn-utils/transit-decoder))
                 (.addLast "string-encoder" (StringEncoder.))
+                (.addLast "transit-encoder" (edn-utils/transit-encoder))
                 (.addLast "main handler" (simple-handler handler))))))))
      group]))
 
@@ -75,7 +75,7 @@
 
 (defn send! [[_ _ c] msg]
   (-> c
-      (.writeAndFlush (prn-str msg))
+      (.writeAndFlush msg)
       .sync))
 
 (defn send-async!

@@ -5,7 +5,7 @@
 
 (defn- send-to-nrepl [c msg]
   (when c
-    (.writeAndFlush c (prn-str msg))))
+    (.writeAndFlush c msg)))
 
 (defn- broadcast-msg! [op & {:as msg}]
   (let [msg (assoc msg :op op)]

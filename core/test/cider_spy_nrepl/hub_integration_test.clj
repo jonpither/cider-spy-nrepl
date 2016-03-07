@@ -120,6 +120,7 @@
                  :ns "clojure.string",
                  :session session-id-2
                  :target "foodude",
+                 :printed-value "true",
                  :value "2"
                  :op "multi-repl-out"}
                 {:cs-sequence 2,

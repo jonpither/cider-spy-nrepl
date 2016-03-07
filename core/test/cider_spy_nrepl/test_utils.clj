@@ -37,12 +37,12 @@
         (atom {:channel
                (reify ChannelHandlerContext
                  (writeAndFlush [this msg]
-                   (handler (clojure.edn/read-string msg))
+                   (handler msg)
                    nil))})]
     [nil nil (reify CanBeOpen
                (isOpen [this] true)
                (writeAndFlush [this m]
-                 (server-events/process nil hub-session (clojure.edn/read-string m))
+                 (server-events/process nil hub-session m)
                  nil)
                (sync [this]
                  this)

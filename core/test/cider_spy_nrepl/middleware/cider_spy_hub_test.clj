@@ -123,7 +123,7 @@
       (handle-msg {:op "cider-spy-hub-alias" :alias "foobar"}))
 
     (test-utils/assert-async-msgs *transport-chan* ["Setting alias on CIDER SPY HUB to foobar"])
-    (test-utils/assert-async-msgs *hub-channel-chan* [":op :register"])))
+    (is (= {:op :register, :alias "foobar", :session-id nil} (first (alts!! [(timeout 2500) *hub-channel-chan*]))))))
 
 (deftest prepare-alias-on-hub-through-connect-message
   (reset! *nrepl-session* {#'*desired-alias* "foobar2"

@@ -30,6 +30,8 @@ where the hub is:
 
 Add the config `CIDER_SPY_ALIAS` so that [`environ`](https://github.com/weavejester/environ) can see it.
 
+Add a regexp to the config variable `CIDER_SPY_IGNORE_PATH` (again use `environ`).
+
 ## Developing
 
 It's extremely useful to make `core` a lein checkouts dependency of `example-project`.

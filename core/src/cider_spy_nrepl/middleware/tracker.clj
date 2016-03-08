@@ -5,18 +5,22 @@
             [clojure.tools.analyzer.jvm :as ana-jvm]
             [clojure.tools.analyzer.env :as env]
             [clojure.tools.namespace.parse :as clj-tools-namespace-parse]
-            [clojure.tools.reader.edn :as edn])
+            [clojure.tools.reader.edn :as edn]
+            [environ.core])
   (:import (java.io PushbackReader)
            (org.joda.time LocalDateTime)))
 
 (defn- safe-inc [v]
   (if v (inc v) 1))
 
+(defn- ignore-ns? [ns]
+  (some-> :cider-spy-ignore-path environ.core/env re-pattern (re-find ns)))
+
 (defn- add-to-ns-trail
   "The user namespace is ignored. If the same ns is given as currently
    at the head, it is also ignored."
   [tracking ns]
-  (if (and ns (not= "user" ns))
+  (if (and ns (not= "user" ns) (not (ignore-ns? ns)))
     (update-in tracking [:ns-trail] conj {:dt (LocalDateTime.) :ns ns})
     tracking))
 

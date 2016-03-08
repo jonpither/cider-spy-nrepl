@@ -85,7 +85,7 @@
 (defmethod process :multi-repl-out [session {:keys [origin-session-id id target originator] :as msg}]
   "Send a message back to CIDER-SPY informing that a eval has been performed
    on a REPL that is being watched."
-  (log/error "REPL out received from" target msg (@session #'*watch-session-request-id*))
+  (log/debug "REPL out received from" target msg (@session #'*watch-session-request-id*))
 
   (let [id-to-use (if (= origin-session-id (-> session meta :id)) id (@session #'*watch-session-request-id*))]
     (swap! session assoc-in [#'*watched-messages* target id (:cs-sequence msg)] (merge msg

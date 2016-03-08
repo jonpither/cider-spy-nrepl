@@ -5,7 +5,8 @@
             [cider-spy-nrepl.middleware.cider :as cider]
             [clojure.tools.nrepl.middleware.session]
             [cider-spy-nrepl.middleware.session-vars :refer :all]
-            [clojure.tools.nrepl.middleware.interruptible-eval]))
+            [clojure.tools.nrepl.middleware.interruptible-eval]
+            [clojure.tools.nrepl.middleware.load-file]))
 
 (deftype TrackingTransport [session parent-msg sequence-no]
   nrepl-transport/Transport
@@ -63,7 +64,8 @@
 (set-descriptor!
  #'wrap-multi-repl
  {:requires #{#'clojure.tools.nrepl.middleware.session/session}
-  :expects #{#'clojure.tools.nrepl.middleware.interruptible-eval/interruptible-eval}
+  :expects #{#'clojure.tools.nrepl.middleware.interruptible-eval/interruptible-eval
+             #'clojure.tools.nrepl.middleware.load-file/wrap-load-file}
   :handles (zipmap (keys cider-spy--nrepl-ops)
                    (repeat {:doc "See the cider-spy README"
                             :returns {} :requires {}}))})

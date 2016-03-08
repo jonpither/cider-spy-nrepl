@@ -71,7 +71,8 @@
   [#'track-load-file
    #'track-namespace
    #'track-command
-   #'track-msg])
+;;   #'track-msg
+   ])
 
 (defn- apply-trackers [session msg]
   (update-in session [#'*tracking*]

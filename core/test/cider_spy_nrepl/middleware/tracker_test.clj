@@ -7,16 +7,6 @@
   `(let [~'session (atom {})]
      ~@forms))
 
-;; Even though I'll remove tracking of whole messages, I'll test for now.
-(deftest test-messages
-  (tracker-harness
-   (let [msg1 {:ns "foo-ns"}
-         msg2 {:ns "foo2-ns"}]
-     (track-msg! msg1 session)
-     (track-msg! msg2 session)
-     (is (= (list msg2 msg1)
-            (get-in @session [#'*tracking* :messages]))))))
-
 (deftest test-track-namespace
   (tracker-harness
    (track-msg! {:ns "foo-ns"} session)

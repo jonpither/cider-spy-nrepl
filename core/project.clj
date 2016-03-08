@@ -1,4 +1,4 @@
-(defproject cider-spy/cider-spy-nrepl "0.2.1-SNAPSHOT"
+(defproject cider-spy/cider-spy-nrepl "0.2.2-SNAPSHOT"
   :description "Multi-person Repl, Code sharing and more."
   :url "https://github.com/jonpither/cider-spy-nrepl"
   :license {:name "Eclipse Public License"

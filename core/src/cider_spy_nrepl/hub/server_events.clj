@@ -88,5 +88,14 @@
         (send-to-nrepl (:channel @watching-session) (assoc msg :target (:alias @session))))
       (log/warn "Session not present for" watching-session-id))))
 
+(defmethod process :multi-repl->interrupt [_ session {:keys [target] :as msg}]
+  (if-let [target-session (register/session-from-alias target)]
+    (do
+      (log/info "Sending REPL interrupt request to" (:alias @target-session))
+      (send-to-nrepl (:channel @target-session) (assoc msg
+                                                       :originator (:alias @session)
+                                                       :origin-session-id (:id @session))))
+    (log/warn "Attempt to interupt unregistered user" target)))
+
 (defn unregister! [session]
   (process nil session {:op :unregister}))

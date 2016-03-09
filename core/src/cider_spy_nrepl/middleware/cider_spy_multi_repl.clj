@@ -43,7 +43,18 @@
                                              :target target)))
   (cider/send-connected-msg! session (str "Sent REPL eval to target " target)))
 
-(defn- track-repl-evals [{:keys [op session] :as msg} handler]
+(defn handle-interrupt
+  "This operation is to eval some code in another persons REPL"
+  [{:keys [id target session] :as msg}]
+  (hub-client/send-async! session (-> msg
+                                      (dissoc :session :transport :pprint-fn)
+                                      (assoc :op :multi-repl->interrupt
+                                             :target target)))
+  (cider/send-connected-msg! session (str "Sent REPL eval to target " target)))
+
+(defn- track-repl-evals
+  "Wrap a standard so we can track and distribute msgs"
+  [{:keys [op session] :as msg} handler]
   (if (and session (= "eval" op) (@session #'*watching?*))
     (do
       (hub-client/send-async! session (-> msg (assoc :op :repl->mult-repl-eval) (dissoc :session :transport :pprint-fn)))
@@ -51,7 +62,8 @@
     (handler msg)))
 
 (def cider-spy--nrepl-ops {"cider-spy-hub-watch-repl" #'handle-watch
-                           "cider-spy-hub-multi-repl-eval" #'handle-eval})
+                           "cider-spy-hub-multi-repl-eval" #'handle-eval
+                           "cider-spy-hub-multi-repl-interrupt" #'handle-interrupt})
 
 (defn wrap-multi-repl
   "Multi REPL Middleware - CURRENTLY NEVER GETS CALLED"

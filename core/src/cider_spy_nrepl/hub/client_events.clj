@@ -50,21 +50,30 @@
   (swap! s assoc #'*watching?* true)
   (cider/send-connected-msg! s "Someone is watching your REPL!"))
 
+(def eval-handler ((comp #'clojure.tools.nrepl.middleware.session/session #'wrap-multi-repl #'interruptible-eval) unknown-op))
+
 (defmethod process :multi-repl->repl-eval [session {:keys [originator origin-session-id] :as msg}]
   "An eval has been initiated in the multi-REPL, we must propagate this to the foundation REPL."
   (log/debug "Multi-REPL received eval request" msg)
   (when-let [connection-buffer-id (@session #'*hub-connection-buffer-id*)]
-    (let [handler ((comp #'clojure.tools.nrepl.middleware.session/session #'wrap-multi-repl #'interruptible-eval) unknown-op)]
-      (cider/send! session (merge msg {:id connection-buffer-id :outside-multi-repl-eval "true" :out (:code msg)}))
-      (handler {:op "eval"
-                :id (:id msg)
-                :code (:code msg)
-                :session (-> session meta :id)
-                :interrupt-id nil
-                :transport (@session #'*cider-spy-transport*)
-                :originator originator
-                :origin-session-id origin-session-id}))
+    (cider/send! session (merge msg {:id connection-buffer-id :outside-multi-repl-eval "true" :out (:code msg)}))
+    (eval-handler {:op "eval"
+                   :id (:id msg)
+                   :code (:code msg)
+                   :session (-> session meta :id)
+                   :interrupt-id nil
+                   :transport (@session #'*cider-spy-transport*)
+                   :originator originator
+                   :origin-session-id origin-session-id})
     (cider/send-connected-msg! session "Multi-REPL received eval request!")))
+
+(defmethod process :multi-repl->interrupt [session msg]
+  "An interupt has been performed in the Multi-REPL."
+  (log/debug "REPL interrupt received")
+  (eval-handler (assoc msg
+                       :op "interrupt"
+                       :session (-> session meta :id)
+                       :transport (@session #'*cider-spy-transport*))))
 
 (defmethod process :repl->mult-repl-eval [session {:keys [code target]}]
   "An eval has been initiated in the foundation REPL, we must propagate this to the multi-REPL."

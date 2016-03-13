@@ -120,13 +120,14 @@
                  :ns "clojure.string",
                  :session session-id-2
                  :target "foodude",
-                 :printed-value "true",
                  :value "2"
+                 :originator "foodude",
                  :op "multi-repl-out"}
                 {:cs-sequence 2,
                  :id "watching-msg-id",
                  :session session-id-2
                  :status ["done"],
+                 :originator "foodude",
                  :target "foodude"
                  :op "multi-repl-out"}]
                (->> msgs-for-2 (take 3))))))
@@ -146,14 +147,16 @@
                    :value "2"
                    :printed-value "true",
                    :cs-sequence 1
-                   :origin-session-id session-id-2}
+                   :origin-session-id session-id-2
+                   :originator "foodude"}
                   {:id "eval-msg",
                    :session session-id-2
                    :op "multi-repl-out"
                    :status ["done"]
                    :target "foodude"
                    :cs-sequence 2
-                   :origin-session-id session-id-2}]
+                   :origin-session-id session-id-2
+                   :originator "foodude"}]
                  (->> (assoc (some-eval session-id-2) :op "cider-spy-hub-multi-repl-eval" :target "foodude")
                       (send-and-seq transport-for-2)
                       (take 3)))))
@@ -228,18 +231,21 @@
                  :session session-id-2
                  :target "foodude",
                  :out "sd\n"
-                 :op "multi-repl-out"}
+                 :op "multi-repl-out"
+                 :originator "foodude"}
                 {:cs-sequence 2,
                  :id "watching-msg-id",
                  :ns "clojure.string",
                  :session session-id-2
                  :target "foodude",
                  :value "nil"
-                 :op "multi-repl-out"}
+                 :op "multi-repl-out"
+                 :originator "foodude"}
                 {:cs-sequence 3,
                  :id "watching-msg-id",
                  :session session-id-2
                  :status ["done"],
                  :target "foodude"
-                 :op "multi-repl-out"}]
+                 :op "multi-repl-out"
+                 :originator "foodude"}]
                (->> msgs-for-2 (take 4))))))))

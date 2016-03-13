@@ -15,8 +15,8 @@
         (nrserver/start-server
          :port 7777
          :handler (nrserver/default-handler
-                   #'cider-spy-nrepl.middleware.cider-spy-multi-repl/wrap-multi-repl
-                   #'cider-spy-nrepl.middleware.cider-spy-hub/wrap-cider-spy-hub
+                   ;; #'cider-spy-nrepl.middleware.cider-spy-multi-repl/wrap-multi-repl
+                   ;; #'cider-spy-nrepl.middleware.cider-spy-hub/wrap-cider-spy-hub
                    #'cider-spy-nrepl.middleware.cider-spy/wrap-cider-spy))]
     server))
 
@@ -66,7 +66,7 @@
               {:id 14,
                :session session-id,
                :status ["done"]}]
-             (take 2 responses)))
+             (take 2 (filter #(= 14 (:id %)) responses))))
 
       (is (= "clojure.string" (-> responses
                                   (nth 2)

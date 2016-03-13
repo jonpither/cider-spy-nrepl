@@ -85,7 +85,9 @@
     (if watching-session
       (do
         (log/info "Sending REPL out to" (:alias @watching-session))
-        (send-to-nrepl (:channel @watching-session) (assoc msg :target (:alias @session))))
+        (send-to-nrepl (:channel @watching-session) (assoc msg
+                                                           :target (:alias @session)
+                                                           :originator (or (:originator msg) (:alias @session)))))
       (log/warn "Session not present for" watching-session-id))))
 
 (defmethod process :multi-repl->interrupt [_ session {:keys [target] :as msg}]

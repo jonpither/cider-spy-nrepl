@@ -91,7 +91,7 @@
         (swap! session assoc-in [#'*watched-messages* target id cs-sequence :sent?] true))
       (log/warn "Holding on to message" id large-sequence-no stored-messages))))
 
-(defmethod process :multi-repl-out [session {:keys [origin-session-id id target originator] :as msg}]
+(defmethod process :multi-repl-out [session {:keys [origin-session-id id target] :as msg}]
   "Send a message back to CIDER-SPY informing that a eval has been performed
    on a REPL that is being watched."
   (log/debug "REPL out received from" target msg (@session #'*watch-session-request-id*))

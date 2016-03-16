@@ -2,12 +2,15 @@
   (:require [clojure.tools.nrepl.server :as nrserver]
             [cider-spy-nrepl.middleware.cider-spy]
             [cider-spy-nrepl.middleware.alias]
+            [cheshire.core :as json]
             [cider-spy-nrepl.hub.server :as hub-server]
+            [cider-spy-nrepl.middleware.cider-spy-session]
             [cider-spy-nrepl.middleware.cider-spy-multi-repl]
             [clojure.tools.nrepl.transport :as transport]
             [cider-spy-nrepl.middleware.cider-spy-hub]
             [cider-spy-nrepl.middleware.hub-settings :as hub-settings]
             [clojure.test :refer :all]
+            [cider-spy-nrepl.nrepl-test-utils :refer [messages-chan! take-from-chan!]]
             [clojure.tools.nrepl :as nrepl]))
 
 (defn- start-up-repl-server []
@@ -15,6 +18,7 @@
         (nrserver/start-server
          :port 7777
          :handler (nrserver/default-handler
+                   #'cider-spy-nrepl.middleware.cider-spy-session/wrap-cider-spy-session
                    #'cider-spy-nrepl.middleware.cider-spy-multi-repl/wrap-multi-repl
                    #'cider-spy-nrepl.middleware.cider-spy-hub/wrap-cider-spy-hub
                    #'cider-spy-nrepl.middleware.cider-spy/wrap-cider-spy))]
@@ -35,38 +39,85 @@
 (use-fixtures :each wrap-setup-once)
 
 (defn- send-and-seq [transport msg]
-  (let [s (nrepl/response-seq transport 10000)]
+  (let [s (nrepl/response-seq transport 3000)]
     (transport/send transport msg)
     s))
 
-(defn some-eval [session-id]
+(defn- some-eval [session-id]
   {:session session-id :ns "clojure.string" :op "eval" :code "( + 1 1)" :file "*cider-repl blog*" :line 12 :column 6 :id "eval-msg"})
 
-(deftest test-connect-to-hub
-  (let [transport (nrepl/connect :port 7777 :host "localhost")
-        session-id (:new-session (first (nrepl/response-seq (transport/send transport {:op "clone" :id "session-create-id"}) 5000)))]
+(defn- msg->summary [msg]
+  {:pre [msg (:value msg)]}
+  (-> msg
+      :value
+      (json/parse-string keyword)))
 
-    (is (= "done" (->> {:session session-id :id "22" :op "cider-spy-hub-register-connection-buffer"}
-                       (send-and-seq transport)
+(defn- msgs-by-id [id msgs]
+  (filter #(= id (:id %)) msgs))
+
+(defn- alias-and-dev [summary-msg]
+  ((juxt (comp set (partial map :alias) vals :devs) (comp :alias :hub-connection)) summary-msg))
+
+(deftest test-connect-to-hub-and-change-alias
+  (let [transport (nrepl/connect :port 7777 :host "localhost")
+        session-id (:new-session (first (nrepl/response-seq (transport/send transport {:op "clone" :id "session-create-id"}) 5000)))
+        msgs-chan (messages-chan! transport)]
+
+    (transport/send transport {:session session-id :id "22" :op "cider-spy-hub-register-connection-buffer"})
+
+    (is (= "done" (->> msgs-chan
+                       (take-from-chan! 1 1000)
                        first
                        :status
                        first)))
 
-    (let [interesting-messages (->> (some-eval session-id)
-                                    (send-and-seq transport)
-                                    (take 7)
-                                    (remove #(= (:id %) "eval-msg")))]
+    (testing "Eval provokes connection to hub"
+      (transport/send transport (some-eval session-id))
 
-      (is (= #{"CIDER-SPY-NREPL: Connecting to SPY HUB localhost:7778."
-               "CIDER-SPY-NREPL: You are connected to the CIDER SPY HUB."
-               "CIDER-SPY-NREPL: Setting alias on CIDER SPY HUB to foodude."
-               "CIDER-SPY-NREPL: Registered on hub as: foodude"}
-             (->> interesting-messages
-                  (filter :value)
-                  (map :value)
-                  set)))
+      (let [msgs (->> msgs-chan
+                      (take-from-chan! 7 1000)
+                      (remove #(= (:id %) "eval-msg")))]
 
-      (is (= "foodude" (->> interesting-messages (filter :hub-registered-alias) first :hub-registered-alias))))))
+        (is (= #{"CIDER-SPY-NREPL: Connecting to SPY HUB localhost:7778."
+                 "CIDER-SPY-NREPL: You are connected to the CIDER SPY HUB."
+                 "CIDER-SPY-NREPL: Setting alias on CIDER SPY HUB to foodude."
+                 "CIDER-SPY-NREPL: Registered on hub as: foodude"}
+               (->> msgs
+                    (filter :value)
+                    (map :value)
+                    set)))
+
+        (is (= "foodude" (->> msgs (filter :hub-registered-alias) first :hub-registered-alias)))))
+
+    (testing "Summary returns connection information"
+      (transport/send transport {:session session-id :id "session-msg-ig" :op "cider-spy-summary"})
+
+      (is (= [#{"foodude"} "foodude"]
+             (->> msgs-chan (take-from-chan! 1 1000) first msg->summary alias-and-dev))))
+
+    (testing "Change the alias"
+      (transport/send transport {:op "cider-spy-hub-alias"
+                                 :alias "Jon2"
+                                 :session session-id})
+
+      (let [msgs (->> msgs-chan
+                      (take-from-chan! 4 1000))]
+
+        (is (= [{:id "22",
+                 :printed-value "true",
+                 :session session-id,
+                 :value "CIDER-SPY-NREPL: Setting alias on CIDER SPY HUB to Jon2."}
+                {:hub-registered-alias "Jon2",
+                 :id "22",
+                 :session session-id}
+                {:id "22",
+                 :printed-value "true",
+                 :session session-id,
+                 :value "CIDER-SPY-NREPL: Registered on hub as: Jon2"}
+                (->> msgs (msgs-by-id "22"))]))
+
+        (is (= [#{"Jon2"} "Jon2"]
+               (->> msgs (msgs-by-id "session-msg-ig") first msg->summary alias-and-dev)))))))
 
 (defn- register-user-on-hub [expected-alias]
   (let [transport (nrepl/connect :port 7777 :host "localhost")
@@ -82,6 +133,45 @@
                  (filter #(= (:value %) (str "CIDER-SPY-NREPL: Registered on hub as: " expected-alias)))
                  first))
     [transport session-id]))
+
+(deftest test-send-messages
+  (let [[transport-for-1 session-id-1] (register-user-on-hub "foodude")
+        [transport-for-2 session-id-2] (register-user-on-hub "foodude~2")]
+
+    (let [msgs-for-1 (nrepl/response-seq transport-for-1 1000)
+          msgs-for-2 (nrepl/response-seq transport-for-2 1000)]
+
+      (is (= "CIDER-SPY-NREPL: Sending message to recipient foodude~2 on CIDER SPY HUB."
+             (->> {:op "cider-spy-hub-send-msg"
+                   :recipient "foodude~2"
+                   :from "foodude"
+                   :message "Hows it going?"
+                   :session session-id-1}
+                  (send-and-seq transport-for-1)
+                  first :value)))
+
+      (is (= {:from "foodude",
+              :id "hub-connection-buffer-id",
+              :msg "Hows it going?",
+              :recipient "foodude~2",
+              :session session-id-2}
+             (first msgs-for-2)))
+
+      (is (= "CIDER-SPY-NREPL: Sending message to recipient foodude on CIDER SPY HUB."
+             (->> {:op "cider-spy-hub-send-msg"
+                   :recipient "foodude"
+                   :from "foodude~2"
+                   :message "Not bad dude."
+                   :session session-id-2}
+                  (send-and-seq transport-for-2)
+                  first :value)))
+
+      (is (= {:from "foodude~2",
+              :id "hub-connection-buffer-id",
+              :msg "Not bad dude.",
+              :recipient "foodude",
+              :session session-id-1}
+             (first msgs-for-1))))))
 
 (deftest test-multi-repl-watch
   (let [[transport-for-1 session-id-1] (register-user-on-hub "foodude")

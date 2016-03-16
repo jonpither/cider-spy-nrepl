@@ -3,9 +3,11 @@
             [cider-spy-nrepl.middleware.tracker :as tracker]
             [clojure.tools.nrepl.middleware :refer [set-descriptor!]]
             [clojure.tools.nrepl.middleware.interruptible-eval]
+            [clojure.tools.logging :as log]
             [clojure.tools.nrepl.middleware.pr-values]
             [clojure.tools.nrepl.middleware.session]
-            [cider-spy-nrepl.middleware.session-vars :refer [*cider-spy-transport* *session-started* *tracking* *summary-message-id*]])
+            [cider-spy-nrepl.middleware.session-vars :refer [*cider-spy-transport* *session-started* *tracking* *summary-message-id*]]
+            [cider-spy-nrepl.middleware.cider-spy-session])
   (:import (org.joda.time LocalDateTime)))
 
 (defn- handle-summary
@@ -39,14 +41,6 @@
         (.printStackTrace t)))
     result))
 
-(defn- update-session-for-cider-spy
-  "We ensure the session has information cider-spy needs for asynchronous
-   communication, such as a transport."
-  [session {:keys [transport]}]
-  (merge {#'*cider-spy-transport* transport
-          #'*session-started* (LocalDateTime.)}
-         session))
-
 (def cider-spy--nrepl-ops {"cider-spy-summary" #'handle-summary
                            "cider-spy-reset" #'handle-reset})
 
@@ -56,18 +50,22 @@
   (fn [{:keys [op session] :as msg}]
     ;; The session can sometimes be nil
     (if session
-      (do
-        (swap! session update-session-for-cider-spy msg)
-        (if-let [cider-spy-handler (get cider-spy--nrepl-ops op)]
-          (cider-spy-handler msg)
-          (wrap-tracking msg handler)))
+      (if-let [cider-spy-handler (get cider-spy--nrepl-ops op)]
+        (cider-spy-handler msg)
+        (wrap-tracking msg handler))
       (handler msg))))
 
 (set-descriptor!
  #'wrap-cider-spy
- {:requires #{#'clojure.tools.nrepl.middleware.session/session
+ {:requires #{#'cider-spy-nrepl.middleware.cider-spy-session/wrap-cider-spy-session
               #'clojure.tools.nrepl.middleware.pr-values/pr-values}
   :expects  #{#'clojure.tools.nrepl.middleware.interruptible-eval/interruptible-eval}
   :handles (zipmap (keys cider-spy--nrepl-ops)
                    (repeat {:doc "See the cider-spy README"
                             :returns {} :requires {}}))})
+
+;; before go live:
+;; Change to be a plugin, with all the middleware (the hub stuff doesn't run with out a URL specific, in effect turned off)
+;; Remove interactions test and connections test
+;; Go ahead with planned session changes
+;; clj-refactor optimise requires throughout

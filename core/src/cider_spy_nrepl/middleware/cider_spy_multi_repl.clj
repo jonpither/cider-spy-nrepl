@@ -4,6 +4,7 @@
             [cider-spy-nrepl.hub.client :as hub-client]
             [cider-spy-nrepl.middleware.cider :as cider]
             [clojure.tools.nrepl.middleware.session]
+            [cider-spy-nrepl.middleware.cider-spy-session]
             [cider-spy-nrepl.middleware.session-vars :refer :all]
             [clojure.tools.nrepl.middleware.interruptible-eval]
             [clojure.tools.nrepl.middleware.load-file]))
@@ -75,7 +76,7 @@
 
 (set-descriptor!
  #'wrap-multi-repl
- {:requires #{#'clojure.tools.nrepl.middleware.session/session}
+ {:requires #{#'cider-spy-nrepl.middleware.cider-spy-session/wrap-cider-spy-session}
   :expects #{#'clojure.tools.nrepl.middleware.interruptible-eval/interruptible-eval
              #'clojure.tools.nrepl.middleware.load-file/wrap-load-file}
   :handles (zipmap (keys cider-spy--nrepl-ops)

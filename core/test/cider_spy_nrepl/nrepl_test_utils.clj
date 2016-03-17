@@ -11,7 +11,7 @@
     c))
 
 (defn take-from-chan! [n seconds c]
-  (let [s (atom '())]
+  (let [s (atom '[])]
     (loop [n n]
       (when-let [v (and (pos? n) (first (alts!! [c (timeout seconds)])))]
         (swap! s conj v)

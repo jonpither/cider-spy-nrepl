@@ -136,6 +136,36 @@
         (assert (= expected-alias (->> msgs (filter :hub-registered-alias) first :hub-registered-alias))))
       [transport msgs-chan session-id])))
 
+;; This is a great test, it's picking up the problem behavour, users not cleanly disconnected
+
+(deftest user-registrations
+  (let [[transport-for-1 msgs-chan-for-1 session-id-1] (register-user-on-hub "foodude")]
+
+    (testing "Summary returns single-dev"
+      (transport/send transport-for-1 {:session session-id-1 :id "session-msg-ig" :op "cider-spy-summary"})
+
+      (is (= [#{"foodude"} "foodude"]
+             (->> msgs-chan-for-1 (take-from-chan! 1 1000) first msg->summary alias-and-dev))))
+
+    (let [[transport-for-2 msgs-chan-for-2 session-id-2] (register-user-on-hub "foodude~2")]
+      (testing "Summary returns two devs"
+        (transport/send transport-for-2 {:session session-id-2 :id "session-msg-ig" :op "cider-spy-summary"})
+
+        (is (= [#{"foodude" "foodude~2"} "foodude~2"]
+               (->> msgs-chan-for-2 (take-from-chan! 1 1000) first msg->summary alias-and-dev)))
+
+        (is (= [#{"foodude" "foodude~2"} "foodude"]
+               (->> msgs-chan-for-1 (take-from-chan! 1 1000) first msg->summary alias-and-dev))))
+
+      (.close transport-for-2)
+
+      (is (= [#{"foodude"} "foodude"]
+             (->> msgs-chan-for-1 (take-from-chan! 1 2000) first msg->summary alias-and-dev)))
+      (is (= [#{"foodude"} "foodude"]
+             (->> msgs-chan-for-1 (take-from-chan! 1 2000) first msg->summary alias-and-dev)))
+      (is (= [#{"foodude"} "foodude"]
+             (->> msgs-chan-for-1 (take-from-chan! 1 2000) first msg->summary alias-and-dev))))))
+
 (deftest test-send-messages
   (let [[transport-for-1 msgs-chan-for-1 session-id-1] (register-user-on-hub "foodude")
         [transport-for-2 msgs-chan-for-2 session-id-2] (register-user-on-hub "foodude~2")]

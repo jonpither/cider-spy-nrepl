@@ -1,5 +1,6 @@
 (ns cider-spy-nrepl.test-utils
   (:require [cheshire.core :as json]
+            [clojure.tools.nrepl.server :as nrserver]
             [cider-spy-nrepl.hub.client :as client]
             [cider-spy-nrepl.hub.client-events :as client-events]
             [cider-spy-nrepl.hub.server-events :as server-events]
@@ -91,3 +92,37 @@
         :session session}))
 
     cider-chan))
+
+(defn some-eval [session-id]
+  {:session session-id :ns "clojure.string" :op "eval" :code "( + 1 1)" :file "*cider-repl blog*" :line 12 :column 6 :id "eval-msg"})
+
+(defn msg->summary [msg]
+  {:pre [msg (:value msg)]}
+  (-> msg
+      :value
+      (json/parse-string keyword)))
+
+(defn msgs-by-id [id msgs]
+  (filter #(= id (:id %)) msgs))
+
+(defn alias-and-dev [summary-msg]
+  ((juxt (comp set (partial map :alias) vals :devs) (comp :alias :hub-connection)) summary-msg))
+
+(defn start-up-repl-server
+  ([] (start-up-repl-server 7777))
+  ([port]
+   (let [server
+         (nrserver/start-server
+          :port port
+          :handler (nrserver/default-handler
+                    #'cider-spy-nrepl.middleware.cider-spy-session/wrap-cider-spy-session
+                    #'cider-spy-nrepl.middleware.cider-spy-multi-repl/wrap-multi-repl
+                    #'cider-spy-nrepl.middleware.cider-spy-hub/wrap-cider-spy-hub
+                    #'cider-spy-nrepl.middleware.cider-spy/wrap-cider-spy))]
+     server)))
+
+(defn stop-repl-server [server]
+  (try
+    (nrserver/stop-server server)
+    (catch Throwable t
+      (println "Couldn't stop nrepl server"))))

@@ -11,3 +11,4 @@ pom.xml.asc
 /core/target/stale/extract-native.dependencies
 /core/.nrepl-port
 /core/.lein-failures
+/core/.lein-env

@@ -11,21 +11,8 @@
             [cider-spy-nrepl.middleware.hub-settings :as hub-settings]
             [clojure.test :refer :all]
             [cider-spy-nrepl.nrepl-test-utils :refer [messages-chan! take-from-chan!]]
+            [cider-spy-nrepl.test-utils :refer [some-eval start-up-repl-server stop-repl-server msg->summary alias-and-dev msgs-by-id]]
             [clojure.tools.nrepl :as nrepl]))
-
-(defn- start-up-repl-server []
-  (let [server
-        (nrserver/start-server
-         :port 7777
-         :handler (nrserver/default-handler
-                   #'cider-spy-nrepl.middleware.cider-spy-session/wrap-cider-spy-session
-                   #'cider-spy-nrepl.middleware.cider-spy-multi-repl/wrap-multi-repl
-                   #'cider-spy-nrepl.middleware.cider-spy-hub/wrap-cider-spy-hub
-                   #'cider-spy-nrepl.middleware.cider-spy/wrap-cider-spy))]
-    server))
-
-(defn- stop-repl-server [server]
-  (nrserver/stop-server server))
 
 (defn- wrap-setup-once [f]
   (with-redefs [hub-settings/hub-host-and-port (constantly ["localhost" 7778])
@@ -37,21 +24,6 @@
       (hub-server/shutdown hub-server))))
 
 (use-fixtures :each wrap-setup-once)
-
-(defn- some-eval [session-id]
-  {:session session-id :ns "clojure.string" :op "eval" :code "( + 1 1)" :file "*cider-repl blog*" :line 12 :column 6 :id "eval-msg"})
-
-(defn- msg->summary [msg]
-  {:pre [msg (:value msg)]}
-  (-> msg
-      :value
-      (json/parse-string keyword)))
-
-(defn- msgs-by-id [id msgs]
-  (filter #(= id (:id %)) msgs))
-
-(defn- alias-and-dev [summary-msg]
-  ((juxt (comp set (partial map :alias) vals :devs) (comp :alias :hub-connection)) summary-msg))
 
 (deftest test-connect-to-hub-and-change-alias
   (let [transport (nrepl/connect :port 7777 :host "localhost")
@@ -131,40 +103,11 @@
       ;; Do an eval to prompt connection to the hub:
       (transport/send transport (some-eval session-id))
       (let [msgs (->> msgs-chan (take-from-chan! 7 1000))]
+        (assert (= 7 (count msgs)) (count msgs))
         (assert (= 2 (count (msgs-by-id "eval-msg" msgs))))
         (assert (= 4 (count (->> msgs (msgs-by-id "hub-connection-buffer-id") (filter :value)))))
         (assert (= expected-alias (->> msgs (filter :hub-registered-alias) first :hub-registered-alias))))
       [transport msgs-chan session-id])))
-
-;; This is a great test, it's picking up the problem behavour, users not cleanly disconnected
-
-(deftest user-registrations
-  (let [[transport-for-1 msgs-chan-for-1 session-id-1] (register-user-on-hub "foodude")]
-
-    (testing "Summary returns single-dev"
-      (transport/send transport-for-1 {:session session-id-1 :id "session-msg-ig" :op "cider-spy-summary"})
-
-      (is (= [#{"foodude"} "foodude"]
-             (->> msgs-chan-for-1 (take-from-chan! 1 1000) first msg->summary alias-and-dev))))
-
-    (let [[transport-for-2 msgs-chan-for-2 session-id-2] (register-user-on-hub "foodude~2")]
-      (testing "Summary returns two devs"
-        (transport/send transport-for-2 {:session session-id-2 :id "session-msg-ig" :op "cider-spy-summary"})
-
-        (is (= [#{"foodude" "foodude~2"} "foodude~2"]
-               (->> msgs-chan-for-2 (take-from-chan! 1 1000) first msg->summary alias-and-dev)))
-
-        (is (= [#{"foodude" "foodude~2"} "foodude"]
-               (->> msgs-chan-for-1 (take-from-chan! 1 1000) first msg->summary alias-and-dev))))
-
-      (.close transport-for-2)
-
-      (is (= [#{"foodude"} "foodude"]
-             (->> msgs-chan-for-1 (take-from-chan! 1 2000) first msg->summary alias-and-dev)))
-      (is (= [#{"foodude"} "foodude"]
-             (->> msgs-chan-for-1 (take-from-chan! 1 2000) first msg->summary alias-and-dev)))
-      (is (= [#{"foodude"} "foodude"]
-             (->> msgs-chan-for-1 (take-from-chan! 1 2000) first msg->summary alias-and-dev))))))
 
 (deftest test-send-messages
   (let [[transport-for-1 msgs-chan-for-1 session-id-1] (register-user-on-hub "foodude")

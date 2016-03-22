@@ -1,29 +1,12 @@
 (ns cider-spy-nrepl.hub-integration-test
-  (:require [clojure.tools.nrepl.server :as nrserver]
-            [cider-spy-nrepl.middleware.cider-spy]
-            [cider-spy-nrepl.middleware.alias]
-            [cheshire.core :as json]
-            [cider-spy-nrepl.hub.server :as hub-server]
-            [cider-spy-nrepl.middleware.cider-spy-session]
-            [cider-spy-nrepl.middleware.cider-spy-multi-repl]
-            [clojure.tools.nrepl.transport :as transport]
-            [cider-spy-nrepl.middleware.cider-spy-hub]
-            [cider-spy-nrepl.middleware.hub-settings :as hub-settings]
+  (:require [cider-spy-nrepl
+             [nrepl-test-utils :refer [messages-chan! take-from-chan!]]
+             [test-utils :refer [alias-and-dev msg->summary msgs-by-id some-eval wrap-setup-alias wrap-startup-hub wrap-startup-nrepl-server]]]
             [clojure.test :refer :all]
-            [cider-spy-nrepl.nrepl-test-utils :refer [messages-chan! take-from-chan!]]
-            [cider-spy-nrepl.test-utils :refer [some-eval start-up-repl-server stop-repl-server msg->summary alias-and-dev msgs-by-id]]
-            [clojure.tools.nrepl :as nrepl]))
+            [clojure.tools.nrepl :as nrepl]
+            [clojure.tools.nrepl.transport :as transport]))
 
-(defn- wrap-setup-once [f]
-  (with-redefs [hub-settings/hub-host-and-port (constantly ["localhost" 7778])
-                cider-spy-nrepl.middleware.alias/alias-from-env (constantly "foodude")]
-    (let [server (start-up-repl-server)
-          hub-server (hub-server/start 7778)]
-      (f)
-      (stop-repl-server server)
-      (hub-server/shutdown hub-server))))
-
-(use-fixtures :each wrap-setup-once)
+(use-fixtures :each (wrap-setup-alias "foodude") wrap-startup-hub wrap-startup-nrepl-server)
 
 (deftest test-connect-to-hub-and-change-alias
   (let [transport (nrepl/connect :port 7777 :host "localhost")

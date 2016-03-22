@@ -1,23 +1,12 @@
 (ns cider-spy-nrepl.connectivity-integration-test
   (:require [cider-spy-nrepl
              [nrepl-test-utils :refer [messages-chan! take-from-chan!]]
-             [test-utils :refer [alias-and-dev msg->summary msgs-by-id some-eval start-up-repl-server stop-repl-server]]]
-            [cider-spy-nrepl.hub.server :as hub-server]
-            [cider-spy-nrepl.middleware.hub-settings :as hub-settings]
+             [test-utils :refer [alias-and-dev msg->summary msgs-by-id start-up-repl-server stop-repl-server wrap-setup-alias wrap-startup-hub]]]
             [clojure.test :refer :all]
             [clojure.tools.nrepl :as nrepl]
             [clojure.tools.nrepl.transport :as transport]))
 
-(defn- wrap-setup-once [f]
-  (with-redefs [hub-settings/hub-host-and-port (constantly ["localhost" 7778])
-                cider-spy-nrepl.middleware.alias/alias-from-env (constantly "foodude")]
-    (let [server (start-up-repl-server)
-          hub-server (hub-server/start 7778)]
-      (f)
-      (stop-repl-server server)
-      (hub-server/shutdown hub-server))))
-
-(use-fixtures :each wrap-setup-once)
+(use-fixtures :each (wrap-setup-alias "foodude") wrap-startup-hub)
 
 ;; Path to stability
 ;; Step 1 stop using evals which create a non-deterministic race condition (location can arrive before registration, or after, make evals a separate test)
@@ -89,7 +78,7 @@
           (assert (registered-devs expected-alias))
           [transport msgs-chan session-id registered-devs])))))
 
-(deftest user-registrations
+(deftest test-user-registrations
   (let [port1 7774
         port2 7775
         server-1 (start-up-repl-server 7774)

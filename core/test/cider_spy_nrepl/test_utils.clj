@@ -1,17 +1,60 @@
 (ns cider-spy-nrepl.test-utils
+  (:refer-clojure :exclude [sync])
   (:require [cheshire.core :as json]
-            [clojure.tools.nrepl.server :as nrserver]
-            [cider-spy-nrepl.hub.client :as client]
-            [cider-spy-nrepl.hub.client-events :as client-events]
-            [cider-spy-nrepl.hub.server-events :as server-events]
-            [cider-spy-nrepl.middleware.cider-spy :as spy-middleware]
-            [cider-spy-nrepl.middleware.cider-spy-hub-close]
-            [cider-spy-nrepl.middleware.cider-spy-hub :as hub-middleware]
-            [clojure.core.async :refer [alts!! chan go timeout >!]]
+            [cider-spy-nrepl.hub
+             [client :as client]
+             [server :as hub-server]
+             [server-events :as server-events]]
+            [cider-spy-nrepl.middleware cider-spy-hub-close
+             [cider-spy :as spy-middleware]
+             [cider-spy-hub :as hub-middleware]
+             [hub-settings :as hub-settings]]
+            [clojure.core.async :refer [>! alts!! chan go timeout]]
             [clojure.test :refer :all]
-            [clojure.tools.nrepl.transport :as transport])
-  (:import (io.netty.channel ChannelHandlerContext))
-  (:refer-clojure :exclude [sync]))
+            [clojure.tools.nrepl
+             [server :as nrserver]
+             [transport :as transport]])
+  (:import io.netty.channel.ChannelHandlerContext))
+
+(defn wrap-setup-alias [alias]
+  (fn [f]
+    (with-redefs [cider-spy-nrepl.middleware.alias/alias-from-env (constantly "foodude")]
+      (f))))
+
+(defn wrap-startup-hub [f]
+  (with-redefs [hub-settings/hub-host-and-port (constantly ["localhost" 7778])]
+    (let [hub-server (hub-server/start 7778)]
+      (try
+        (f)
+        (finally
+          (hub-server/shutdown hub-server))))))
+
+(defn start-up-repl-server
+  ([] (start-up-repl-server 7777))
+  ([port]
+   (let [server
+         (nrserver/start-server
+          :port port
+          :handler (nrserver/default-handler
+                    #'cider-spy-nrepl.middleware.cider-spy-session/wrap-cider-spy-session
+                    #'cider-spy-nrepl.middleware.cider-spy-multi-repl/wrap-multi-repl
+                    #'cider-spy-nrepl.middleware.cider-spy-hub/wrap-cider-spy-hub
+                    #'cider-spy-nrepl.middleware.cider-spy/wrap-cider-spy
+                    #'cider-spy-nrepl.middleware.cider-spy-hub-close/wrap-close))]
+     server)))
+
+(defn stop-repl-server [server]
+  (try
+    (nrserver/stop-server server)
+    (catch Throwable t
+      (println "Couldn't stop nrepl server"))))
+
+(defn wrap-startup-nrepl-server [f]
+  (let [server (start-up-repl-server)]
+    (try
+      (f)
+      (finally
+        (stop-repl-server server)))))
 
 (defn assert-async-msgs
   "Take msg patterns, asserts all accounted for in chan"
@@ -108,17 +151,3 @@
 
 (defn alias-and-dev [summary-msg]
   ((juxt (comp set (partial map :alias) vals :devs) (comp :alias :hub-connection)) summary-msg))
-
-(defn start-up-repl-server
-  ([] (start-up-repl-server 7777))
-  ([port]
-   (let [server
-         (nrserver/start-server
-          :port port
-          :handler (nrserver/default-handler
-                    #'cider-spy-nrepl.middleware.cider-spy-session/wrap-cider-spy-session
-                    #'cider-spy-nrepl.middleware.cider-spy-multi-repl/wrap-multi-repl
-                    #'cider-spy-nrepl.middleware.cider-spy-hub/wrap-cider-spy-hub
-                    #'cider-spy-nrepl.middleware.cider-spy/wrap-cider-spy
-                    #'cider-spy-nrepl.middleware.cider-spy-hub-close/wrap-close))]
-     server)))

@@ -13,16 +13,19 @@
         session-id (:new-session (first (nrepl/response-seq (transport/send transport {:op "clone" :id "session-create-id"}) 5000)))
         msgs-chan (messages-chan! transport)]
 
+    ;; Register connection buffer for status messages
     (transport/send transport {:session session-id :id "22" :op "cider-spy-hub-register-connection-buffer"})
-
     (is (= "done" (->> msgs-chan
                        (take-from-chan! 1 1000)
                        first
                        :status
                        first)))
 
-    (testing "Connection to the hub"
+    ;; Register the summary message
+    (transport/send transport {:session session-id :id "session-msg-ig" :op "cider-spy-summary"})
+    (assert (->> msgs-chan (take-from-chan! 1 1000) first msg->summary :session :started))
 
+    (testing "Connection to the hub"
       ;; Connect to the hub:
       (transport/send transport {:session session-id :id "connect-msg-id" :op "cider-spy-hub-connect"})
 
@@ -42,8 +45,6 @@
         (is (= "foodude" (->> msgs (filter :hub-registered-alias) first :hub-registered-alias)))))
 
     (testing "Summary returns connection information"
-      (transport/send transport {:session session-id :id "session-msg-ig" :op "cider-spy-summary"})
-
       (is (= [#{"foodude"} "foodude"]
              (->> msgs-chan (take-from-chan! 1 1000) first msg->summary alias-and-dev))))
 

@@ -19,8 +19,13 @@
 
 (use-fixtures :each wrap-setup-once)
 
+;; Path to stability
 ;; Step 1 stop using evals which create a non-deterministic race condition (location can arrive before registration, or after, make evals a separate test)
 ;; Step 2 actually fix the test
+;; Step 3 rework register-user-on-hub-with-summary into a common fixture
+;; Step 4 fix ALL tests
+;; Step 5 Remove the legacy connectivity-test
+;; Step 6 fix the session trampling bug
 
 (defn- register-user-on-hub-with-summary [port expected-alias]
   (let [transport (nrepl/connect :port port :host "localhost")
@@ -44,7 +49,6 @@
       (transport/send transport {:session session-id :id "connect-msg-id" :op "cider-spy-hub-connect"})
 
       ;; Ensure connected:
-
       (let [msgs (->> msgs-chan (take-from-chan! 6 10000))]
         (is (= 6 (count msgs)) (count msgs))
         (is (= 4 (count (->> msgs (msgs-by-id "hub-connection-buffer-id") (filter :value)))))

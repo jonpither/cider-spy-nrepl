@@ -100,11 +100,11 @@
       (transport/send transport {:session session-id :id "hub-connection-buffer-id" :op "cider-spy-hub-register-connection-buffer"})
       (assert (->> msgs-chan (take-from-chan! 1 1000)))
 
-      ;; Do an eval to prompt connection to the hub:
-      (transport/send transport (some-eval session-id))
-      (let [msgs (->> msgs-chan (take-from-chan! 7 1000))]
-        (assert (= 7 (count msgs)) (count msgs))
-        (assert (= 2 (count (msgs-by-id "eval-msg" msgs))))
+      ;; Connect to the hub:
+      (transport/send transport {:session session-id :id "connect-msg-id" :op "cider-spy-hub-connect"})
+
+      (let [msgs (->> msgs-chan (take-from-chan! 5 1000))]
+        (assert (= 5 (count msgs)) (count msgs))
         (assert (= 4 (count (->> msgs (msgs-by-id "hub-connection-buffer-id") (filter :value)))))
         (assert (= expected-alias (->> msgs (filter :hub-registered-alias) first :hub-registered-alias))))
       [transport msgs-chan session-id])))

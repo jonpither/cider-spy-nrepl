@@ -1,8 +1,10 @@
 (ns cider-spy-nrepl.connections-test
   (:require [cider-spy-nrepl.hub.register :as register]
+            [cider-spy-nrepl.middleware.session-vars
+             :refer
+             [*desired-alias* *hub-client* *registrations*]]
             [cider-spy-nrepl.test-utils :as test-utils]
             [clojure.core.async :refer [alts!! timeout]]
-            [cider-spy-nrepl.middleware.session-vars :refer [*hub-client* *registrations* *desired-alias*]]
             [clojure.test :refer :all]))
 
 ;; TODO worried about never shutting down individual connections to hub

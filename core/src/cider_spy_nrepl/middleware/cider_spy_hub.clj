@@ -88,10 +88,16 @@
   (cider/send-connected-msg! session "Disconnected from the HUB")
   (cider/update-spy-buffer-summary! session))
 
+(defn- handle-cider-spy-connect
+  "Initiate connection. Used for test purposes."
+  [_ session]
+  (connect-to-hub! session))
+
 (def cider-spy-hub--nrepl-ops {"cider-spy-hub-register-connection-buffer" #'handle-register-hub-connection-buffer-msg
                                "cider-spy-hub-alias" #'handle-change-hub-alias
                                "cider-spy-hub-send-msg" #'handle-send-msg
-                               "cider-spy-hub-disconnect" #'handle-cider-spy-disconnect})
+                               "cider-spy-hub-disconnect" #'handle-cider-spy-disconnect
+                               "cider-spy-hub-connect" #'handle-cider-spy-connect})
 
 (defn wrap-cider-spy-hub
   [handler]
@@ -106,10 +112,10 @@
 
 (set-descriptor!
  #'wrap-cider-spy-hub
- {:requires #{#'cider-spy-nrepl.middleware.cider-spy-session/wrap-cider-spy-session}
-  :expects  #{#'clojure.tools.nrepl.middleware.interruptible-eval/interruptible-eval
-              #'clojure.tools.nrepl.middleware.load-file/wrap-load-file
+ {:requires #{#'cider-spy-nrepl.middleware.cider-spy-session/wrap-cider-spy-session
               #'cider-spy-nrepl.middleware.cider-spy/wrap-cider-spy}
+  :expects  #{#'clojure.tools.nrepl.middleware.interruptible-eval/interruptible-eval
+              #'clojure.tools.nrepl.middleware.load-file/wrap-load-file}
   :handles (zipmap (keys cider-spy-hub--nrepl-ops)
                    (repeat {:doc "See the cider-spy-hub README"
                             :returns {} :requires {}}))})

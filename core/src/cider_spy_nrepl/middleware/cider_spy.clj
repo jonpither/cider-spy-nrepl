@@ -17,18 +17,15 @@
   (try
     (swap! session assoc #'*summary-message-id* id)
     (cider/update-spy-buffer-summary! session)
-    {:status :done}
     (catch Throwable t
       (println "Error occured servicing cider-spy-summary request")
-      (.printStackTrace t)
-      {:status :error})))
+      (.printStackTrace t))))
 
 (defn- handle-reset
   "Reset CIDER-SPY tracking."
   [{:keys [session]}]
   (swap! session dissoc #'*tracking*)
-  (cider/update-spy-buffer-summary! session)
-  {:status :done})
+  (cider/update-spy-buffer-summary! session))
 
 (defn- wrap-tracking
   "Wrap the handler to apply tracking and to update the CIDER SPY summary buffer."
@@ -45,6 +42,10 @@
 (def cider-spy--nrepl-ops {"cider-spy-summary" #'handle-summary
                            "cider-spy-reset" #'handle-reset})
 
+(def ops-that-can-eval
+  "Set of nREPL ops that can lead code being evaluated."
+  #{"eval" "load-file" "refresh" "refresh-all" "refresh-clear" "undef"})
+
 (defn wrap-cider-spy
   "Cider Spy Middleware."
   [handler]
@@ -53,7 +54,9 @@
     (if session
       (if-let [cider-spy-handler (get cider-spy--nrepl-ops op)]
         (cider-spy-handler msg)
-        (wrap-tracking msg handler))
+        (if (ops-that-can-eval op)
+          (wrap-tracking msg handler)
+          (handler msg)))
       (handler msg))))
 
 (set-descriptor!

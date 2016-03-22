@@ -97,10 +97,10 @@
   {:session session-id :ns "clojure.string" :op "eval" :code "( + 1 1)" :file "*cider-repl blog*" :line 12 :column 6 :id "eval-msg"})
 
 (defn msg->summary [msg]
-  {:pre [msg (:value msg)]}
-  (-> msg
-      :value
-      (json/parse-string keyword)))
+  (when msg
+    (-> msg
+        :value
+        (json/parse-string keyword))))
 
 (defn msgs-by-id [id msgs]
   (filter #(= id (:id %)) msgs))

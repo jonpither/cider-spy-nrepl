@@ -18,8 +18,7 @@
   (fn [{:keys [op session] :as msg}]
     ;; The session can sometimes be nil
     (when session
-      (swap! session update-session-for-cider-spy msg)
-      (println "CSS" op (System/identityHashCode session) (@session #'*session-started*)))
+      (swap! session update-session-for-cider-spy msg))
     (handler msg)))
 
 (set-descriptor!

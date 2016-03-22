@@ -15,6 +15,7 @@
 ;; Step 4 fix ALL tests
 ;; Step 5 Remove the legacy connectivity-test
 ;; Step 6 fix the session trampling bug
+;; Step 7 a dedicated and nice looking eval/location test
 
 (defn- register-user-on-hub-with-summary [port expected-alias]
   (let [transport (nrepl/connect :port port :host "localhost")

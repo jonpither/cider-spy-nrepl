@@ -21,11 +21,13 @@
                        :status
                        first)))
 
-    (testing "Eval provokes connection to hub"
-      (transport/send transport (some-eval session-id))
+    (testing "Connection to the hub"
+
+      ;; Connect to the hub:
+      (transport/send transport {:session session-id :id "connect-msg-id" :op "cider-spy-hub-connect"})
 
       (let [msgs (->> msgs-chan
-                      (take-from-chan! 7 1000)
+                      (take-from-chan! 5 1000)
                       (remove #(= (:id %) "eval-msg")))]
 
         (is (= #{"CIDER-SPY-NREPL: Connecting to SPY HUB localhost:7778."

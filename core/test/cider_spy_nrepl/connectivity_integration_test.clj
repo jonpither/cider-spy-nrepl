@@ -102,7 +102,7 @@
         (is (= #{"foodude" "foodude~2"}
                (->> msgs-chan-for-1 (take-from-chan! 1 5000) first msg->summary alias-and-dev first)))
 
-        (stop-repl-server server-2)
+        (transport/send transport-for-2 {:op "close" :id "close-session-id" :session session-id-2})
 
         (is (= [#{"foodude"} "foodude"]
                (->> msgs-chan-for-1 (take-from-chan! 1 5000) first msg->summary alias-and-dev))))

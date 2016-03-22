@@ -1,17 +1,17 @@
 (ns cider-spy-nrepl.middleware.cider-spy-hub
-  (:require [cider-spy-nrepl.hub.client :as hub-client]
-            [cider-spy-nrepl.hub.client-events :as client-events]
-            [clojure.tools.nrepl.transport :as t]
-            [clojure.tools.nrepl.misc :refer [response-for]]
-            [cider-spy-nrepl.middleware.cider :as cider]
-            [cider-spy-nrepl.middleware.hub-settings :as settings]
-            [cider-spy-nrepl.middleware.alias :as alias]
-            [cider-spy-nrepl.middleware.cider-spy-session]
-            [clojure.tools.nrepl.middleware.session]
-            [clojure.tools.nrepl.middleware.interruptible-eval]
-            [clojure.tools.nrepl.middleware.load-file]
-            [cider-spy-nrepl.middleware.session-vars :refer :all]
-            [clojure.tools.nrepl.middleware :refer [set-descriptor!]]))
+  (:require [cider-spy-nrepl.hub
+             [client :as hub-client]
+             [client-events :as client-events]]
+            [cider-spy-nrepl.middleware cider-spy-session
+             [alias :as alias]
+             [cider :as cider]
+             [hub-settings :as settings]
+             [session-vars :refer :all]]
+            [clojure.tools.nrepl
+             [middleware :refer [set-descriptor!]]
+             [misc :refer [response-for]]
+             [transport :as t]]
+            [clojure.tools.nrepl.middleware interruptible-eval load-file]))
 
 (defn- register
   "Register the alias for the users session on the CIDER-SPY-HUB."

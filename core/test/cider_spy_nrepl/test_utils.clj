@@ -5,6 +5,7 @@
             [cider-spy-nrepl.hub.client-events :as client-events]
             [cider-spy-nrepl.hub.server-events :as server-events]
             [cider-spy-nrepl.middleware.cider-spy :as spy-middleware]
+            [cider-spy-nrepl.middleware.cider-spy-hub-close]
             [cider-spy-nrepl.middleware.cider-spy-hub :as hub-middleware]
             [clojure.core.async :refer [alts!! chan go timeout >!]]
             [clojure.test :refer :all]
@@ -118,11 +119,6 @@
                     #'cider-spy-nrepl.middleware.cider-spy-session/wrap-cider-spy-session
                     #'cider-spy-nrepl.middleware.cider-spy-multi-repl/wrap-multi-repl
                     #'cider-spy-nrepl.middleware.cider-spy-hub/wrap-cider-spy-hub
-                    #'cider-spy-nrepl.middleware.cider-spy/wrap-cider-spy))]
+                    #'cider-spy-nrepl.middleware.cider-spy/wrap-cider-spy
+                    #'cider-spy-nrepl.middleware.cider-spy-hub-close/wrap-close))]
      server)))
-
-(defn stop-repl-server [server]
-  (try
-    (nrserver/stop-server server)
-    (catch Throwable t
-      (println "Couldn't stop nrepl server"))))

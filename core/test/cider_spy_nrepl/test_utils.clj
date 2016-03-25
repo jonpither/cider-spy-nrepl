@@ -16,6 +16,10 @@
              [transport :as transport]])
   (:import io.netty.channel.ChannelHandlerContext))
 
+(defn wrap-nuke-sessions [f]
+  (reset! cider-spy-nrepl.hub.register/sessions {})
+  (f))
+
 (defn wrap-setup-alias [alias]
   (fn [f]
     (with-redefs [cider-spy-nrepl.middleware.alias/alias-from-env (constantly "foodude")]
@@ -65,11 +69,6 @@
       (is (some (partial re-find (re-pattern m))
                 (remove nil? received-msgs))
           (str "Could not find msg: " m " got:\n" (clojure.string/join " " received-msgs))))))
-
-(defmacro spy-harness [& body]
-  `(do
-     (reset! cider-spy-nrepl.hub.register/sessions {})
-     ~@body))
 
 (defn some-eval [session-id]
   {:session session-id :ns "clojure.string" :op "eval" :code "( + 1 1)" :file "*cider-repl blog*" :line 12 :column 6 :id "eval-msg"})

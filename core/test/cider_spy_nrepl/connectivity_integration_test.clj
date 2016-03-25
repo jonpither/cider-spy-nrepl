@@ -1,11 +1,11 @@
 (ns cider-spy-nrepl.connectivity-integration-test
   (:require [cider-spy-nrepl
-             [test-utils :refer [messages-chan! take-from-chan! alias-and-dev msg->summary msgs-by-id start-up-repl-server stop-repl-server wrap-setup-alias wrap-startup-hub]]]
+             [test-utils :refer [messages-chan! take-from-chan! alias-and-dev msg->summary msgs-by-id start-up-repl-server stop-repl-server wrap-setup-alias wrap-startup-hub wrap-nuke-sessions]]]
             [clojure.test :refer :all]
             [clojure.tools.nrepl :as nrepl]
             [clojure.tools.nrepl.transport :as transport]))
 
-(use-fixtures :each (wrap-setup-alias "foodude") wrap-startup-hub)
+(use-fixtures :each wrap-nuke-sessions (wrap-setup-alias "foodude") wrap-startup-hub)
 
 ;; Path to stability
 ;; Step 1 stop using evals which create a non-deterministic race condition (location can arrive before registration, or after, make evals a separate test)

@@ -3,6 +3,7 @@
              [test-utils :refer [messages-chan! take-from-chan! alias-and-dev msg->summary msgs-by-id start-up-repl-server stop-repl-server wrap-setup-alias wrap-startup-hub wrap-nuke-sessions]]]
             [clojure.test :refer :all]
             [clojure.tools.nrepl :as nrepl]
+            [clojure.core.async :refer [>! alts!! buffer chan go go-loop timeout <!]]
             [clojure.tools.nrepl.transport :as transport]))
 
 (use-fixtures :each wrap-nuke-sessions (wrap-setup-alias "foodude") wrap-startup-hub)
@@ -18,41 +19,48 @@
 
 (defn- register-user-on-hub-with-summary [port expected-alias]
   (let [transport (nrepl/connect :port port :host "localhost")
-        msgs-chan (messages-chan! transport)]
+        all-msgs-chan (messages-chan! transport)
+        hub-chan (chan 100)
+        summary-chan (chan 100)
+        other-chan (chan 100)]
+
+    (go-loop []
+      (when-let [{:keys [id] :as m} (<! all-msgs-chan)]
+        (>! (case id
+              "session-msg-ig" summary-chan
+              "hub-connection-buffer-id" hub-chan
+              other-chan) m)
+        (recur)))
 
     ;; Create the session:
     (transport/send transport {:op "clone" :id "session-create-id"})
 
-    (let [session-id (->> msgs-chan (take-from-chan! 1 1000) first :new-session)]
+    (let [session-id (->> other-chan (take-from-chan! 1 1000) first :new-session)]
       (assert session-id)
 
       ;; Register connection buffer for status messages
       (transport/send transport {:session session-id :id "hub-connection-buffer-id" :op "cider-spy-hub-register-connection-buffer"})
-      (assert (->> msgs-chan (take-from-chan! 1 1000)))
+      (assert (->> hub-chan (take-from-chan! 1 1000)))
 
       ;; Register the summary message
       (transport/send transport {:session session-id :id "session-msg-ig" :op "cider-spy-summary"})
-      (assert (->> msgs-chan (take-from-chan! 1 1000) first msg->summary :session :started))
+      (assert (->> summary-chan (take-from-chan! 1 1000) first msg->summary :session :started))
 
       ;; Connect to the hub:
       (transport/send transport {:session session-id :id "connect-msg-id" :op "cider-spy-hub-connect"})
 
       ;; Ensure connected:
-      (let [msgs (->> msgs-chan (take-from-chan! 6 10000))]
-        (is (= 6 (count msgs)) (count msgs))
-        (is (= 4 (count (->> msgs (msgs-by-id "hub-connection-buffer-id") (filter :value)))))
+      (let [msgs (->> hub-chan (take-from-chan! 5 10000))]
+        (is (= 5 (count msgs)))
+        (is (= 4 (count (->> msgs (filter :value)))))
+        (is (= expected-alias (->> msgs (filter :hub-registered-alias) first :hub-registered-alias))))
+
+      (let [[msg] (->> summary-chan (take-from-chan! 1 10000))]
         ;; 1 summary message after registration happens
-        (is (= 1 (count (->> msgs (msgs-by-id "session-msg-ig")))) (count (->> msgs (msgs-by-id "session-msg-ig"))))
-        (is (= expected-alias (->> msgs (filter :hub-registered-alias) first :hub-registered-alias)))
-        (let [registered-devs (->> msgs
-                                   (msgs-by-id "session-msg-ig")
-                                   (map msg->summary)
-                                   (map :devs)
-                                   (mapcat vals)
-                                   (map :alias)
-                                   (set))]
+        (is (= msg))
+        (let [registered-devs (->> msg msg->summary :devs vals (map :alias) set)]
           (assert (registered-devs expected-alias))
-          [transport msgs-chan session-id registered-devs]))
+          [transport session-id hub-chan summary-chan other-chan registered-devs]))
 
 
       ;; the eval: the user may not be registered when location bit is done, hence competition
@@ -85,16 +93,16 @@
         server-2 (start-up-repl-server 7775)]
 
     (try
-      (let [[transport-for-1 msgs-chan-for-1 session-id-1] (register-user-on-hub-with-summary 7774 "foodude")
-            [transport-for-2 msgs-chan-for-2 session-id-2 registered-devs] (register-user-on-hub-with-summary 7775 "foodude~2")]
+      (let [[transport-for-1 session-id-1 _ summary-chan-1] (register-user-on-hub-with-summary 7774 "foodude")
+            [transport-for-2 session-id-2 _ summary-chan-2 _ registered-devs] (register-user-on-hub-with-summary 7775 "foodude~2")]
 
         (is (= #{"foodude" "foodude~2"}
-               (->> msgs-chan-for-1 (take-from-chan! 1 5000) first msg->summary alias-and-dev first)))
+               (->> summary-chan-1 (take-from-chan! 1 5000) first msg->summary alias-and-dev first)))
 
         (transport/send transport-for-2 {:op "close" :id "close-session-id" :session session-id-2})
 
         (is (= [#{"foodude"} "foodude"]
-               (->> msgs-chan-for-1 (take-from-chan! 1 5000) first msg->summary alias-and-dev))))
+               (->> summary-chan-1 (take-from-chan! 1 5000) first msg->summary alias-and-dev))))
       (finally
         (stop-repl-server server-1)
         (stop-repl-server server-2)))))

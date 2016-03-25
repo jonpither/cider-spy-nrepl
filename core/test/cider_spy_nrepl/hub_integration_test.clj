@@ -29,8 +29,7 @@
       (transport/send transport {:session session-id :id "connect-msg-id" :op "cider-spy-hub-connect"})
 
       (let [msgs (->> msgs-chan
-                      (take-from-chan! 5 1000)
-                      (remove #(= (:id %) "eval-msg")))]
+                      (take-from-chan! 5 1000))]
 
         (is (= #{"CIDER-SPY-NREPL: Connecting to SPY HUB localhost:7778."
                  "CIDER-SPY-NREPL: You are connected to the CIDER SPY HUB."

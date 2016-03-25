@@ -9,7 +9,7 @@
              [cider-spy :as spy-middleware]
              [cider-spy-hub :as hub-middleware]
              [hub-settings :as hub-settings]]
-            [clojure.core.async :refer [>! alts!! chan go timeout]]
+            [clojure.core.async :refer [>! alts!! buffer chan go go-loop timeout]]
             [clojure.test :refer :all]
             [clojure.tools.nrepl
              [server :as nrserver]
@@ -151,3 +151,19 @@
 
 (defn alias-and-dev [summary-msg]
   ((juxt (comp set (partial map :alias) vals :devs) (comp :alias :hub-connection)) summary-msg))
+
+(defn messages-chan! [transport]
+  (let [c (chan (buffer 100))]
+    (go-loop []
+      (when-let [v (transport/recv transport Long/MAX_VALUE)]
+        (>! c v)
+        (recur)))
+    c))
+
+(defn take-from-chan! [n seconds c]
+  (let [s (atom '[])]
+    (loop [n n]
+      (when-let [v (and (pos? n) (first (alts!! [c (timeout seconds)])))]
+        (swap! s conj v)
+        (recur (dec n))))
+    @s))

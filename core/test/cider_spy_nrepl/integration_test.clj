@@ -1,8 +1,7 @@
 (ns cider-spy-nrepl.integration-test
   (:require [cheshire.core :as json]
             [cider-spy-nrepl
-             [nrepl-test-utils :refer [messages-chan! take-from-chan!]]
-             [test-utils :refer [wrap-startup-nrepl-server]]]
+             [test-utils :refer [messages-chan! take-from-chan! wrap-startup-nrepl-server]]]
             [clojure.test :refer :all]
             [clojure.tools.nrepl :as nrepl]
             [clojure.tools.nrepl.transport :as transport]))

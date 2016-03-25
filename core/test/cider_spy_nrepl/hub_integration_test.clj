@@ -1,7 +1,6 @@
 (ns cider-spy-nrepl.hub-integration-test
   (:require [cider-spy-nrepl
-             [nrepl-test-utils :refer [messages-chan! take-from-chan!]]
-             [test-utils :refer [alias-and-dev msg->summary msgs-by-id some-eval wrap-setup-alias wrap-startup-hub wrap-startup-nrepl-server]]]
+             [test-utils :refer [messages-chan! take-from-chan! alias-and-dev msg->summary msgs-by-id some-eval wrap-setup-alias wrap-startup-hub wrap-startup-nrepl-server]]]
             [clojure.test :refer :all]
             [clojure.tools.nrepl :as nrepl]
             [clojure.tools.nrepl.transport :as transport]))

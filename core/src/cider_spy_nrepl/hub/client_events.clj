@@ -88,7 +88,6 @@
     (if (= large-sequence-no (count (vals stored-messages)))
       ;; send all the ones that are pending, in order:
       (doseq [{:keys [cs-sequence sent?] :as msg} (sort-by :cs-sequence (vals stored-messages)) :when (not sent?)]
-        (log/error "Sending back" msg)
         (f (-> msg (assoc :target target)))
         (swap! session assoc-in [#'*watched-messages* target id cs-sequence :sent?] true))
       (log/warn "Holding on to message" id large-sequence-no stored-messages))))

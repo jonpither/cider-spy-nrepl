@@ -9,9 +9,24 @@
             [clojure.core.async :refer [<! >! alts!! buffer chan go-loop timeout]]
             [clojure.test :refer :all]
             [clojure.tools.nrepl :as nrepl]
+            [clojure.tools.nrepl.middleware :refer [set-descriptor!]]
+            [clojure.tools.nrepl.middleware.session]
+            [clojure.tools.nrepl.middleware.interruptible-eval]
             [clojure.tools.nrepl
              [server :as nrserver]
              [transport :as transport]]))
+
+(defn wrap-fix-inner-evals [handler]
+  (fn [{:keys [session] :as msg}]
+    (when session
+      (swap! session dissoc #'clojure.tools.nrepl.middleware.interruptible-eval/*msg*))
+    (handler msg)))
+
+(set-descriptor!
+ #'wrap-fix-inner-evals
+ {:requires #{#'clojure.tools.nrepl.middleware.session/session}
+  :expects #{#'clojure.tools.nrepl.middleware.interruptible-eval/interruptible-eval}
+  :handles {"fix-inner-evals" {:doc "" :returns {} :requires {}}}})
 
 (defn wrap-nuke-sessions [f]
   (reset! cider-spy-nrepl.hub.register/sessions {})
@@ -30,6 +45,19 @@
         (finally
           (hub-server/shutdown hub-server))))))
 
+(deftype TrackingOutboundTransport [underlying]
+  clojure.tools.nrepl.transport/Transport
+  (send [this msg]
+    (when (= (:id msg) "eval-msg")
+      (clojure.tools.logging/error "SENDING" (System/identityHashCode this) msg))
+    (clojure.tools.nrepl.transport/send underlying msg))
+  (recv [this]
+    (clojure.tools.nrepl.transport/recv underlying))
+  (recv [this timeout]
+    (clojure.tools.nrepl.transport/recv underlying timeout))
+  java.io.Closeable
+  (close [this] (.close underlying)))
+
 (defn start-up-repl-server
   ([] (start-up-repl-server 7777))
   ([port]
@@ -37,11 +65,14 @@
          (nrserver/start-server
           :port port
           :handler (nrserver/default-handler
+                    #'wrap-fix-inner-evals
                     #'cider-spy-nrepl.middleware.cider-spy-session/wrap-cider-spy-session
                     #'cider-spy-nrepl.middleware.cider-spy-multi-repl/wrap-multi-repl
                     #'cider-spy-nrepl.middleware.cider-spy-hub/wrap-cider-spy-hub
                     #'cider-spy-nrepl.middleware.cider-spy/wrap-cider-spy
-                    #'cider-spy-nrepl.middleware.cider-spy-hub-close/wrap-close))]
+                    #'cider-spy-nrepl.middleware.cider-spy-hub-close/wrap-close)
+;;          :transport-fn (fn [socket] (TrackingOutboundTransport. (clojure.tools.nrepl.transport/bencode socket)))
+          )]
      server)))
 
 (defn stop-repl-server [server]

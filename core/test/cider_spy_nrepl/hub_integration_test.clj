@@ -1,11 +1,11 @@
 (ns cider-spy-nrepl.hub-integration-test
   (:require [cider-spy-nrepl
-             [test-utils :refer [messages-chan! take-from-chan! alias-and-dev msg->summary msgs-by-id some-eval wrap-setup-alias wrap-startup-hub wrap-startup-nrepl-server register-user-on-hub-with-summary]]]
+             [test-utils :refer :all]]
             [clojure.test :refer :all]
             [clojure.tools.nrepl :as nrepl]
             [clojure.tools.nrepl.transport :as transport]))
 
-(use-fixtures :each (wrap-setup-alias "foodude") wrap-startup-hub wrap-startup-nrepl-server)
+(use-fixtures :each wrap-nuke-sessions (wrap-setup-alias "foodude") wrap-startup-hub wrap-startup-nrepl-server)
 
 (deftest test-connect-to-hub-and-change-alias
   (let [transport (nrepl/connect :port 7777 :host "localhost")
@@ -223,6 +223,7 @@
 
     ;; Regular eval with 2 responses, shown in full here for reference purposes
     (transport/send transport-for-1 (assoc (some-eval session-id-1) :code "(println \"sd\")"))
+
     (is (= [{:id "eval-msg",
              :session session-id-1
              :out "sd\n"}
@@ -233,7 +234,7 @@
             {:id "eval-msg",
              :session session-id-1
              :status ["done"]}]
-           (->> other-chan-1 (take-from-chan! 3 1000))))
+           (->> other-chan-1 (take-from-chan! 3 4000))))
 
     (testing "User 2 can watch user 1 evals"
 
@@ -264,4 +265,5 @@
                :target "foodude"
                :op "multi-repl-out"
                :originator "foodude"}]
+
              (->> other-chan-2 (take-from-chan! 3 1000)))))))

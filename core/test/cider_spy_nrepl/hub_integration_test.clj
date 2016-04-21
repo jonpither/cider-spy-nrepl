@@ -166,7 +166,6 @@
                  :session session-id-2
                  :target "foodude"
                  :value "2"
-                 :printed-value "true",
                  :cs-sequence 1
                  :origin-session-id session-id-2
                  :originator "foodude"}

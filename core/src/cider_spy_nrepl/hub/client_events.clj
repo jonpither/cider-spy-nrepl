@@ -98,11 +98,7 @@
   (log/debug "REPL out received from" target msg (@session #'*watch-session-request-id*))
 
   (let [id-to-use (if (= origin-session-id (-> session meta :id)) id (@session #'*watch-session-request-id*))]
-    (swap! session assoc-in [#'*watched-messages* target id (:cs-sequence msg)] (merge msg
-                                                                                       {:id id-to-use}
-                                                                                       (when (:value msg)
-                                                                                         {:printed-value "true"}))))
-
+    (swap! session assoc-in [#'*watched-messages* target id (:cs-sequence msg)] (merge msg {:id id-to-use})))
   (send-out-unsent-messages-if-in-order! session id target (partial cider/send! session))
   ;; Evict any pending messages do not match this ID (brutal!)
   ;; If we don't do this we get a leak. Could in future aim for a less strict regime

@@ -16,6 +16,6 @@
 
 (set-descriptor!
  #'wrap-close
- {:expects #{#'clojure.tools.nrepl.middleware.session/session}
-  :handles {"close" {:doc "See the cider-spy-hub README"
-                     :returns {} :requires {}}}})
+ {:expects #{"close"}
+  :handles {"cider-spy-hub-close" {:doc "See the cider-spy-hub README"
+                                   :returns {} :requires {}}}})

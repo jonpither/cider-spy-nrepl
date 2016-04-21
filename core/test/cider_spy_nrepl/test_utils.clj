@@ -12,6 +12,7 @@
             [clojure.tools.nrepl.middleware :refer [set-descriptor!]]
             [clojure.tools.nrepl.middleware.session]
             [clojure.tools.nrepl.middleware.interruptible-eval]
+            [cider-spy-nrepl.middleware.cider-spy-hub-close]
             [clojure.tools.nrepl
              [server :as nrserver]
              [transport :as transport]]))
@@ -57,6 +58,15 @@
     (clojure.tools.nrepl.transport/recv underlying timeout))
   java.io.Closeable
   (close [this] (.close underlying)))
+
+(defn debug-stack []
+  (println (clojure.tools.nrepl.middleware/linearize-middleware-stack (concat nrserver/default-middlewares
+                                                                              [#'wrap-fix-inner-evals
+                                                                               #'cider-spy-nrepl.middleware.cider-spy-session/wrap-cider-spy-session
+                                                                               #'cider-spy-nrepl.middleware.cider-spy-multi-repl/wrap-multi-repl
+                                                                               #'cider-spy-nrepl.middleware.cider-spy-hub/wrap-cider-spy-hub
+                                                                               #'cider-spy-nrepl.middleware.cider-spy/wrap-cider-spy
+                                                                               #'cider-spy-nrepl.middleware.cider-spy-hub-close/wrap-close]))))
 
 (defn start-up-repl-server
   ([] (start-up-repl-server 7777))

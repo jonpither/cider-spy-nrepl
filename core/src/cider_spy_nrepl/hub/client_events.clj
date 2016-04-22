@@ -23,7 +23,6 @@
 
 (defmethod process :registered [session {:keys [alias registered] :as s}]
   (log/debug (format "Registered: %s" alias))
-  (println "updating reg")
   (swap! session assoc #'*registrations* registered)
   (cider/update-spy-buffer-summary! session))
 
@@ -34,7 +33,6 @@
 
 (defmethod process :location [session {:keys [alias registered]}]
   (log/debug (format "Location change: %s" alias))
-  (println "updating loc")
   (swap! session assoc #'*registrations* registered)
   (cider/update-spy-buffer-summary! session))
 

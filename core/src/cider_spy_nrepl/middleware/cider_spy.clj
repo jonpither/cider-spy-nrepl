@@ -4,7 +4,6 @@
             [clojure.tools.nrepl.middleware :refer [set-descriptor!]]
             [clojure.tools.nrepl.middleware.interruptible-eval]
             [clojure.tools.nrepl.middleware.load-file]
-            [clojure.tools.logging :as log]
             [clojure.tools.nrepl.middleware.pr-values]
             [clojure.tools.nrepl.middleware.session]
             [cider-spy-nrepl.middleware.session-vars :refer [*cider-spy-transport* *session-started* *tracking* *summary-message-id*]]

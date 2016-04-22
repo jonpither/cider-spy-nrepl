@@ -1,7 +1,6 @@
 (ns cider-spy-nrepl.hub.client
   (:require [cider-spy-nrepl.hub.edn-utils :as edn-utils]
-            [cider-spy-nrepl.middleware.session-vars :refer [*hub-client*]]
-            [clojure.tools.logging :as log])
+            [cider-spy-nrepl.middleware.session-vars :refer [*hub-client*]])
   (:import (io.netty.bootstrap Bootstrap)
            (io.netty.channel ChannelInitializer
                              SimpleChannelInboundHandler)
@@ -21,7 +20,7 @@
         (handler request)
         (catch Throwable t
           (println "Error occuring processing CIDER-SPY-HUB message. Check for compatibility.")
-          (log/error t)))
+          (.printStackTrace t)))
       (.flush ctx))))
 
 (defn- client-bootstrap

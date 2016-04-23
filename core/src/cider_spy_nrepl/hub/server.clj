@@ -53,7 +53,7 @@
      boss-group worker-group]))
 
 (defn start [port]
-  (println (format "Starting CIDER-SPY HUB Server on %s." port))
+  (log/infof "Starting CIDER-SPY HUB Server on %s." port)
   (start-netty-server :port port))
 
 (defn shutdown

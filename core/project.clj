@@ -17,7 +17,10 @@
   :repl-options {:init-ns user
                  :welcome (println "Type (dev) to start")}
   :profiles {:hub {:dependencies [[org.clojure/tools.logging "0.3.1"]
-                                  [ch.qos.logback/logback-core "1.1.1"]]}
+                                  [ch.qos.logback/logback-classic "1.1.1"]]
+                   :resource-paths ["resources"]}
              :dev [:hub {:dependencies [[org.clojure/core.async "0.2.374"]]
-                         :source-paths ["dev"]}]}
+                         :source-paths ["dev"]
+                         :resource-paths ["test-resources"]}]
+             :test [:dev]}
   :main cider-spy-nrepl.hub.main)

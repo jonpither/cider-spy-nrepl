@@ -9,7 +9,7 @@
 
 (defn- log
   "Used for testing"
-  [m]
+  [& args]
   ;; (clojure.tools.logging/info m)
   )
 
@@ -93,7 +93,7 @@
       (doseq [{:keys [cs-sequence sent?] :as msg} (sort-by :cs-sequence (vals stored-messages)) :when (not sent?)]
         (f (-> msg (assoc :target target)))
         (swap! session assoc-in [#'*watched-messages* target id cs-sequence :sent?] true))
-      (log/warn "Holding on to message" id large-sequence-no stored-messages))))
+      (log "Holding on to message" id large-sequence-no stored-messages))))
 
 (defmethod process :multi-repl-out [session {:keys [origin-session-id id target] :as msg}]
   "Send a message back to CIDER-SPY informing that a eval has been performed

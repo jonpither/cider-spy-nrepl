@@ -1,7 +1,7 @@
 (ns cider-spy-nrepl.integration-test
   (:require [cheshire.core :as json]
             [cider-spy-nrepl
-             [test-utils :refer [messages-chan! take-from-chan! wrap-startup-nrepl-server non-error-spewing-transport]]]
+             [test-utils :refer :all]]
             [clojure.test :refer :all]
             [clojure.tools.nrepl :as nrepl]
             [clojure.tools.nrepl.transport :as transport]))
@@ -48,8 +48,11 @@
                  :status ["done"]}]
                (take 2 (filter #(= 14 (:id %)) responses))))
 
-        (is (= "clojure.string" (-> responses
-                                    (nth 2)
+        ;; Still intermittent, when the NS doesn't contain anything, think there's a high chance of #21 causing this, would fix that first,
+        ;; then try this 20 times or so in succession.
+
+        (is (= "clojure.string" (-> (msgs-by-id "session-msg-ig" responses)
+                                    first
                                     :value
                                     (json/parse-string keyword)
                                     :ns-trail

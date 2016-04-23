@@ -37,7 +37,8 @@
             *hub-channel-chan* (chan)
             *transport* (reify transport/Transport
                           (send [_ r]
-                            (go (>! *transport-chan* (:value r)))))
+                            (when (:value r)
+                              (go (>! *transport-chan* (:value r))))))
             client/connect (constantly [nil nil (MockChannel. true)])
             settings/hub-host-and-port (constantly ["some-host" 999])]
 

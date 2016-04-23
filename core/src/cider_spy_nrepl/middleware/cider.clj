@@ -8,8 +8,14 @@
 (defn send! [session msg]
   (assert (:id msg) msg)
   (when-let [cider-spy-transport (@session #'*cider-spy-transport*)]
-    (transport/send cider-spy-transport
-                    (response-for {:session (-> session meta :id) :id (:id msg)} msg))))
+    (try
+      (transport/send cider-spy-transport
+                      (response-for {:session (-> session meta :id) :id (:id msg)} msg))
+      (catch Throwable t
+        ;; We purposefully swallow exceptions here.
+        ;; The transport back to CIDER is closed, which can happen when everything is shutting down.
+        ;; Besides, there's nothing we can do.
+        ))))
 
 (defn update-spy-buffer-summary!
   "Send this string back to the users CIDER SPY buffer.

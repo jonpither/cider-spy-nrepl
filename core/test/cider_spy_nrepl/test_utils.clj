@@ -68,6 +68,26 @@
                                                                                #'cider-spy-nrepl.middleware.cider-spy/wrap-cider-spy
                                                                                #'cider-spy-nrepl.middleware.cider-spy-hub-close/wrap-close]))))
 
+(deftype NonErrorSpewingTransport [underlying]
+  clojure.tools.nrepl.transport/Transport
+  (send [this msg]
+    (clojure.tools.nrepl.transport/send underlying msg))
+  (recv [this]
+    (try
+      (clojure.tools.nrepl.transport/recv underlying)
+      (catch Throwable t)))
+  (recv [this timeout]
+    (try
+      (clojure.tools.nrepl.transport/recv underlying timeout)
+      (catch Throwable t)))
+  java.io.Closeable
+  (close [this] (.close underlying)))
+
+(defn non-error-spewing-transport
+  "Our tests shutdown nREPL often, and the underlying transport spews out errors when this happens."
+  [socket]
+  (NonErrorSpewingTransport. (clojure.tools.nrepl.transport/bencode socket)))
+
 (defn start-up-repl-server
   ([] (start-up-repl-server 7777))
   ([port]
@@ -81,7 +101,7 @@
                     #'cider-spy-nrepl.middleware.cider-spy-hub/wrap-cider-spy-hub
                     #'cider-spy-nrepl.middleware.cider-spy/wrap-cider-spy
                     #'cider-spy-nrepl.middleware.cider-spy-hub-close/wrap-close)
-;;          :transport-fn (fn [socket] (TrackingOutboundTransport. (clojure.tools.nrepl.transport/bencode socket)))
+;;          :transport-fn (fn [socket] (NonErrorSpewingTransport. (clojure.tools.nrepl.transport/bencode socket)))
           )]
      server)))
 
@@ -140,7 +160,7 @@
     @s))
 
 (defn register-user-on-hub-with-summary [port expected-alias]
-  (let [transport (nrepl/connect :port port :host "localhost")
+  (let [transport (nrepl/connect :port port :host "localhost" :transport-fn non-error-spewing-transport)
         all-msgs-chan (messages-chan! transport)
         hub-chan (chan 100)
         summary-chan (chan 100)

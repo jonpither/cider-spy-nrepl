@@ -1,7 +1,7 @@
 (ns cider-spy-nrepl.integration-test
   (:require [cheshire.core :as json]
             [cider-spy-nrepl
-             [test-utils :refer [messages-chan! take-from-chan! wrap-startup-nrepl-server]]]
+             [test-utils :refer [messages-chan! take-from-chan! wrap-startup-nrepl-server non-error-spewing-transport]]]
             [clojure.test :refer :all]
             [clojure.tools.nrepl :as nrepl]
             [clojure.tools.nrepl.transport :as transport]))
@@ -20,7 +20,7 @@
     (is (= ["done"] (:status (second response))))))
 
 (deftest test-display-a-summary
-  (let [transport (nrepl/connect :port 7777 :host "localhost")
+  (let [transport (nrepl/connect :port 7777 :host "localhost" :transport-fn non-error-spewing-transport)
         msgs-chan (messages-chan! transport)]
 
     (transport/send transport {:op "clone" :id "session-create-id"})

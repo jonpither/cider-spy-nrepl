@@ -8,7 +8,7 @@
 (use-fixtures :each wrap-nuke-sessions (wrap-setup-alias "foodude") wrap-startup-hub wrap-startup-nrepl-server)
 
 (deftest test-connect-to-hub-and-change-alias
-  (let [transport (nrepl/connect :port 7777 :host "localhost")
+  (let [transport (nrepl/connect :port 7777 :host "localhost" :transport-fn non-error-spewing-transport)
         session-id (:new-session (first (nrepl/response-seq (transport/send transport {:op "clone" :id "session-create-id"}) 5000)))
         msgs-chan (messages-chan! transport)]
 

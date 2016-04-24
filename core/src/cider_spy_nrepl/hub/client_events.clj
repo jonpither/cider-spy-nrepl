@@ -85,14 +85,14 @@
   (log (format "REPL eval received from %s: %s" target code))
   (cider/send! session {:id (get @(cs-session session) #'*hub-connection-buffer-id*) :target target :watch-repl-eval-code code}))
 
-(defn send-out-unsent-messages-if-in-order! [session id target f]
-  (let [stored-messages (get-in @(cs-session session) [#'*watched-messages* target id])
+(defn send-out-unsent-messages-if-in-order! [cs-session id target f]
+  (let [stored-messages (get-in @cs-session [#'*watched-messages* target id])
         large-sequence-no (apply max (map :cs-sequence (vals stored-messages)))]
     (if (= large-sequence-no (count (vals stored-messages)))
       ;; send all the ones that are pending, in order:
       (doseq [{:keys [cs-sequence sent?] :as msg} (sort-by :cs-sequence (vals stored-messages)) :when (not sent?)]
         (f (-> msg (assoc :target target)))
-        (swap! (cs-session session) assoc-in [#'*watched-messages* target id cs-sequence :sent?] true))
+        (swap! cs-session assoc-in [#'*watched-messages* target id cs-sequence :sent?] true))
       (log "Holding on to message" id large-sequence-no stored-messages))))
 
 (defmethod process :multi-repl-out [session {:keys [origin-session-id id target] :as msg}]
@@ -102,7 +102,7 @@
 
   (let [id-to-use (if (= origin-session-id (-> session meta :id)) id (get @(cs-session session) #'*watch-session-request-id*))]
     (swap! (cs-session session) assoc-in [#'*watched-messages* target id (:cs-sequence msg)] (merge msg {:id id-to-use})))
-  (send-out-unsent-messages-if-in-order! session id target (partial cider/send! session))
+  (send-out-unsent-messages-if-in-order! (cs-session session) id target (partial cider/send! session))
   ;; Evict any pending messages do not match this ID (brutal!)
   ;; If we don't do this we get a leak. Could in future aim for a less strict regime
   (swap! (cs-session session) update-in [#'*watched-messages* target] select-keys [id]))

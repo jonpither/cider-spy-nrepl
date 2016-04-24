@@ -1,5 +1,7 @@
 (ns cider-spy-nrepl.middleware.session-vars)
 
+(def ^{:dynamic true :doc "The CIDER-SPY session"} *cider-spy-session*)
+
 (def ^{:dynamic true :doc "A map of hub connection details"} *hub-connection-details*)
 
 (def ^{:dynamic true :doc "The message ID used for sending asynchronous summary updates back to the client"} *summary-message-id*)
@@ -25,3 +27,6 @@
 (def ^{:dynamic true :doc "The message ID used for sending asynchronous multi REPL updates back to the client"} *watch-session-request-id*)
 
 (def ^{:dynamic true :doc "We hold on to messages for ordering resequencing purposes"} *watched-messages*)
+
+(defn cs-session [nrepl-session]
+  (get @nrepl-session #'*cider-spy-session*))

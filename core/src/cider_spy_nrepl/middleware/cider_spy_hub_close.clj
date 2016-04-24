@@ -5,7 +5,7 @@
 
 (defn- look-up-client-in-session [id]
   (when-let [session (@(var-get #'clojure.tools.nrepl.middleware.session/sessions) id)]
-    (@session #'*hub-client*)))
+    (get @(cs-session session) #'*hub-client*)))
 
 (defn wrap-close
   [handler]

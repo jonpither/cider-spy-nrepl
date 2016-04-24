@@ -1,5 +1,5 @@
 (ns cider-spy-nrepl.middleware.summary-builder
-  (:require [cider-spy-nrepl.middleware.session-vars :refer [*hub-connection-details* *registrations* *session-started* *tracking*]])
+  (:require [cider-spy-nrepl.middleware.session-vars :refer :all])
   (:import (org.joda.time LocalDateTime Seconds)))
 
 (defn- remove-duplicate-entries
@@ -21,9 +21,10 @@
 (defn summary
   "Build a summary of the users REPL session."
   [session]
-  (let [{:keys [ns-trail commands nses-loaded]} (session #'*tracking*)
-        cider-spy-session-started (session #'*session-started*)]
-    {:hub-connection (when-let [{:keys [when-connected alias]} (session #'*hub-connection-details*)]
+  (let [cider-spy-session @(cs-session session)
+        {:keys [ns-trail commands nses-loaded]} (cider-spy-session #'*tracking*)
+        cider-spy-session-started (cider-spy-session #'*session-started*)]
+    {:hub-connection (when-let [{:keys [when-connected alias]} (cider-spy-session #'*hub-connection-details*)]
                        {:started (when when-connected (.toString (LocalDateTime. when-connected) "hh:mm:ss"))
                         :alias alias})
      :ns-trail (->> ns-trail
@@ -32,7 +33,7 @@
                     (map #(dissoc % :dt)))
      :nses-loaded nses-loaded
      :fns commands
-     :devs (session #'*registrations*)
+     :devs (cider-spy-session #'*registrations*)
      :session {:started (.toString cider-spy-session-started "hh:mm:ss")
                :seconds (.getSeconds (Seconds/secondsBetween cider-spy-session-started
                                                              (LocalDateTime.)))}}))

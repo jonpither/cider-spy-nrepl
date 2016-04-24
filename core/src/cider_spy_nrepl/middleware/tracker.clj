@@ -1,7 +1,7 @@
 (ns cider-spy-nrepl.middleware.tracker
   (:require [cider-spy-nrepl.hub.client :refer [send-async!]]
             [clojure.tools.analyzer :as ana]
-            [cider-spy-nrepl.middleware.session-vars :refer [*tracking*]]
+            [cider-spy-nrepl.middleware.session-vars :refer [*tracking* cs-session]]
             [clojure.tools.analyzer.jvm :as ana-jvm]
             [clojure.tools.analyzer.env :as env]
             [clojure.tools.namespace.parse :as clj-tools-namespace-parse]
@@ -81,8 +81,8 @@
                       trackers)))
 
 (defn track-msg! [msg session]
-  (let [old-session @session
-        session-tracked (swap! session apply-trackers msg)
+  (let [old-session @(cs-session session)
+        session-tracked (swap! (cs-session session) apply-trackers msg)
         [old-session-msgs new-session-msgs] (map #(get-in % [#'*tracking* :ns-trail])
                                                  [old-session session-tracked])
         messages-searched (drop (count old-session-msgs)

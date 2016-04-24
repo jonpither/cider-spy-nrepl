@@ -1,5 +1,5 @@
 (ns cider-spy-nrepl.middleware.cider-spy-session
-  (:require [cider-spy-nrepl.middleware.session-vars :refer [*cider-spy-transport* *session-started* *tracking* *summary-message-id*]]
+  (:require [cider-spy-nrepl.middleware.session-vars :refer :all]
             [clojure.tools.nrepl.middleware :refer [set-descriptor!]]
             [clojure.tools.nrepl.middleware.session])
    (:import (org.joda.time LocalDateTime)))
@@ -8,9 +8,9 @@
   "We ensure the session has information cider-spy needs for asynchronous
    communication, such as a transport."
   [session {:keys [transport]}]
-  (merge {#'*cider-spy-transport* transport
-          #'*session-started* (LocalDateTime.)}
-         session))
+  (or (and (session #'*cider-spy-session*) session)
+      (assoc session #'*cider-spy-session* (atom {#'*cider-spy-transport* transport
+                                                  #'*session-started* (LocalDateTime.)}))))
 
 (defn wrap-cider-spy-session
   "Cider Spy Session Middleware."

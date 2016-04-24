@@ -1,6 +1,6 @@
 (ns cider-spy-nrepl.hub.client
   (:require [cider-spy-nrepl.hub.edn-utils :as edn-utils]
-            [cider-spy-nrepl.middleware.session-vars :refer [*hub-client*]])
+            [cider-spy-nrepl.middleware.session-vars :refer :all])
   (:import (io.netty.bootstrap Bootstrap)
            (io.netty.channel ChannelInitializer
                              SimpleChannelInboundHandler)
@@ -80,6 +80,6 @@
 (defn send-async!
   [session msg]
   (assert (:op msg))
-  (when-let [bootstrap (@session #'*hub-client*)]
+  (when-let [bootstrap (get @(cs-session session) #'*hub-client*)]
     (future
       (send! bootstrap msg))))

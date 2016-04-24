@@ -16,7 +16,7 @@
 (defn- register
   "Register the alias for the users session on the CIDER-SPY-HUB."
   [session]
-  (let [alias (or (@session #'*desired-alias*) (alias/alias-from-env))]
+  (let [alias (or (get @(cs-session session) #'*desired-alias*) (alias/alias-from-env))]
     (cider/send-connected-msg! session (format "Setting alias on CIDER SPY HUB to %s." alias))
     (hub-client/send-async! session {:op :register :alias alias :session-id (-> session meta :id)})))
 
@@ -25,7 +25,7 @@
   [session hub-client]
   (if hub-client
     (do
-      (swap! session assoc #'*hub-client* hub-client)
+      (swap! (cs-session session) assoc #'*hub-client* hub-client)
       (cider/send-connected-msg! session "You are connected to the CIDER SPY HUB.")
       (register session))
     (cider/send-connected-msg! session "You are NOT connected to the CIDER SPY HUB.")))
@@ -41,8 +41,8 @@
 (defn- connect-to-hub! [session]
   (future
     (locking session
-      (let [user-disconnect (@session #'*user-disconnect*)
-            hub-client (@session #'*hub-client*)
+      (let [user-disconnect (get @(cs-session session) #'*user-disconnect*)
+            hub-client (get @(cs-session session) #'*hub-client*)
             connected? (and hub-client (.isOpen (last hub-client)))
             closed? (and hub-client (not connected?))]
         (when (and (not connected?) (not user-disconnect))
@@ -57,16 +57,16 @@
   "We register the buffer in EMACS used for displaying connection information
    about the CIDER-SPY-HUB."
   [{:keys [id transport] :as msg} session]
-  (swap! session assoc #'*hub-connection-buffer-id* id)
+  (swap! (cs-session session) assoc #'*hub-connection-buffer-id* id)
   ;; Resend out the alias
-  (when-let [{:keys [alias]} (@session #'*hub-connection-details*)]
+  (when-let [{:keys [alias]} (get @(cs-session session) #'*hub-connection-details*)]
     (cider/send-connected-on-hub-msg! session alias))
   (t/send transport (response-for msg {:status :done})))
 
 (defn- handle-change-hub-alias
   "Change alias in CIDER-SPY-HUB."
   [{:keys [alias]} session]
-  (swap! session assoc #'*desired-alias* alias)
+  (swap! (cs-session session) assoc #'*desired-alias* alias)
   (register session))
 
 (defn- handle-send-msg
@@ -82,9 +82,9 @@
 (defn- handle-cider-spy-disconnect
   "Disconnect permantently the user from the CIDER-SPY-HUB."
   [_ session]
-  (swap! session assoc #'*user-disconnect* true)
-  (swap! session dissoc #'*registrations*)
-  (-> (@session #'*hub-client*) last .close)
+  (swap! (cs-session session) assoc #'*user-disconnect* true)
+  (swap! (cs-session session) dissoc #'*registrations*)
+  (-> session cs-session deref (get #'*hub-client*) last .close)
   (cider/send-connected-msg! session "Disconnected from the HUB")
   (cider/update-spy-buffer-summary! session))
 

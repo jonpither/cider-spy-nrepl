@@ -21,7 +21,7 @@
     (nrepl-transport/send (:transport parent-msg)
                           (if (:originator parent-msg)
                             (assoc msg
-                                   :id (@session #'*hub-connection-buffer-id*)
+                                   :id (get @(cs-session session) #'*hub-connection-buffer-id*)
                                    :outside-multi-repl-eval "true"
                                    :originator (:originator parent-msg))
                             msg)))
@@ -31,7 +31,7 @@
 (defn handle-watch
   "This operation is to start watching someone elses REPL"
   [{:keys [id target session] :as msg}]
-  (swap! session assoc #'*watch-session-request-id* id)
+  (swap! (cs-session session) assoc #'*watch-session-request-id* id)
   (hub-client/send-async! session {:op :start-multi-repl :target target})
   (cider/send-connected-msg! session (str "Sent watching REPL request to target " target)))
 
@@ -56,7 +56,7 @@
 (defn- track-repl-evals
   "Wrap a standard so we can track and distribute msgs"
   [{:keys [op session] :as msg} handler]
-  (if (and session (= "eval" op) (@session #'*watching?*))
+  (if (and session (= "eval" op) (get @(cs-session session) #'*watching?*))
     (do
       (hub-client/send-async! session (-> msg (assoc :op :repl->mult-repl-eval) (dissoc :session :transport :pprint-fn)))
       (handler (assoc msg :transport (TrackingTransport. session msg (atom 0)))))

@@ -6,7 +6,7 @@
             [clojure.tools.nrepl.middleware.load-file]
             [clojure.tools.nrepl.middleware.pr-values]
             [clojure.tools.nrepl.middleware.session]
-            [cider-spy-nrepl.middleware.session-vars :refer [*cider-spy-transport* *session-started* *tracking* *summary-message-id*]]
+            [cider-spy-nrepl.middleware.session-vars :refer :all]
             [cider-spy-nrepl.middleware.cider-spy-session])
   (:import (org.joda.time LocalDateTime)))
 
@@ -14,7 +14,7 @@
   "Handle the CIDER-SPY request for summary information."
   [{:keys [id session] :as msg}]
   (try
-    (swap! session assoc #'*summary-message-id* id)
+    (swap! (cs-session session) assoc #'*summary-message-id* id)
     (cider/update-spy-buffer-summary! session)
     (catch Throwable t
       (println "Error occured servicing cider-spy-summary request")
@@ -23,7 +23,7 @@
 (defn- handle-reset
   "Reset CIDER-SPY tracking."
   [{:keys [session]}]
-  (swap! session dissoc #'*tracking*)
+  (swap! (cs-session session) dissoc #'*tracking*)
   (cider/update-spy-buffer-summary! session))
 
 (defn- wrap-tracking

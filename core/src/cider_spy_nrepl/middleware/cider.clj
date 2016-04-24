@@ -7,7 +7,7 @@
 
 (defn send! [session msg]
   (assert (:id msg) msg)
-  (when-let [cider-spy-transport (@session #'*cider-spy-transport*)]
+  (when-let [cider-spy-transport (get @(cs-session session) #'*cider-spy-transport*)]
     (try
       (transport/send cider-spy-transport
                       (response-for {:session (-> session meta :id) :id (:id msg)} msg))
@@ -22,7 +22,7 @@
    EMACS CIDER SPY has a listener waiting for a message with an ID
    the same as SUMMARY-MESSAGE-ID in the session."
   [session]
-  (when-let [summary-msg-id (@session #'*summary-message-id*)]
+  (when-let [summary-msg-id (get @(cs-session session) #'*summary-message-id*)]
     (send! session {:id summary-msg-id
                     :value (json/encode (summary-builder/summary @session))
                     ;; Avoid manipulation from clojure.tools.nrepl.middleware.pr-values:
@@ -30,7 +30,7 @@
 
 (defn send-connected-on-hub-msg!
   [session alias]
-  (when-let [connection-buffer-message-id (@session #'*hub-connection-buffer-id*)]
+  (when-let [connection-buffer-message-id (get @(cs-session session) #'*hub-connection-buffer-id*)]
     (send! session {:id connection-buffer-message-id :hub-registered-alias alias})))
 
 (defn send-connected-msg!
@@ -38,5 +38,5 @@
    The correct ID is used as to ensure the message shows up in the relevant
    CIDER-SPY buffer."
   [session s]
-  (when-let [connection-buffer-message-id (@session #'*hub-connection-buffer-id*)]
+  (when-let [connection-buffer-message-id (get @(cs-session session) #'*hub-connection-buffer-id*)]
     (send! session {:id connection-buffer-message-id :value (str "CIDER-SPY-NREPL: " s) :printed-value "true"})))

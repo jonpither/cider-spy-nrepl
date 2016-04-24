@@ -21,7 +21,7 @@
 (defn summary
   "Build a summary of the users REPL session."
   [session]
-  (let [cider-spy-session @(cs-session session)
+  (let [cider-spy-session @(session #'*cider-spy-session*)
         {:keys [ns-trail commands nses-loaded]} (cider-spy-session #'*tracking*)
         cider-spy-session-started (cider-spy-session #'*session-started*)]
     {:hub-connection (when-let [{:keys [when-connected alias]} (cider-spy-session #'*hub-connection-details*)]

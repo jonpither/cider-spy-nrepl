@@ -1,0 +1,15 @@
+<!-- DR test  Logback configuration. See http://logback.qos.ch/manual/index.html -->
+<configuration scan="false" debug="true">
+
+    <property name="PATTERN" value="%d{yyyy-MM-dd HH:mm:ss.SSS} [%thread] %-5level %logger{36} - %X{bolt} %X{batch-id} %msg%n"/>
+
+    <appender name="stdOut" class="ch.qos.logback.core.ConsoleAppender">
+        <encoder>
+            <pattern>${PATTERN}</pattern>
+        </encoder>
+    </appender>
+
+    <root level="ERROR">
+        <appender-ref ref="stdOut" />
+    </root>
+</configuration>

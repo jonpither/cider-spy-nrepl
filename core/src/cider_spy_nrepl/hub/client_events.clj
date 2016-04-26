@@ -20,7 +20,7 @@
 
 (defmethod process :connected [session {:keys [alias when-connected]}]
   (log (format "Registered on hub as: %s" alias))
-  (swap! (cs-session session) assoc '*hub-connection-details* {:alias alias :when-connected when-connected})
+  (swap! (cs-session session) assoc #'*hub-connection-details* {:alias alias :when-connected when-connected})
   (cider/send-connected-on-hub-msg! session alias)
   (cider/send-connected-msg! session (format "Registered on hub as: %s" alias))
 ;;  (cider/update-spy-buffer-summary! session)

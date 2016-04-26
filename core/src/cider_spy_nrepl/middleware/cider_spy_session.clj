@@ -1,7 +1,8 @@
 (ns cider-spy-nrepl.middleware.cider-spy-session
   (:require [cider-spy-nrepl.middleware.session-vars :refer :all]
             [clojure.tools.nrepl.middleware :refer [set-descriptor!]]
-            [clojure.tools.nrepl.middleware.session])
+            [clojure.tools.nrepl.middleware.session]
+            [clojure.tools.nrepl.middleware.pr-values])
    (:import (org.joda.time LocalDateTime)))
 
 (defn- update-session-for-cider-spy
@@ -23,6 +24,7 @@
 
 (set-descriptor!
  #'wrap-cider-spy-session
- {:requires #{#'clojure.tools.nrepl.middleware.session/session}
+ {:requires #{#'clojure.tools.nrepl.middleware.session/session
+              #'clojure.tools.nrepl.middleware.pr-values/pr-values}
   :handles {"cider-spy-session" {:doc "See the cider-spy README"
                                  :returns {} :requires {}}}})

@@ -4,7 +4,7 @@
   :license {:name "Eclipse Public License"
             :url "http://www.eclipse.org/legal/epl-v10.html"}
   :dependencies [[cheshire "5.5.0"]
-                 [cider/cider-nrepl "0.9.1"]
+                 [cider/cider-nrepl "0.12.0"]
                  [io.netty/netty-all "5.0.0.Alpha2"]
                  [joda-time "2.9.1"]
                  [org.clojure/clojure "1.7.0"]

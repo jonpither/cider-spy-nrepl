@@ -177,16 +177,16 @@
     ;; Create the session:
     (transport/send transport {:op "clone" :id "session-create-id"})
 
-    (let [session-id (->> other-chan (take-from-chan! 1 1000) first :new-session)]
+    (let [session-id (->> other-chan (take-from-chan! 1 5000) first :new-session)]
       (assert session-id)
 
       ;; Register connection buffer for status messages
       (transport/send transport {:session session-id :id "hub-connection-buffer-id" :op "cider-spy-hub-register-connection-buffer"})
-      (assert (->> hub-chan (take-from-chan! 1 1000)))
+      (assert (->> hub-chan (take-from-chan! 1 5000)))
 
       ;; Register the summary message
       (transport/send transport {:session session-id :id "session-msg-ig" :op "cider-spy-summary"})
-      (assert (->> summary-chan (take-from-chan! 1 1000) first msg->summary :session :started))
+      (assert (->> summary-chan (take-from-chan! 1 5000) first msg->summary :session :started))
 
       ;; Connect to the hub:
       (transport/send transport {:session session-id :id "connect-msg-id" :op "cider-spy-hub-connect"})

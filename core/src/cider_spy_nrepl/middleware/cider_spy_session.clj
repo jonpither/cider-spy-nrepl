@@ -24,7 +24,8 @@
 
 (set-descriptor!
  #'wrap-cider-spy-session
- {:requires #{#'clojure.tools.nrepl.middleware.session/session
-              #'clojure.tools.nrepl.middleware.pr-values/pr-values}
+ {:requires #{"session";; #'clojure.tools.nrepl.middleware.session/session
+              "pr-values" ;;#'clojure.tools.nrepl.middleware.pr-values/pr-values
+              }
   :handles {"cider-spy-session" {:doc "See the cider-spy README"
                                  :returns {} :requires {}}}})
